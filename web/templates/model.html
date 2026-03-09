@@ -30,6 +30,7 @@
   <li class="nav-item"><a class="nav-link active" data-bs-toggle="tab" href="#tab-summary">Summary</a></li>
   <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tab-saliency">Saliency</a></li>
   <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tab-occlusion">Occlusion</a></li>
+  <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tab-ablation">AblationCAM</a></li>
 </ul>
 
 <div class="tab-content mb-5">
@@ -90,8 +91,32 @@
         {% endfor %}
       </div>
       {% endfor %}
+      {% endfor %}
     {% else %}
     <p class="text-muted">No occlusion charts available yet.</p>
+    {% endif %}
+  </div>
+
+  {# AblationCAM tab #}
+  <div class="tab-pane fade" id="tab-ablation">
+    {% if charts.ablation %}
+      {% for cls, zones in charts.ablation.items() %}
+      <h6 class="fw-semibold text-uppercase text-muted mt-3 mb-2">{{ cls | replace('_',' ') | title }}</h6>
+      {% for zone, fnames in zones.items() %}
+      <p class="text-muted small mb-1">{{ zone }}</p>
+      <div class="row g-2 mb-3">
+        {% for fname in fnames %}
+        <div class="col-lg-3 col-md-4 col-6">
+          <img src="/api/chart/{{ model }}/ablation/{{ cls }}/{{ zone }}/{{ fname }}"
+               class="img-fluid chart-img w-100" alt="{{ fname }}">
+          <div class="chart-label">{{ fname | replace('.png','') | title }}</div>
+        </div>
+        {% endfor %}
+      </div>
+      {% endfor %}
+      {% endfor %}
+    {% else %}
+    <p class="text-muted">No AblationCAM charts available yet.</p>
     {% endif %}
   </div>
 
@@ -128,6 +153,7 @@
             <th>Fold</th>
             <th>Class</th>
             <th>Zone</th>
+            <th>Confidence</th>
             <th>PZ&nbsp;vox</th>
             <th>TZ&nbsp;vox</th>
             <th>Sal dom.&nbsp;ch</th>
@@ -152,6 +178,16 @@
               {% if r.primary_zone == 'pz' %}<span class="badge badge-pz text-white rounded-pill px-2">PZ</span>
               {% elif r.primary_zone == 'tz' %}<span class="badge badge-tz text-white rounded-pill px-2">TZ</span>
               {% else %}<span class="text-muted">—</span>{% endif %}
+            </td>
+            <td>
+              {% if r.confidence is defined and r.confidence is not none %}
+                <span class="badge rounded-pill px-2
+                  {% if r.confidence >= 0.8 %}bg-danger
+                  {% elif r.confidence >= 0.5 %}bg-warning text-dark
+                  {% else %}bg-secondary{% endif %}">
+                  {{ "%.3f"|format(r.confidence) }}
+                </span>
+              {% else %}—{% endif %}
             </td>
             <td>{{ r.pz_voxels if r.pz_voxels is not none else '—' }}</td>
             <td>{{ r.tz_voxels if r.tz_voxels is not none else '—' }}</td>

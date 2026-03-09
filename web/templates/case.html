@@ -83,7 +83,8 @@
       <div class="d-flex gap-2 flex-wrap ms-2">
         {% for panel, label in [('t2w','T2W'),('adc','ADC'),('hbv','HBV'),
                                   ('prediction','Pred'),('label','Label'),
-                                  ('saliency','Sal'),('occlusion','Occ'),('zones','Zones')] %}
+                                  ('saliency','Sal'),('occlusion','Occ'),
+                                  ('ablation','AblCAM'),('zones','Zones')] %}
         <div class="form-check form-switch mb-0" title="Toggle {{ label }}">
           <input class="form-check-input panel-toggle" type="checkbox"
                  id="tog-{{ panel }}" data-panel="{{ panel }}" checked>
@@ -120,6 +121,12 @@
             <td>{{ record.tz_voxels }}</td></tr>
         {% endif %}
       </table>
+    </div>
+
+    {# Confidence gauge #}
+    <div class="stat-card mb-2">
+      <div class="stat-label mb-2">Model Confidence</div>
+      <div id="plot-confidence" style="height:110px"></div>
     </div>
     {% endif %}
 
@@ -167,14 +174,15 @@ const CH_COLORS = ["#e74c3c", "#2ecc71", "#3498db"];
 
 // Panel metadata: key → display label
 const PANEL_META = {
-  t2w:        { label: "T2W (MRI)",      order: 0 },
-  adc:        { label: "ADC (MRI)",      order: 1 },
-  hbv:        { label: "HBV (MRI)",      order: 2 },
-  prediction: { label: "Cancer Prob",    order: 3 },
-  label:      { label: "Label (GT)",     order: 4 },
-  saliency:   { label: "Saliency",       order: 5 },
-  occlusion:  { label: "Occlusion",      order: 6 },
-  zones:      { label: "Zones (PZ/TZ)",  order: 7 },
+  t2w:        { label: "T2W (MRI)",         order: 0 },
+  adc:        { label: "ADC (MRI)",         order: 1 },
+  hbv:        { label: "HBV (MRI)",         order: 2 },
+  prediction: { label: "Cancer Prob",       order: 3 },
+  label:      { label: "Label (GT)",        order: 4 },
+  saliency:   { label: "Saliency",          order: 5 },
+  occlusion:  { label: "Occlusion",         order: 6 },
+  ablation:   { label: "AblationCAM",       order: 7 },
+  zones:      { label: "Zones (PZ/TZ)",     order: 8 },
 };
 
 // Panels visible at startup (without optional ones that may not exist)
@@ -252,6 +260,36 @@ const PLOTLY_LAYOUT_MINI = {
   showlegend: false,
 };
 
+function plotConfidence(confidence) {
+  const div = document.getElementById("plot-confidence");
+  if (!div) return;
+  if (confidence == null) {
+    div.innerHTML = '<p class="text-muted small text-center pt-3">Not available</p>';
+    return;
+  }
+  const pct = Math.round(confidence * 100);
+  const color = confidence >= 0.8 ? "#dc3545" : confidence >= 0.5 ? "#fd7e14" : "#6c757d";
+  Plotly.newPlot("plot-confidence", [{
+    type: "indicator", mode: "gauge+number",
+    value: confidence,
+    number: { valueformat: ".3f", font: { size: 20 } },
+    gauge: {
+      axis: { range: [0, 1], tickformat: ".1f", tickfont: { size: 9 } },
+      bar: { color },
+      steps: [
+        { range: [0, 0.5], color: "#f8f9fa" },
+        { range: [0.5, 0.8], color: "#fff3cd" },
+        { range: [0.8, 1.0], color: "#f8d7da" },
+      ],
+      threshold: { line: { color: "#333", width: 2 }, thickness: 0.75, value: 0.5 },
+    },
+  }], {
+    margin: { t: 10, b: 10, l: 20, r: 20 },
+    paper_bgcolor: "white",
+    height: 110,
+  }, { displayModeBar: false });
+}
+
 function plotInputAblation(weights) {
   if (!weights) {
     document.getElementById("plot-inp-abl").innerHTML =
@@ -318,11 +356,12 @@ function plotBar(divId, means) {
     showSlice(parseInt(slider.value));
 
     // Warn if no XAI maps
-    const hasXAI = "saliency" in panels || "occlusion" in panels;
+    const hasXAI = "saliency" in panels || "occlusion" in panels || "ablation" in panels;
     if (!hasXAI) document.getElementById("no-xai-msg").style.display = "";
 
     // Stats panel
     const stats = data.stats;
+    plotConfidence(stats.confidence ?? null);
     plotInputAblation(stats.input_ablation);
     plotPie("plot-sal-pie", stats.saliency?.ch_fraction ?? null);
     plotPie("plot-occ-pie", stats.occlusion?.ch_fraction ?? null);

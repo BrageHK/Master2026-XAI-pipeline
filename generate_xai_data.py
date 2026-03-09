@@ -38,6 +38,9 @@ import numpy as np
 import torch
 import torch.nn.functional as F
 from captum.attr import Occlusion, Saliency
+from src.ablation_cam_3d import AblationCAM3D, find_decoder_feature_layers
+
+from src.utils import load_plans as _load_plans_from_file
 
 # ---------------------------------------------------------------------------
 # Paths
@@ -227,8 +230,7 @@ def load_model(model_name: str, fold: int, device: torch.device) -> torch.nn.Mod
 # ===========================================================================
 
 def load_plans() -> dict:
-    with open(PLANS_FILE, "rb") as f:
-        return pickle.load(f)
+    return _load_plans_from_file(PLANS_FILE)
 
 
 def load_splits() -> List[Dict]:
@@ -450,6 +452,77 @@ def _sentinel(arr: Optional[np.ndarray]) -> np.ndarray:
     return arr if arr is not None else np.zeros((0,), dtype=np.float32)
 
 
+def _build_progress_record(
+    predicted_pos: bool,
+    lbl_crop: Optional[np.ndarray],
+    zones_crop: Optional[np.ndarray],
+    sal_np: Optional[np.ndarray],
+    occ_np: Optional[np.ndarray],
+    abl_np: Optional[np.ndarray] = None,
+    pred_cancer_voxels: int = 0,
+    pred_max_prob: float = 0.0,
+    confidence: float = 0.0,
+) -> dict:
+    """Build a per-case record for progress.json from already-computed arrays."""
+    has_pca = (lbl_crop is not None) and bool(lbl_crop.sum() > 1)
+
+    if predicted_pos and has_pca:
+        classification = "tp"
+    elif predicted_pos and not has_pca:
+        classification = "fp"
+    elif not predicted_pos and not has_pca:
+        classification = "tn"
+    else:
+        classification = "fn"
+
+    pca_pz = pca_tz = 0
+    if has_pca and zones_crop is not None and zones_crop.ndim == 3:
+        lbl_2d = lbl_crop[0]
+        pca_pz = int((lbl_2d * (zones_crop == 1)).sum())
+        pca_tz = int((lbl_2d * (zones_crop == 2)).sum())
+
+    zone_cat, primary_zone = _zone_category(pca_pz, pca_tz)
+
+    sal_frac = None
+    if sal_np is not None and sal_np.ndim == 4:
+        sal_frac = _channel_stats(np.abs(sal_np))["ch_fraction"]
+
+    occ_frac = None
+    if occ_np is not None and occ_np.ndim == 4:
+        occ_frac = _channel_stats(np.abs(occ_np))["ch_fraction"]
+
+    # AblationCAM produces a single-channel spatial map (1, D, H, W);
+    # there is no per-input-channel breakdown, so we store None.
+    abl_frac = None  # reserved for future per-channel ablation variants
+
+    return {
+        "done":                    True,
+        "error":                   None,
+        "predicted_pos":           predicted_pos,
+        "pred_cancer_voxels":      pred_cancer_voxels,
+        "pred_max_prob":           round(float(pred_max_prob), 4),
+        "confidence":              round(float(confidence), 4),
+        "has_pca":                 has_pca,
+        "gt_cancer_voxels":        int(lbl_crop.sum()) if has_pca else 0,
+        "classification":          classification,
+        "primary_zone":            primary_zone,
+        "zone_category":           zone_cat,
+        "pz_voxels":               pca_pz if has_pca else None,
+        "tz_voxels":               pca_tz if has_pca else None,
+        "saliency_ch_fraction":    sal_frac,
+        "occlusion_ch_fraction":   occ_frac,
+        "ablation_ch_fraction":    abl_frac,
+    }
+
+
+def _save_progress(progress: dict, progress_file: Path) -> None:
+    """Atomically write progress dict to JSON (safe against mid-write kills)."""
+    tmp = progress_file.with_name(".progress.json.tmp")
+    with open(tmp, "w") as f:
+        json.dump(progress, f, indent=2)
+    os.replace(tmp, progress_file)
+
+
 # ===========================================================================
 # MONAI per-fold processing
 # ===========================================================================
@@ -469,6 +542,12 @@ def process_fold_monai(
 
     fold_dir = output_dir / f"fold_{fold}"
     fold_dir.mkdir(parents=True, exist_ok=True)
+
+    progress_file = fold_dir / "progress.json"
+    progress: dict = {}
+    if progress_file.exists():
+        with open(progress_file) as _f:
+            progress = json.load(_f)
 
     print(f"\n{'=' * 60}")
     print(f"Model: {model_name}  |  Fold {fold}")
@@ -490,6 +569,7 @@ def process_fold_monai(
 
     run_saliency       = "saliency"        in methods
     run_occlusion      = "occlusion"       in methods
+    run_ablation_cam   = "ablation"        in methods
     run_input_ablation = "input_ablation"  in methods
 
     processed, skipped, errors = 0, 0, 0
@@ -499,7 +579,7 @@ def process_fold_monai(
         case_id = fname.split("_0000")[0]
         out_file = fold_dir / f"{case_id}.npz"
 
-        if skip_existing and out_file.exists():
+        if skip_existing and progress.get(case_id, {}).get("done"):
             skipped += 1
             continue
 
@@ -516,9 +596,10 @@ def process_fold_monai(
                 cancer_prob   = torch.sigmoid(out[:, 1])   # (1, H, W, D)
                 fixed_mask    = (cancer_prob > 0.5)         # (1, H, W, D) bool
                 cancer_voxels = int(fixed_mask.sum().item())
+                pred_max_prob = float(cancer_prob.max().item())
                 predicted_pos = cancer_voxels > 0
 
-            print(f"    Predicted positive: {predicted_pos}  (cancer voxels={cancer_voxels})")
+            print(f"    Predicted positive: {predicted_pos}  (cancer voxels={cancer_voxels}  max_prob={pred_max_prob:.3f})")
 
             # ---- Depth crop coordinates (D is axis 3 in MONAI layout) ----
             D = x.shape[4]
@@ -553,7 +634,7 @@ def process_fold_monai(
             zones_crop = _zones_from_monai_batch(batch, d0, d1)  # (D_crop, H, W) or None
 
             # ---- XAI: only when predicted positive -------------------------
-            sal_np = occ_np = inp_abl = None
+            sal_np = occ_np = abl_np = inp_abl = None
 
             if predicted_pos:
                 forward_func = _make_forward_func_sigmoid(network, fixed_mask)
@@ -580,6 +661,31 @@ def process_fold_monai(
                     occ_np = occ_np.transpose(0, 3, 1, 2)          # (3, D, H, W)
                     occ_np = occ_np[:, d0:d1]                       # (3, D_crop, H, W)
 
+                if run_ablation_cam:
+                    try:
+                        print("    Running 3D AblationCAM…")
+                        target_layers = find_decoder_feature_layers(network, n_layers=1)
+                        if not target_layers:
+                            raise RuntimeError("No suitable Conv3d layers found in model.")
+                        target_layer = target_layers[0]
+                        print(f"    Target layer: {target_layer.__class__.__name__}"
+                              f"(out_channels={target_layer.out_channels})")
+                        cam = AblationCAM3D(network, [target_layer], batch_size=16)
+                        _mask = fixed_mask[0].float()  # (H, W, D)
+
+                        def _abl_target(output):
+                            cancer = torch.sigmoid(output.unsqueeze(0)[:, 1])  # (1, H, W, D)
+                            return (cancer * _mask).sum()
+
+                        abl_maps = cam(x.detach().clone(), targets=[_abl_target])
+                        # abl_maps: (1, H, W, D) — permute to (1, D, H, W) then crop
+                        abl_maps_np = abl_maps.transpose(0, 3, 1, 2)  # (1, D, H, W)
+                        abl_np = abl_maps_np[:, d0:d1]                 # (1, D_crop, H, W)
+                    except Exception as exc:
+                        print(f"    AblationCAM failed: {exc}")
+                        traceback.print_exc()
+                        abl_np = None
+
                 if run_input_ablation:
                     print("    Running Input Ablation…")
                     forward_func_abl = _make_forward_func_sigmoid(network, fixed_mask)
@@ -598,29 +704,40 @@ def process_fold_monai(
                         print(f"      ch {ch}: orig={orig_score:.4f} abl={abl_score:.4f} w={w:.4f}")
                     inp_abl = np.array(weights, dtype=np.float32)
 
-            # ---- Save -----------------------------------------------------
-            np.savez_compressed(
-                out_file,
-                saliency       = _sentinel(sal_np).astype(np.float32) if sal_np is not None else _sentinel(None),
-                occlusion      = _sentinel(occ_np).astype(np.float32) if occ_np is not None else _sentinel(None),
-                ablation       = _sentinel(None),
-                input_ablation = _sentinel(inp_abl),
-                image          = image_crop.astype(np.float32),
-                prediction     = pred_crop.astype(np.float32),
-                label          = _sentinel(lbl_crop).astype(np.float32) if lbl_crop is not None else _sentinel(None),
-                zones          = zones_crop.astype(np.int8) if zones_crop is not None else _sentinel(None),
-                channels       = np.array(CHANNEL_NAMES),
-                case_id        = case_id,
-                fold           = fold,
-                model          = model_name,
+            # ---- Save .npz only when model predicts positive ---------------
+            if predicted_pos:
+                np.savez_compressed(
+                    out_file,
+                    saliency       = _sentinel(sal_np).astype(np.float32) if sal_np is not None else _sentinel(None),
+                    occlusion      = _sentinel(occ_np).astype(np.float32) if occ_np is not None else _sentinel(None),
+                    ablation       = _sentinel(abl_np).astype(np.float32) if abl_np is not None else _sentinel(None),
+                    input_ablation = _sentinel(inp_abl),
+                    image          = image_crop.astype(np.float32),
+                    prediction     = pred_crop.astype(np.float32),
+                    label          = _sentinel(lbl_crop).astype(np.float32) if lbl_crop is not None else _sentinel(None),
+                    zones          = zones_crop.astype(np.int8) if zones_crop is not None else _sentinel(None),
+                    channels       = np.array(CHANNEL_NAMES),
+                    case_id        = case_id,
+                    fold           = fold,
+                    model          = model_name,
+                )
+                print(f"    Saved: {out_file}")
+                processed += 1
+
+            # ---- Record progress ------------------------------------------
+            progress[case_id] = _build_progress_record(
+                predicted_pos, lbl_crop, zones_crop, sal_np, occ_np, abl_np,
+                pred_cancer_voxels=cancer_voxels, pred_max_prob=pred_max_prob,
+                confidence=pred_max_prob,  # MONAI uses sigmoid — identical to pred_max_prob
             )
-            print(f"    Saved: {out_file}")
-            processed += 1
+            _save_progress(progress, progress_file)
 
         except Exception as exc:
             print(f"    ERROR: {exc}")
             traceback.print_exc()
             errors += 1
+            progress[case_id] = {"done": False, "error": str(exc), "predicted_pos": None}
+            _save_progress(progress, progress_file)
 
         if torch.cuda.is_available() and (i + 1) % 10 == 0:
             torch.cuda.empty_cache()
@@ -652,6 +769,12 @@ def process_fold_nnunet(
     fold_dir = output_dir / f"fold_{fold}"
     fold_dir.mkdir(parents=True, exist_ok=True)
 
+    progress_file = fold_dir / "progress.json"
+    progress: dict = {}
+    if progress_file.exists():
+        with open(progress_file) as _f:
+            progress = json.load(_f)
+
     print(f"\n{'=' * 60}")
     print(f"Model: nnunet  |  Fold {fold}")
 
@@ -670,6 +793,7 @@ def process_fold_nnunet(
     d_div, h_div, w_div = _compute_nnunet_divisors(plans)
     run_saliency       = "saliency"       in methods
     run_occlusion      = "occlusion"      in methods
+    run_ablation_cam   = "ablation"       in methods
     run_input_ablation = "input_ablation" in methods
 
     processed, skipped, errors = 0, 0, 0
@@ -677,7 +801,7 @@ def process_fold_nnunet(
     for i, case_id in enumerate(val_cases):
         out_file = fold_dir / f"{case_id}.npz"
 
-        if skip_existing and out_file.exists():
+        if skip_existing and progress.get(case_id, {}).get("done"):
             skipped += 1
             continue
 
@@ -706,9 +830,11 @@ def process_fold_nnunet(
                 cancer_prob   = torch.softmax(out, dim=1)[:, 1]  # (1, D_pad, H_pad, W_pad)
                 fixed_mask    = (cancer_prob > 0.5)
                 cancer_voxels = int(fixed_mask.sum().item())
+                pred_max_prob = float(cancer_prob.max().item())
+                confidence    = float(torch.sigmoid(out[:, 1]).max().item())
                 predicted_pos = cancer_voxels > 0
 
-            print(f"    Predicted positive: {predicted_pos}  (cancer voxels={cancer_voxels})")
+            print(f"    Predicted positive: {predicted_pos}  (cancer voxels={cancer_voxels}  max_prob={pred_max_prob:.3f})")
 
             # ---- Crop coordinates -----------------------------------------
             D_orig = original_dhw[0]
@@ -752,7 +878,7 @@ def process_fold_nnunet(
             )
 
             # ---- XAI: only when predicted positive ------------------------
-            sal_np = occ_np = inp_abl = None
+            sal_np = occ_np = abl_np = inp_abl = None
 
             if predicted_pos:
                 if occ_crop_hw is not None:
@@ -787,6 +913,29 @@ def process_fold_nnunet(
                     occ_np = _unpad(occ_attr.detach().cpu().numpy()[0], (original_dhw[0], x_crop.shape[3], x_crop.shape[4]))
                     occ_np = occ_np[:, d0:d1]  # (3, D_crop, H_crop, W_crop)
 
+                if run_ablation_cam:
+                    try:
+                        print("    Running 3D AblationCAM…")
+                        target_layer = network.conv_blocks_context[6][1].blocks[0].conv
+                        print(f"    Target layer: {target_layer.__class__.__name__}"
+                              f"(out_channels={target_layer.out_channels})")
+                        cam = AblationCAM3D(network, [target_layer], batch_size=16)
+                        _mask = fixed_mask_crop[0].float()  # (D_pad, H_crop, W_crop)
+
+                        def _abl_target(output):
+                            if isinstance(output, (list, tuple)):
+                                output = output[0]
+                            cancer_prob = torch.softmax(output.unsqueeze(0), dim=1)[0, 1]
+                            return (cancer_prob * _mask).sum()
+
+                        abl_maps = cam(x_crop, targets=[_abl_target])  # (1, D_pad, H_crop, W_crop)
+                        abl_np = _unpad(abl_maps, (original_dhw[0], x_crop.shape[3], x_crop.shape[4]))
+                        abl_np = abl_np[:, d0:d1]  # (1, D_crop, H_crop, W_crop)
+                    except Exception as exc:
+                        print(f"    AblationCAM failed: {exc}")
+                        traceback.print_exc()
+                        abl_np = None
+
                 if run_input_ablation:
                     print("    Running Input Ablation…")
                     with torch.no_grad():
@@ -804,29 +953,40 @@ def process_fold_nnunet(
                         print(f"      ch {ch}: orig={orig_score:.4f} abl={abl_score:.4f} w={w:.4f}")
                     inp_abl = np.array(weights, dtype=np.float32)
 
-            # ---- Save -----------------------------------------------------
-            np.savez_compressed(
-                out_file,
-                saliency       = _sentinel(sal_np).astype(np.float32) if sal_np is not None else _sentinel(None),
-                occlusion      = _sentinel(occ_np).astype(np.float32) if occ_np is not None else _sentinel(None),
-                ablation       = _sentinel(None),
-                input_ablation = _sentinel(inp_abl),
-                image          = image_crop.astype(np.float32),
-                prediction     = pred_crop.astype(np.float32),
-                label          = lbl_crop.astype(np.float32) if lbl_crop is not None else _sentinel(None),
-                zones          = zones_crop.astype(np.int8) if zones_crop is not None else _sentinel(None),
-                channels       = np.array(CHANNEL_NAMES),
-                case_id        = case_id,
-                fold           = fold,
-                model          = "nnunet",
+            # ---- Save .npz only when model predicts positive ---------------
+            if predicted_pos:
+                np.savez_compressed(
+                    out_file,
+                    saliency       = _sentinel(sal_np).astype(np.float32) if sal_np is not None else _sentinel(None),
+                    occlusion      = _sentinel(occ_np).astype(np.float32) if occ_np is not None else _sentinel(None),
+                    ablation       = _sentinel(abl_np).astype(np.float32) if abl_np is not None else _sentinel(None),
+                    input_ablation = _sentinel(inp_abl),
+                    image          = image_crop.astype(np.float32),
+                    prediction     = pred_crop.astype(np.float32),
+                    label          = lbl_crop.astype(np.float32) if lbl_crop is not None else _sentinel(None),
+                    zones          = zones_crop.astype(np.int8) if zones_crop is not None else _sentinel(None),
+                    channels       = np.array(CHANNEL_NAMES),
+                    case_id        = case_id,
+                    fold           = fold,
+                    model          = "nnunet",
+                )
+                print(f"    Saved: {out_file}")
+                processed += 1
+
+            # ---- Record progress ------------------------------------------
+            progress[case_id] = _build_progress_record(
+                predicted_pos, lbl_crop, zones_crop, sal_np, occ_np, abl_np,
+                pred_cancer_voxels=cancer_voxels, pred_max_prob=pred_max_prob,
+                confidence=confidence,
             )
-            print(f"    Saved: {out_file}")
-            processed += 1
+            _save_progress(progress, progress_file)
 
         except Exception as exc:
             print(f"    ERROR: {exc}")
             traceback.print_exc()
             errors += 1
+            progress[case_id] = {"done": False, "error": str(exc), "predicted_pos": None}
+            _save_progress(progress, progress_file)
 
         if torch.cuda.is_available() and (i + 1) % 10 == 0:
             torch.cuda.empty_cache()
@@ -1254,7 +1414,7 @@ def main() -> None:
         "--methods",
         nargs="+",
         required=True,
-        choices=["saliency", "occlusion", "input_ablation", "all"],
+        choices=["saliency", "occlusion", "ablation", "input_ablation", "all"],
         metavar="METHOD",
         help="XAI methods to run. Use 'all' for all methods.",
     )
@@ -1326,7 +1486,7 @@ def main() -> None:
     # Resolve methods
     methods = set(args.methods)
     if "all" in methods:
-        methods = {"saliency", "occlusion", "input_ablation"}
+        methods = {"saliency", "occlusion", "ablation", "input_ablation"}
 
     # Parse occlusion params
     occ_window: Tuple[int, int, int, int] = tuple(  # type: ignore[assignment]

@@ -2169,12 +2169,14 @@ name = "master"
 version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
+    { name = "flask" },
     { name = "picai-nnunet-xai" },
     { name = "umamba" },
 ]
 
 [package.metadata]
 requires-dist = [
+    { name = "flask", specifier = ">=3.0" },
     { name = "picai-nnunet-xai", editable = "picai_nnunet" },
     { name = "umamba", editable = "U_MambaMTL_XAI" },
 ]

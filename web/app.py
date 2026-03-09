@@ -85,17 +85,17 @@ def _model_stats(model: str) -> dict:
 def _available_charts(model: str) -> dict:
     """
     Returns a nested dict describing which chart PNGs are available.
-    Structure: {summary: [fname], saliency: {class: {zone: [fname]}}, occlusion: ...}
+    Structure: {summary: [fname], saliency: {class: {zone: [fname]}}, occlusion: ..., ablation: ...}
     """
     base = METRICS_DIR / model
-    out: dict = {"summary": [], "saliency": {}, "occlusion": {}}
+    out: dict = {"summary": [], "saliency": {}, "occlusion": {}, "ablation": {}}
 
     for fname in ("confusion_matrix.png", "zone_distribution.png",
                   "overall_channel_activation.png"):
         if (base / "summary" / fname).exists():
             out["summary"].append(fname)
 
-    for method in ("saliency", "occlusion"):
+    for method in ("saliency", "occlusion", "ablation"):
         method_dir = base / method
         if not method_dir.exists():
             continue
@@ -176,6 +176,7 @@ def _build_case_payload(model: str, case_id: str) -> dict:
     pred       = npz["prediction"]  # (1, D, H, W)
     saliency   = npz.get("saliency",       np.zeros((0,), dtype=np.float32))
     occlusion  = npz.get("occlusion",      np.zeros((0,), dtype=np.float32))
+    ablation   = npz.get("ablation",       np.zeros((0,), dtype=np.float32))
     zones      = npz.get("zones",          np.zeros((0,), dtype=np.int8))
     label      = npz.get("label",          np.zeros((0,), dtype=np.float32))
     inp_abl    = npz.get("input_ablation", np.zeros((0,), dtype=np.float32))
@@ -209,6 +210,12 @@ def _build_case_payload(model: str, case_id: str) -> dict:
         v1 = float(np.percentile(occ_mean, 99)) or 1e-6
         panels["occlusion"] = _render_all_slices(occ_mean, "plasma", 0.0, v1)
 
+    # AblationCAM (single-channel spatial map)
+    if not _is_sentinel(ablation) and ablation.ndim == 4:
+        abl_map = ablation[0]  # (D, H, W)
+        v1 = float(np.percentile(abl_map, 99)) or 1e-6
+        panels["ablation"] = _render_all_slices(abl_map, "inferno", 0.0, v1)
+
     # Zones (discrete colormap)
     if not _is_sentinel(zones) and zones.ndim == 3:
         panels["zones"] = _render_all_slices(zones.astype(np.float32), "", 0, 2,
@@ -217,11 +224,14 @@ def _build_case_payload(model: str, case_id: str) -> dict:
     # Stats: pull from in-memory sample_data (pre-loaded at startup)
     record = CASE_INDEX.get(model, {}).get(case_id, {})
     stats = {
-        "input_ablation": inp_abl.tolist() if (not _is_sentinel(inp_abl) and inp_abl.shape == (3,)) else None,
-        "saliency":       record.get("saliency"),
-        "occlusion":      record.get("occlusion"),
-        "pz_voxels":      record.get("pz_voxels"),
-        "tz_voxels":      record.get("tz_voxels"),
+        "input_ablation":      inp_abl.tolist() if (not _is_sentinel(inp_abl) and inp_abl.shape == (3,)) else None,
+        "saliency":            record.get("saliency"),
+        "occlusion":           record.get("occlusion"),
+        "pz_voxels":           record.get("pz_voxels"),
+        "tz_voxels":           record.get("tz_voxels"),
+        "confidence":          record.get("confidence"),
+        "pred_max_prob":       record.get("pred_max_prob"),
+        "ablation_ch_fraction": record.get("ablation_ch_fraction"),
     }
 
     return {"n_slices": n_slices, "panels": panels, "stats": stats, "record": record}

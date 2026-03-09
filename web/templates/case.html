@@ -1,0 +1,341 @@
+{% extends "base.html" %}
+{% block title %}{{ case_id }} — {{ model }}{% endblock %}
+
+{% block head %}
+<style>
+  /* Viewer layout */
+  #viewer-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: .5rem;
+  }
+  .panel-box { position: relative; background: #000; border-radius: .5rem; overflow: hidden; }
+  .panel-box img {
+    width: 100%; display: block; image-rendering: pixelated;
+    transition: opacity .05s;
+  }
+  .panel-label {
+    position: absolute; bottom: 0; left: 0; right: 0;
+    background: rgba(0,0,0,.6); color: #fff;
+    font-size: .7rem; text-align: center; padding: 2px 0;
+  }
+
+  /* Slider */
+  #slice-slider { accent-color: var(--accent-{{ model }}); }
+
+  /* Stats sidebar */
+  .stat-card { background: #fff; border-radius: .5rem; padding: 1rem; margin-bottom: .75rem;
+               box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+  .stat-label { font-size: .7rem; text-transform: uppercase; color: #64748b; letter-spacing: .05em; }
+
+  /* Loading overlay */
+  #loading-overlay {
+    position: fixed; inset: 0; background: rgba(15,23,42,.85);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    z-index: 9999; color: #e2e8f0;
+  }
+  #loading-overlay .spinner-border { width: 3rem; height: 3rem; }
+</style>
+{% endblock %}
+
+{% block content %}
+
+{# Loading overlay #}
+<div id="loading-overlay">
+  <div class="spinner-border text-light mb-3" role="status"></div>
+  <p id="loading-msg" class="mb-1">Loading case data…</p>
+  <p class="text-muted small">Pre-rendering all slices — this takes a few seconds the first time.</p>
+</div>
+
+{# ── Header ───────────────────────────────────────────────────────────────── #}
+<div class="d-flex align-items-center gap-3 mb-4">
+  <a href="/model/{{ model }}" class="btn btn-sm btn-outline-secondary">← {{ model }}</a>
+  <span class="badge bg-{{ model }} px-3 fs-6">{{ model }}</span>
+  <h4 class="fw-bold mb-0 font-monospace">{{ case_id }}</h4>
+  {% if record %}
+  <span class="ms-1 badge badge-{{ record.classification }} text-white rounded-pill px-2 fs-6">
+    {{ record.classification | upper }}
+  </span>
+  {% if record.primary_zone == 'pz' %}
+    <span class="badge badge-pz text-white rounded-pill px-2">PZ</span>
+  {% elif record.primary_zone == 'tz' %}
+    <span class="badge badge-tz text-white rounded-pill px-2">TZ</span>
+  {% endif %}
+  <span class="text-muted small">Fold {{ fold }}</span>
+  {% endif %}
+</div>
+
+<div class="row g-4">
+
+  {# ── Left: slice viewer ────────────────────────────────────────────────── #}
+  <div class="col-xl-9">
+
+    {# Slice control bar #}
+    <div class="d-flex align-items-center gap-3 mb-3 p-3 bg-white rounded shadow-sm">
+      <label class="fw-semibold text-nowrap" for="slice-slider">Depth slice</label>
+      <input type="range" id="slice-slider" class="form-range flex-grow-1"
+             min="0" value="0" step="1">
+      <span id="slice-label" class="text-muted text-nowrap small fw-semibold" style="min-width:80px">
+        — / —
+      </span>
+
+      {# Panel toggles #}
+      <div class="d-flex gap-2 flex-wrap ms-2">
+        {% for panel, label in [('t2w','T2W'),('adc','ADC'),('hbv','HBV'),
+                                  ('prediction','Pred'),('label','Label'),
+                                  ('saliency','Sal'),('occlusion','Occ'),('zones','Zones')] %}
+        <div class="form-check form-switch mb-0" title="Toggle {{ label }}">
+          <input class="form-check-input panel-toggle" type="checkbox"
+                 id="tog-{{ panel }}" data-panel="{{ panel }}" checked>
+          <label class="form-check-label small" for="tog-{{ panel }}">{{ label }}</label>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    {# Image grid — populated by JS #}
+    <div id="viewer-grid"></div>
+    <p id="no-xai-msg" class="text-muted small mt-2" style="display:none">
+      ⚠ Saliency / Occlusion maps were not computed for this case (model predicted negative).
+    </p>
+
+  </div>
+
+  {# ── Right: stats sidebar ─────────────────────────────────────────────── #}
+  <div class="col-xl-3">
+
+    {% if record %}
+    {# Classification detail #}
+    <div class="stat-card mb-2">
+      <div class="stat-label">Classification</div>
+      <table class="table table-sm table-borderless mb-0">
+        <tr><th class="ps-0 text-muted fw-normal">Has PCA</th>
+            <td>{{ 'Yes' if record.has_pca else 'No' }}</td></tr>
+        <tr><th class="ps-0 text-muted fw-normal">Predicted +</th>
+            <td>{{ 'Yes' if record.predicted_positive else 'No' }}</td></tr>
+        {% if record.pz_voxels is not none %}
+        <tr><th class="ps-0 text-muted fw-normal">PZ voxels</th>
+            <td>{{ record.pz_voxels }}</td></tr>
+        <tr><th class="ps-0 text-muted fw-normal">TZ voxels</th>
+            <td>{{ record.tz_voxels }}</td></tr>
+        {% endif %}
+      </table>
+    </div>
+    {% endif %}
+
+    {# Input ablation #}
+    <div class="stat-card">
+      <div class="stat-label mb-1">Input Ablation</div>
+      <div id="plot-inp-abl" style="height:160px"></div>
+    </div>
+
+    {# Saliency channel fractions #}
+    <div class="stat-card">
+      <div class="stat-label mb-1">Saliency — Channel Share</div>
+      <div id="plot-sal-pie" style="height:200px"></div>
+    </div>
+
+    {# Occlusion channel fractions #}
+    <div class="stat-card">
+      <div class="stat-label mb-1">Occlusion — Channel Share</div>
+      <div id="plot-occ-pie" style="height:200px"></div>
+    </div>
+
+    {# Saliency bar #}
+    <div class="stat-card">
+      <div class="stat-label mb-1">Saliency — Mean per Channel</div>
+      <div id="plot-sal-bar" style="height:160px"></div>
+    </div>
+
+    {# Occlusion bar #}
+    <div class="stat-card">
+      <div class="stat-label mb-1">Occlusion — Mean per Channel</div>
+      <div id="plot-occ-bar" style="height:160px"></div>
+    </div>
+
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// ── Config ─────────────────────────────────────────────────────────────────
+const MODEL   = "{{ model }}";
+const CASE_ID = "{{ case_id }}";
+const CH_NAMES = ["T2W", "ADC", "HBV"];
+const CH_COLORS = ["#e74c3c", "#2ecc71", "#3498db"];
+
+// Panel metadata: key → display label
+const PANEL_META = {
+  t2w:        { label: "T2W (MRI)",      order: 0 },
+  adc:        { label: "ADC (MRI)",      order: 1 },
+  hbv:        { label: "HBV (MRI)",      order: 2 },
+  prediction: { label: "Cancer Prob",    order: 3 },
+  label:      { label: "Label (GT)",     order: 4 },
+  saliency:   { label: "Saliency",       order: 5 },
+  occlusion:  { label: "Occlusion",      order: 6 },
+  zones:      { label: "Zones (PZ/TZ)",  order: 7 },
+};
+
+// Panels visible at startup (without optional ones that may not exist)
+const ALWAYS_SHOW = new Set(["t2w", "adc", "hbv", "prediction"]);
+
+let panels = {};       // { panelKey: [base64DataURL, ...] }
+let nSlices = 0;
+
+// ── Slice display ───────────────────────────────────────────────────────────
+function showSlice(sl) {
+  for (const [key, imgs] of Object.entries(panels)) {
+    const img = document.getElementById(`img-${key}`);
+    if (img && imgs[sl]) img.src = imgs[sl];
+  }
+  document.getElementById("slice-label").textContent = `${sl + 1} / ${nSlices}`;
+}
+
+// ── Build viewer grid ───────────────────────────────────────────────────────
+function buildGrid(availablePanels) {
+  const grid = document.getElementById("viewer-grid");
+  grid.innerHTML = "";
+
+  const sorted = Object.keys(availablePanels)
+    .filter(k => k in PANEL_META)
+    .sort((a, b) => PANEL_META[a].order - PANEL_META[b].order);
+
+  for (const key of sorted) {
+    const box = document.createElement("div");
+    box.className = "panel-box";
+    box.id = `box-${key}`;
+
+    const img = document.createElement("img");
+    img.id = `img-${key}`;
+    img.alt = key;
+    box.appendChild(img);
+
+    const lbl = document.createElement("div");
+    lbl.className = "panel-label";
+    lbl.textContent = PANEL_META[key]?.label ?? key;
+    box.appendChild(lbl);
+
+    grid.appendChild(box);
+  }
+}
+
+// ── Panel toggles ───────────────────────────────────────────────────────────
+document.querySelectorAll(".panel-toggle").forEach(chk => {
+  chk.addEventListener("change", () => {
+    const key = chk.dataset.panel;
+    const box = document.getElementById(`box-${key}`);
+    if (box) box.style.display = chk.checked ? "" : "none";
+  });
+});
+
+// ── Sync toggle visibility with what actually loaded ────────────────────────
+function syncToggles(availablePanels) {
+  document.querySelectorAll(".panel-toggle").forEach(chk => {
+    const key = chk.dataset.panel;
+    const exists = key in availablePanels;
+    const container = chk.closest(".form-check");
+    if (!exists) {
+      container.style.opacity = "0.35";
+      chk.checked = false;
+      chk.disabled = true;
+    }
+  });
+}
+
+// ── Plotly helpers ──────────────────────────────────────────────────────────
+const PLOTLY_LAYOUT_MINI = {
+  margin: { t: 4, b: 30, l: 30, r: 10 },
+  paper_bgcolor: "white",
+  plot_bgcolor:  "white",
+  font: { size: 11 },
+  showlegend: false,
+};
+
+function plotInputAblation(weights) {
+  if (!weights) {
+    document.getElementById("plot-inp-abl").innerHTML =
+      '<p class="text-muted small text-center pt-3">Not computed</p>';
+    return;
+  }
+  Plotly.newPlot("plot-inp-abl", [{
+    type: "bar", orientation: "h",
+    x: weights, y: CH_NAMES,
+    marker: { color: CH_COLORS },
+    text: weights.map(v => v.toFixed(3)), textposition: "auto",
+  }], { ...PLOTLY_LAYOUT_MINI, xaxis: { title: "importance" } }, { displayModeBar: false });
+}
+
+function plotPie(divId, fractions) {
+  if (!fractions) {
+    document.getElementById(divId).innerHTML =
+      '<p class="text-muted small text-center pt-3">Not computed</p>';
+    return;
+  }
+  Plotly.newPlot(divId, [{
+    type: "pie", labels: CH_NAMES, values: fractions,
+    marker: { colors: CH_COLORS },
+    textinfo: "label+percent", hole: 0.35,
+  }], { margin: { t: 10, b: 10, l: 10, r: 10 }, paper_bgcolor: "white",
+        font: { size: 10 }, showlegend: false }, { displayModeBar: false });
+}
+
+function plotBar(divId, means) {
+  if (!means) {
+    document.getElementById(divId).innerHTML =
+      '<p class="text-muted small text-center pt-3">Not computed</p>';
+    return;
+  }
+  Plotly.newPlot(divId, [{
+    type: "bar", x: CH_NAMES, y: means,
+    marker: { color: CH_COLORS },
+    text: means.map(v => v.toExponential(2)), textposition: "auto",
+  }], { ...PLOTLY_LAYOUT_MINI, yaxis: { title: "mean attr." } }, { displayModeBar: false });
+}
+
+// ── Main load ────────────────────────────────────────────────────────────────
+(async () => {
+  const loadMsg = document.getElementById("loading-msg");
+  try {
+    loadMsg.textContent = "Fetching & rendering slices (server-side)…";
+    const resp = await fetch(`/api/case/${MODEL}/${CASE_ID}.json`);
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+
+    loadMsg.textContent = "Decoding response…";
+    const data = await resp.json();
+    panels  = data.panels;
+    nSlices = data.n_slices;
+
+    // Build grid with available panels
+    buildGrid(panels);
+    syncToggles(panels);
+
+    // Slider
+    const slider = document.getElementById("slice-slider");
+    slider.max = nSlices - 1;
+    slider.value = Math.floor(nSlices / 2);
+    slider.addEventListener("input", e => showSlice(parseInt(e.target.value)));
+    showSlice(parseInt(slider.value));
+
+    // Warn if no XAI maps
+    const hasXAI = "saliency" in panels || "occlusion" in panels;
+    if (!hasXAI) document.getElementById("no-xai-msg").style.display = "";
+
+    // Stats panel
+    const stats = data.stats;
+    plotInputAblation(stats.input_ablation);
+    plotPie("plot-sal-pie", stats.saliency?.ch_fraction ?? null);
+    plotPie("plot-occ-pie", stats.occlusion?.ch_fraction ?? null);
+    plotBar("plot-sal-bar", stats.saliency?.ch_mean ?? null);
+    plotBar("plot-occ-bar", stats.occlusion?.ch_mean ?? null);
+
+  } catch (err) {
+    loadMsg.textContent = `Error: ${err.message}`;
+    return;
+  }
+
+  // Hide overlay
+  document.getElementById("loading-overlay").style.display = "none";
+})();
+</script>
+{% endblock %}

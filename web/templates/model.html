@@ -1,0 +1,218 @@
+{% extends "base.html" %}
+{% block title %}{{ model }} — PI-CAI XAI{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.8/css/dataTables.bootstrap5.min.css">
+<style>
+  .chart-img { border-radius: .5rem; box-shadow: 0 1px 4px rgba(0,0,0,.1); }
+  .chart-label { font-size: .7rem; color: #64748b; text-align: center; margin-top: .25rem; }
+  tr.clickable-row { cursor: pointer; }
+  tr.clickable-row:hover { background: #f0f9ff; }
+</style>
+{% endblock %}
+
+{% block content %}
+
+{# ── Header ───────────────────────────────────────────────────────────────── #}
+<div class="d-flex align-items-center mb-4 gap-3">
+  <a href="/" class="btn btn-sm btn-outline-secondary">← Overview</a>
+  <span class="badge bg-{{ model }} fs-6 px-3">{{ model }}</span>
+  {% if stats.has_data %}
+  <span class="text-muted">{{ stats.total }} validation cases &nbsp;|&nbsp;
+    F1 <strong>{{ stats.f1 }}</strong> &nbsp; Precision <strong>{{ stats.precision }}</strong> &nbsp;
+    Sensitivity <strong>{{ stats.sensitivity }}</strong>
+  </span>
+  {% endif %}
+</div>
+
+{# ── Chart tabs ───────────────────────────────────────────────────────────── #}
+<ul class="nav nav-tabs mb-3" id="chartTabs" role="tablist">
+  <li class="nav-item"><a class="nav-link active" data-bs-toggle="tab" href="#tab-summary">Summary</a></li>
+  <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tab-saliency">Saliency</a></li>
+  <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tab-occlusion">Occlusion</a></li>
+</ul>
+
+<div class="tab-content mb-5">
+
+  {# Summary tab #}
+  <div class="tab-pane fade show active" id="tab-summary">
+    {% if charts.summary %}
+    <div class="row g-3">
+      {% for fname in charts.summary %}
+      <div class="col-lg-4 col-md-6">
+        <img src="/api/chart/{{ model }}/summary/{{ fname }}" class="img-fluid chart-img w-100" alt="{{ fname }}">
+        <div class="chart-label">{{ fname | replace('.png','') | replace('_',' ') | title }}</div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p class="text-muted">No summary charts available yet.</p>
+    {% endif %}
+  </div>
+
+  {# Saliency tab #}
+  <div class="tab-pane fade" id="tab-saliency">
+    {% if charts.saliency %}
+      {% for cls, zones in charts.saliency.items() %}
+      <h6 class="fw-semibold text-uppercase text-muted mt-3 mb-2">{{ cls | replace('_',' ') | title }}</h6>
+      {% for zone, fnames in zones.items() %}
+      <p class="text-muted small mb-1">{{ zone }}</p>
+      <div class="row g-2 mb-3">
+        {% for fname in fnames %}
+        <div class="col-lg-3 col-md-4 col-6">
+          <img src="/api/chart/{{ model }}/saliency/{{ cls }}/{{ zone }}/{{ fname }}"
+               class="img-fluid chart-img w-100" alt="{{ fname }}">
+          <div class="chart-label">{{ fname | replace('.png','') | title }}</div>
+        </div>
+        {% endfor %}
+      </div>
+      {% endfor %}
+      {% endfor %}
+    {% else %}
+    <p class="text-muted">No saliency charts available yet.</p>
+    {% endif %}
+  </div>
+
+  {# Occlusion tab #}
+  <div class="tab-pane fade" id="tab-occlusion">
+    {% if charts.occlusion %}
+      {% for cls, zones in charts.occlusion.items() %}
+      <h6 class="fw-semibold text-uppercase text-muted mt-3 mb-2">{{ cls | replace('_',' ') | title }}</h6>
+      {% for zone, fnames in zones.items() %}
+      <p class="text-muted small mb-1">{{ zone }}</p>
+      <div class="row g-2 mb-3">
+        {% for fname in fnames %}
+        <div class="col-lg-3 col-md-4 col-6">
+          <img src="/api/chart/{{ model }}/occlusion/{{ cls }}/{{ zone }}/{{ fname }}"
+               class="img-fluid chart-img w-100" alt="{{ fname }}">
+          <div class="chart-label">{{ fname | replace('.png','') | title }}</div>
+        </div>
+        {% endfor %}
+      </div>
+      {% endfor %}
+    {% else %}
+    <p class="text-muted">No occlusion charts available yet.</p>
+    {% endif %}
+  </div>
+
+</div>{# /tab-content #}
+
+{# ── Case table ───────────────────────────────────────────────────────────── #}
+<div class="card shadow-sm">
+  <div class="card-header bg-white d-flex align-items-center gap-3">
+    <span class="fw-semibold">Cases</span>
+    <div class="ms-auto d-flex gap-2 flex-wrap">
+      {% for cls, col in [('tp','success'),('fp','danger'),('fn','warning'),('tn','secondary')] %}
+      <div class="form-check form-check-inline mb-0">
+        <input class="form-check-input cls-filter" type="checkbox" value="{{ cls }}"
+               id="chk-{{ cls }}" checked>
+        <label class="form-check-label small badge-{{ cls }} badge rounded-pill text-white px-2"
+               for="chk-{{ cls }}">{{ cls | upper }}</label>
+      </div>
+      {% endfor %}
+      <select class="form-select form-select-sm" id="fold-filter" style="width:auto">
+        <option value="">All folds</option>
+        {% for f in range(5) %}
+        <option value="{{ f }}">Fold {{ f }}</option>
+        {% endfor %}
+      </select>
+    </div>
+  </div>
+  <div class="card-body p-0">
+    {% if records %}
+    <div class="table-responsive">
+      <table id="caseTable" class="table table-sm table-hover mb-0">
+        <thead class="table-light">
+          <tr>
+            <th>Case ID</th>
+            <th>Fold</th>
+            <th>Class</th>
+            <th>Zone</th>
+            <th>PZ&nbsp;vox</th>
+            <th>TZ&nbsp;vox</th>
+            <th>Sal dom.&nbsp;ch</th>
+            <th>Occ dom.&nbsp;ch</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in records %}
+          {% set cls = r.classification %}
+          <tr class="clickable-row"
+              data-href="/model/{{ model }}/case/{{ r.case_id }}"
+              data-cls="{{ cls }}"
+              data-fold="{{ r.fold }}">
+            <td class="font-monospace small">{{ r.case_id }}</td>
+            <td>{{ r.fold }}</td>
+            <td>
+              <span class="badge badge-{{ cls }} text-white rounded-pill px-2">
+                {{ cls | upper }}
+              </span>
+            </td>
+            <td>
+              {% if r.primary_zone == 'pz' %}<span class="badge badge-pz text-white rounded-pill px-2">PZ</span>
+              {% elif r.primary_zone == 'tz' %}<span class="badge badge-tz text-white rounded-pill px-2">TZ</span>
+              {% else %}<span class="text-muted">—</span>{% endif %}
+            </td>
+            <td>{{ r.pz_voxels if r.pz_voxels is not none else '—' }}</td>
+            <td>{{ r.tz_voxels if r.tz_voxels is not none else '—' }}</td>
+            <td>
+              {% if r.saliency %}
+                {{ ['T2W','ADC','HBV'][r.saliency.dominant_ch] }}
+              {% else %}—{% endif %}
+            </td>
+            <td>
+              {% if r.occlusion %}
+                {{ ['T2W','ADC','HBV'][r.occlusion.dominant_ch] }}
+              {% else %}—{% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <p class="text-muted text-center py-4">No cases found. Run <code>generate_xai_data.py</code> first.</p>
+    {% endif %}
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.8/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.8/js/dataTables.bootstrap5.min.js"></script>
+<script>
+const table = $('#caseTable').DataTable({
+  pageLength: 25,
+  order: [[2, 'asc'], [0, 'asc']],
+  columnDefs: [{ orderable: false, targets: [] }],
+  language: { search: 'Search cases:' }
+});
+
+// Row click → case detail
+$('#caseTable tbody').on('click', 'tr', function () {
+  const href = $(this).data('href');
+  if (href) window.location = href;
+});
+
+// Classification filter checkboxes
+$('.cls-filter').on('change', function () {
+  const checked = $('.cls-filter:checked').map((_, el) => el.value).get();
+  $.fn.dataTable.ext.search = [
+    function (_, __, ___, row) {
+      const cls   = $(row[2]).text().trim().toLowerCase();
+      const fold  = $('#fold-filter').val();
+      const rFold = $(row[1]).text().trim();
+      return checked.includes(cls) && (fold === '' || rFold === fold);
+    }
+  ];
+  table.draw();
+});
+
+// Fold filter
+$('#fold-filter').on('change', function () {
+  $('.cls-filter').trigger('change');
+});
+</script>
+{% endblock %}

@@ -1,0 +1,16 @@
+[project]
+name = "master"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "picai-nnunet-xai",
+    "umamba",
+    "flask>=3.0",
+]
+
+[tool.uv.sources]
+picai-nnunet-xai = { path = "picai_nnunet", editable = true }
+umamba = { path = "U_MambaMTL_XAI", editable = true }
+

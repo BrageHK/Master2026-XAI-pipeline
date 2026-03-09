@@ -13,6 +13,7 @@ import argparse
 import base64
 import io
 import json
+import time
 from functools import lru_cache
 from pathlib import Path
 from typing import Dict, List, Optional
@@ -35,12 +36,79 @@ MODELS       = ["umamba_mtl", "swin_unetr", "nnunet"]
 CHANNEL_NAMES = ["T2W", "ADC", "HBV"]
 
 # ---------------------------------------------------------------------------
-# App + startup data load
+# App + dynamic data load
 # ---------------------------------------------------------------------------
 app = Flask(__name__)
 
+_CACHE_TTL = 30  # seconds between rescans
+_cache_time: float = 0.0
+_CASE_DATA: Dict[str, List[dict]] = {}
+_CASE_INDEX: Dict[str, Dict[str, dict]] = {}
+
+
+def _is_empty(arr) -> bool:
+    return arr is None or (isinstance(arr, np.ndarray) and arr.size == 0)
+
+
+def _scan_progress_records(model: str) -> List[dict]:
+    """Build case records from progress.json files (includes TN/FN without NPZ files)."""
+    records = []
+    model_dir = XAI_DIR / model
+    if not model_dir.exists():
+        return records
+
+    for fold_dir in sorted(model_dir.glob("fold_*")):
+        progress_path = fold_dir / "progress.json"
+        if not progress_path.exists():
+            continue
+        try:
+            fold = int(fold_dir.name.split("_")[1])
+        except (IndexError, ValueError):
+            continue
+
+        npz_cases = {f.stem for f in fold_dir.glob("*.npz")}
+
+        try:
+            with open(progress_path) as f:
+                progress = json.load(f)
+        except Exception:
+            continue
+
+        for case_id, entry in progress.items():
+            if not entry.get("done") or entry.get("error"):
+                continue
+
+            def _ch_stat(key: str):
+                frac = entry.get(f"{key}_ch_fraction")
+                if not frac:
+                    return None
+                return {"ch_fraction": frac, "dominant_ch": int(np.argmax(frac))}
+
+            record: dict = {
+                "case_id":            case_id,
+                "fold":               fold,
+                "model":              model,
+                "classification":     entry.get("classification"),
+                "has_pca":            entry.get("has_pca", False),
+                "predicted_positive": entry.get("predicted_pos", False),
+                "primary_zone":       entry.get("primary_zone"),
+                "zone_category":      entry.get("zone_category"),
+                "pz_voxels":          entry.get("pz_voxels"),
+                "tz_voxels":          entry.get("tz_voxels"),
+                "confidence":         entry.get("confidence"),
+                "pred_max_prob":      entry.get("pred_max_prob"),
+                "has_npz":            case_id in npz_cases,
+                "saliency":           _ch_stat("saliency"),
+                "occlusion":          _ch_stat("occlusion"),
+                "ablation":           _ch_stat("ablation"),
+            }
+            records.append(record)
+
+    return records
+
 
 def _load_all_sample_data() -> Dict[str, List[dict]]:
+    """Load from sample_data.json if available, else scan NPZ files directly."""
     data: Dict[str, List[dict]] = {}
     for model in MODELS:
         path = METRICS_DIR / model / "sample_data.json"
@@ -48,18 +116,30 @@ def _load_all_sample_data() -> Dict[str, List[dict]]:
             with open(path) as f:
                 data[model] = json.load(f)
         else:
-            data[model] = []
+            data[model] = _scan_npz_records(model)
     return data
 
 
-# Loaded once at startup — lives in RAM, no per-request disk I/O
-CASE_DATA: Dict[str, List[dict]] = _load_all_sample_data()
+def _get_case_data() -> Dict[str, List[dict]]:
+    """Return case data, refreshing from disk at most every _CACHE_TTL seconds."""
+    global _cache_time, _CASE_DATA, _CASE_INDEX
+    if time.monotonic() - _cache_time > _CACHE_TTL:
+        _CASE_DATA  = _load_all_sample_data()
+        _CASE_INDEX = {
+            model: {r["case_id"]: r for r in records}
+            for model, records in _CASE_DATA.items()
+        }
+        _cache_time = time.monotonic()
+    return _CASE_DATA
 
-# Index for O(1) case lookup: {model: {case_id: record}}
-CASE_INDEX: Dict[str, Dict[str, dict]] = {
-    model: {r["case_id"]: r for r in records}
-    for model, records in CASE_DATA.items()
-}
+
+def _get_case_index() -> Dict[str, Dict[str, dict]]:
+    _get_case_data()
+    return _CASE_INDEX
+
+
+# Initialise on startup
+_get_case_data()
 
 
 # ---------------------------------------------------------------------------
@@ -67,7 +147,7 @@ CASE_INDEX: Dict[str, Dict[str, dict]] = {
 # ---------------------------------------------------------------------------
 
 def _model_stats(model: str) -> dict:
-    records = CASE_DATA.get(model, [])
+    records = _get_case_data().get(model, [])
     counts  = {c: sum(1 for r in records if r["classification"] == c)
                for c in ("tp", "fp", "fn", "tn")}
     tp, fp, fn, tn = counts["tp"], counts["fp"], counts["fn"], counts["tn"]
@@ -139,27 +219,32 @@ _ZONE_NORM = mcolors.BoundaryNorm([0, 0.5, 1.5, 2.5], _ZONE_CMAP.N)
 
 
 def _arr_to_b64(arr2d: np.ndarray, cmap: str, vmin: float, vmax: float,
-                is_zone: bool = False) -> str:
+                is_zone: bool = False, transparent: bool = False) -> str:
     """Render a (H, W) numpy array as a base64 data-URL PNG (200×200 px)."""
     fig, ax = plt.subplots(figsize=(2, 2), dpi=100)
     ax.axis("off")
-    fig.patch.set_facecolor("black")
+    if transparent:
+        fig.patch.set_alpha(0)
+        ax.set_facecolor("none")
+    else:
+        fig.patch.set_facecolor("black")
     if is_zone:
         ax.imshow(arr2d, cmap=_ZONE_CMAP, norm=_ZONE_NORM, interpolation="nearest")
     else:
         ax.imshow(arr2d, cmap=cmap, vmin=vmin, vmax=vmax, interpolation="nearest")
     buf = io.BytesIO()
     plt.savefig(buf, format="png", bbox_inches="tight", pad_inches=0,
-                facecolor="black")
+                facecolor="none" if transparent else "black",
+                transparent=transparent)
     plt.close(fig)
     buf.seek(0)
     return "data:image/png;base64," + base64.b64encode(buf.read()).decode()
 
 
 def _render_all_slices(arr: np.ndarray, cmap: str, vmin: float, vmax: float,
-                        is_zone: bool = False) -> List[str]:
+                        is_zone: bool = False, transparent: bool = False) -> List[str]:
     """Render all depth slices of a (D, H, W) array as base64 data-URL PNGs."""
-    return [_arr_to_b64(arr[sl], cmap, vmin, vmax, is_zone)
+    return [_arr_to_b64(arr[sl], cmap, vmin, vmax, is_zone, transparent)
             for sl in range(arr.shape[0])]
 
 
@@ -190,39 +275,39 @@ def _build_case_payload(model: str, case_id: str) -> dict:
         v0, v1 = float(ch.min()), float(ch.max())
         panels[name] = _render_all_slices(ch, "gray", v0, v1)
 
-    # Cancer probability
+    # Cancer probability (transparent background for client-side compositing)
     prob = pred[0]  # (D, H, W)
-    panels["prediction"] = _render_all_slices(prob, "hot", 0.0, 1.0)
+    panels["prediction"] = _render_all_slices(prob, "hot", 0.0, 1.0, transparent=True)
 
     # Ground-truth label
     if not _is_sentinel(label) and label.ndim == 4:
-        panels["label"] = _render_all_slices(label[0], "hot", 0.0, 1.0)
+        panels["label"] = _render_all_slices(label[0], "hot", 0.0, 1.0, transparent=True)
 
     # Saliency (absolute mean across channels)
     if not _is_sentinel(saliency) and saliency.ndim == 4:
         sal_mean = np.abs(saliency).mean(axis=0)  # (D, H, W)
         v1 = float(np.percentile(sal_mean, 99)) or 1e-6
-        panels["saliency"] = _render_all_slices(sal_mean, "viridis", 0.0, v1)
+        panels["saliency"] = _render_all_slices(sal_mean, "viridis", 0.0, v1, transparent=True)
 
     # Occlusion (absolute mean across channels)
     if not _is_sentinel(occlusion) and occlusion.ndim == 4:
         occ_mean = np.abs(occlusion).mean(axis=0)  # (D, H, W)
         v1 = float(np.percentile(occ_mean, 99)) or 1e-6
-        panels["occlusion"] = _render_all_slices(occ_mean, "plasma", 0.0, v1)
+        panels["occlusion"] = _render_all_slices(occ_mean, "plasma", 0.0, v1, transparent=True)
 
     # AblationCAM (single-channel spatial map)
     if not _is_sentinel(ablation) and ablation.ndim == 4:
         abl_map = ablation[0]  # (D, H, W)
         v1 = float(np.percentile(abl_map, 99)) or 1e-6
-        panels["ablation"] = _render_all_slices(abl_map, "inferno", 0.0, v1)
+        panels["ablation"] = _render_all_slices(abl_map, "inferno", 0.0, v1, transparent=True)
 
     # Zones (discrete colormap)
     if not _is_sentinel(zones) and zones.ndim == 3:
         panels["zones"] = _render_all_slices(zones.astype(np.float32), "", 0, 2,
-                                              is_zone=True)
+                                              is_zone=True, transparent=True)
 
-    # Stats: pull from in-memory sample_data (pre-loaded at startup)
-    record = CASE_INDEX.get(model, {}).get(case_id, {})
+    # Stats: pull from in-memory sample_data (refreshed periodically)
+    record = _get_case_index().get(model, {}).get(case_id, {})
     stats = {
         "input_ablation":      inp_abl.tolist() if (not _is_sentinel(inp_abl) and inp_abl.shape == (3,)) else None,
         "saliency":            record.get("saliency"),
@@ -251,7 +336,7 @@ def index():
 def model_view(model: str):
     if model not in MODELS:
         abort(404)
-    records = CASE_DATA.get(model, [])
+    records = _get_case_data().get(model, [])
     stats   = _model_stats(model)
     charts  = _available_charts(model)
     return render_template("model.html", model=model, records=records,
@@ -262,7 +347,7 @@ def model_view(model: str):
 def case_view(model: str, case_id: str):
     if model not in MODELS:
         abort(404)
-    record = CASE_INDEX.get(model, {}).get(case_id)
+    record = _get_case_index().get(model, {}).get(case_id)
     return render_template("case.html", model=model, case_id=case_id,
                            fold=record["fold"] if record else "?",
                            record=record)
@@ -287,7 +372,7 @@ def api_cases(model: str):
     """Return the in-memory sample_data list for a model."""
     if model not in MODELS:
         abort(404)
-    return jsonify(CASE_DATA.get(model, []))
+    return jsonify(_get_case_data().get(model, []))
 
 
 @app.route("/api/chart/<model>/<path:relpath>")
@@ -312,8 +397,8 @@ def main() -> None:
     parser.add_argument("--debug", action="store_true", help="Enable Flask debug mode")
     args = parser.parse_args()
 
-    total = sum(len(v) for v in CASE_DATA.values())
-    print(f"Loaded {total} cases across {len(MODELS)} models from {METRICS_DIR}")
+    total = sum(len(v) for v in _get_case_data().values())
+    print(f"Loaded {total} cases across {len(MODELS)} models (refreshes every {_CACHE_TTL}s)")
     print(f"XAI NPZ directory: {XAI_DIR}")
     print(f"Starting server at http://{args.host}:{args.port}")
 

@@ -10,7 +10,7 @@
     gap: .5rem;
   }
   .panel-box { position: relative; background: #000; border-radius: .5rem; overflow: hidden; }
-  .panel-box img {
+  .panel-box img, .panel-box canvas {
     width: 100%; display: block; image-rendering: pixelated;
     transition: opacity .05s;
   }
@@ -92,6 +92,25 @@
         </div>
         {% endfor %}
       </div>
+    </div>
+
+    {# Overlay compositing controls #}
+    <div class="d-flex align-items-center gap-3 mb-3 p-2 px-3 bg-white rounded shadow-sm flex-wrap">
+      <span class="fw-semibold small text-nowrap">Background:</span>
+      <div class="btn-group btn-group-sm" role="group" aria-label="Background channel">
+        <input type="radio" class="btn-check" name="bg-radio" id="bg-t2w" value="t2w" checked>
+        <label class="btn btn-outline-secondary" for="bg-t2w">T2W</label>
+        <input type="radio" class="btn-check" name="bg-radio" id="bg-adc" value="adc">
+        <label class="btn btn-outline-secondary" for="bg-adc">ADC</label>
+        <input type="radio" class="btn-check" name="bg-radio" id="bg-hbv" value="hbv">
+        <label class="btn btn-outline-secondary" for="bg-hbv">HBV</label>
+        <input type="radio" class="btn-check" name="bg-radio" id="bg-none" value="">
+        <label class="btn btn-outline-secondary" for="bg-none">None</label>
+      </div>
+      <span class="fw-semibold small text-nowrap ms-2">Overlay α:</span>
+      <input type="range" id="overlay-alpha" class="form-range" style="width:120px"
+             min="0" max="1" step="0.05" value="0.6">
+      <span id="alpha-label" class="small text-muted" style="min-width:35px">0.60</span>
     </div>
 
     {# Image grid — populated by JS #}
@@ -185,19 +204,66 @@ const PANEL_META = {
   zones:      { label: "Zones (PZ/TZ)",     order: 8 },
 };
 
-// Panels visible at startup (without optional ones that may not exist)
-const ALWAYS_SHOW = new Set(["t2w", "adc", "hbv", "prediction"]);
+// These panels are rendered as canvas with compositable background
+const OVERLAY_PANELS = new Set(["prediction", "label", "saliency", "occlusion", "ablation", "zones"]);
 
-let panels = {};       // { panelKey: [base64DataURL, ...] }
+let panels = {};           // { panelKey: [base64DataURL, ...] }
+let cachedImages = {};     // { panelKey: [HTMLImageElement, ...] }
 let nSlices = 0;
+let currentBg    = "t2w"; // background channel key, or "" for none
+let currentAlpha = 0.6;
+
+// ── Composite a single overlay panel onto its canvas ───────────────────────
+function compositePanel(key, sl) {
+  const canvas = document.getElementById(`canvas-${key}`);
+  if (!canvas) return;
+  const ctx = canvas.getContext("2d");
+  ctx.clearRect(0, 0, 200, 200);
+  ctx.fillStyle = "#000";
+  ctx.fillRect(0, 0, 200, 200);
+
+  if (currentBg && cachedImages[currentBg]?.[sl]) {
+    ctx.globalAlpha = 1.0;
+    ctx.drawImage(cachedImages[currentBg][sl], 0, 0, 200, 200);
+  }
+  if (cachedImages[key]?.[sl]) {
+    ctx.globalAlpha = currentAlpha;
+    ctx.drawImage(cachedImages[key][sl], 0, 0, 200, 200);
+    ctx.globalAlpha = 1.0;
+  }
+}
+
+function recompositeAll() {
+  const sl = parseInt(document.getElementById("slice-slider").value) || 0;
+  for (const key of Object.keys(panels)) {
+    if (OVERLAY_PANELS.has(key)) compositePanel(key, sl);
+  }
+}
 
 // ── Slice display ───────────────────────────────────────────────────────────
 function showSlice(sl) {
-  for (const [key, imgs] of Object.entries(panels)) {
-    const img = document.getElementById(`img-${key}`);
-    if (img && imgs[sl]) img.src = imgs[sl];
+  for (const key of Object.keys(panels)) {
+    if (OVERLAY_PANELS.has(key)) {
+      compositePanel(key, sl);
+    } else {
+      const img = document.getElementById(`img-${key}`);
+      if (img && panels[key][sl]) img.src = panels[key][sl];
+    }
   }
   document.getElementById("slice-label").textContent = `${sl + 1} / ${nSlices}`;
+}
+
+// ── Pre-load all base64 PNGs into Image objects ─────────────────────────────
+async function preloadImages(panelsData) {
+  await Promise.all(Object.entries(panelsData).map(([key, slices]) => {
+    cachedImages[key] = [];
+    return Promise.all(slices.map((src, i) => new Promise(resolve => {
+      const img = new Image();
+      img.onload = resolve;
+      img.src = src;
+      cachedImages[key][i] = img;
+    })));
+  }));
 }
 
 // ── Build viewer grid ───────────────────────────────────────────────────────
@@ -214,10 +280,19 @@ function buildGrid(availablePanels) {
     box.className = "panel-box";
     box.id = `box-${key}`;
 
-    const img = document.createElement("img");
-    img.id = `img-${key}`;
-    img.alt = key;
-    box.appendChild(img);
+    if (OVERLAY_PANELS.has(key)) {
+      const canvas = document.createElement("canvas");
+      canvas.id = `canvas-${key}`;
+      canvas.width  = 200;
+      canvas.height = 200;
+      canvas.alt = key;
+      box.appendChild(canvas);
+    } else {
+      const img = document.createElement("img");
+      img.id = `img-${key}`;
+      img.alt = key;
+      box.appendChild(img);
+    }
 
     const lbl = document.createElement("div");
     lbl.className = "panel-label";
@@ -235,6 +310,22 @@ document.querySelectorAll(".panel-toggle").forEach(chk => {
     const box = document.getElementById(`box-${key}`);
     if (box) box.style.display = chk.checked ? "" : "none";
   });
+});
+
+// ── Background + alpha controls ─────────────────────────────────────────────
+document.querySelectorAll("input[name='bg-radio']").forEach(radio => {
+  radio.addEventListener("change", () => {
+    currentBg = radio.value;
+    recompositeAll();
+  });
+});
+
+const alphaSlider = document.getElementById("overlay-alpha");
+const alphaLabel  = document.getElementById("alpha-label");
+alphaSlider.addEventListener("input", () => {
+  currentAlpha = parseFloat(alphaSlider.value);
+  alphaLabel.textContent = currentAlpha.toFixed(2);
+  recompositeAll();
 });
 
 // ── Sync toggle visibility with what actually loaded ────────────────────────
@@ -347,6 +438,10 @@ function plotBar(divId, means) {
     // Build grid with available panels
     buildGrid(panels);
     syncToggles(panels);
+
+    // Pre-load all images for client-side compositing
+    loadMsg.textContent = "Pre-loading images…";
+    await preloadImages(panels);
 
     // Slider
     const slider = document.getElementById("slice-slider");

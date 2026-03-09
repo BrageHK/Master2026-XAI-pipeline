@@ -131,24 +131,44 @@ def zone_distribution(records: List[dict]) -> Dict[str, Dict[str, int]]:
 # ---------------------------------------------------------------------------
 
 def plot_confusion_matrix(counts: Dict[str, int], metrics: dict, out_path: Path) -> None:
-    labels = ["TP", "FP", "TN", "FN"]
-    values = [counts["tp"], counts["fp"], counts["tn"], counts["fn"]]
-    colors = ["#2ecc71", "#e74c3c", "#3498db", "#e67e22"]
+    tp, fp, tn, fn = counts["tp"], counts["fp"], counts["tn"], counts["fn"]
 
-    fig, axes = plt.subplots(1, 2, figsize=(12, 5), gridspec_kw={"width_ratios": [2, 1]})
+    # 2x2 matrix: rows = Actual, cols = Predicted
+    # [TP, FN]
+    # [FP, TN]
+    matrix = np.array([[tp, fn], [fp, tn]])
+    cell_colors = np.array([["#2ecc71", "#e67e22"], ["#e74c3c", "#3498db"]])
+    row_labels = ["Actual Positive", "Actual Negative"]
+    col_labels = ["Predicted Positive", "Predicted Negative"]
+
+    fig, axes = plt.subplots(1, 2, figsize=(12, 5), gridspec_kw={"width_ratios": [1, 1]})
 
     ax = axes[0]
-    bars = ax.bar(labels, values, color=colors, edgecolor="white", linewidth=1.5)
-    for bar, val in zip(bars, values):
-        ax.text(bar.get_x() + bar.get_width() / 2, bar.get_height() + 0.3,
-                str(val), ha="center", va="bottom", fontweight="bold", fontsize=13)
-    ax.set_title("Classification Counts (all folds)", fontsize=14, fontweight="bold")
-    ax.set_ylabel("Count")
-    ax.set_ylim(0, max(values) * 1.15 + 1)
-    ax.grid(axis="y", alpha=0.3)
+    ax.axis("off")
+    ax.set_title("Confusion Matrix (all folds)", fontsize=14, fontweight="bold", pad=16)
+
+    for i in range(2):
+        for j in range(2):
+            rect = plt.Rectangle([j, 1 - i], 1, 1, color=cell_colors[i, j], alpha=0.75,
+                                  transform=ax.transData)
+            ax.add_patch(rect)
+            label = ["TP", "FN", "FP", "TN"][i * 2 + j]
+            ax.text(j + 0.5, 1 - i + 0.6, label,
+                    ha="center", va="center", fontsize=11, color="white", fontweight="bold")
+            ax.text(j + 0.5, 1 - i + 0.25, str(matrix[i, j]),
+                    ha="center", va="center", fontsize=22, fontweight="bold", color="white")
+
+    for j, lbl in enumerate(col_labels):
+        ax.text(j + 0.5, 2.12, lbl, ha="center", va="bottom", fontsize=10, fontweight="bold")
+    for i, lbl in enumerate(row_labels):
+        ax.text(-0.08, 1 - i + 0.5, lbl, ha="right", va="center", fontsize=10, fontweight="bold")
+
+    ax.set_xlim(-0.5, 2)
+    ax.set_ylim(-0.1, 2.3)
 
     ax2 = axes[1]
     ax2.axis("off")
+    ax2.set_title("Metrics", fontsize=14, fontweight="bold", pad=16)
     metric_labels = ["Precision", "Sensitivity", "Specificity", "F1"]
     metric_keys   = ["precision", "sensitivity", "specificity", "f1"]
     rows = [[lbl, f"{metrics[k]:.3f}" if metrics[k] is not None else "N/A"]

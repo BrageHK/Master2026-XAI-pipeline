@@ -3,7 +3,7 @@
 #SBATCH --account=share-ie-idi
 #SBATCH --time=24:00:00
 #SBATCH --gres=gpu:1
-#SBATCH --constraint="a100|h100"
+#SBATCH --constraint="gpu80g"
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
 #SBATCH --cpus-per-task=4
@@ -26,4 +26,4 @@ echo "Total of $SLURM_NTASKS cores"
 
 module purge
 
-uv run captum_xai.py --fold "$SLURM_ARRAY_TASK_ID" --model "swin_unetr" --methods "all"
+uv run generate_xai_data.py --fold "$SLURM_ARRAY_TASK_ID" --models "swin_unetr" --methods "all"

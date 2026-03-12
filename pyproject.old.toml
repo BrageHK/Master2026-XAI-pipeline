@@ -1,0 +1,26 @@
+[project]
+name = "project"
+version = "0.1.0"
+requires-python = ">=3.13.0"
+dependencies = [
+  "torch>=2.9.1",
+  "torchvision>=0.24.1",
+  "pytorch-triton-rocm>=3.5.1 ; sys_platform == 'linux'",
+  "mamba-ssm>=2.3.1",
+]
+
+[tool.uv.sources]
+torch = [
+  { index = "pytorch-rocm", marker = "sys_platform == 'linux'" },
+]
+torchvision = [
+  { index = "pytorch-rocm", marker = "sys_platform == 'linux'" },
+]
+pytorch-triton-rocm = [
+  { index = "pytorch-rocm", marker = "sys_platform == 'linux'" },
+]
+
+[[tool.uv.index]]
+name = "pytorch-rocm"
+url = "https://download.pytorch.org/whl/rocm6.4"
+explicit = true

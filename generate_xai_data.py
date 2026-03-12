@@ -60,7 +60,7 @@ NNUNET_RESULTS      = NNUNET_ROOT / "results" / "nnUNet"
 TASK_NAME           = "Task2203_picai_baseline"
 DATASET_DIR         = NNUNET_PREPROCESSED / TASK_NAME
 PLANS_FILE          = NNUNET_RESULTS / "plans.pkl"
-SPLITS_FILE         = NNUNET_ROOT / "splits.json"
+SPLITS_DIR          = NNUNET_ROOT / "splits"
 
 IMAGES_TR = Path(
     "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0"
@@ -198,8 +198,8 @@ def load_mamba(model_name: str, fold: int, device: torch.device) -> torch.nn.Mod
     else:
         raise ValueError(f"Unknown MONAI model: {model_name!r}")
 
-    config = load_config(f"experiments/picai/{model_name}/config.yaml")
-    config.data.json_list = f"json_datalists/picai/fold_{fold}.json"
+    config = load_config(f"U_MambaMTL_XAI/experiments/picai/{model_name}/config.yaml")
+    config.data.json_list = str(UMAMBA_ROOT / f"json_datalists/picai/fold_{fold}.json")
     config.gpus           = [device.index if device.type == "cuda" else 0]
     config.cache_rate     = 0.0
 
@@ -233,9 +233,9 @@ def load_plans() -> dict:
     return _load_plans_from_file(PLANS_FILE)
 
 
-def load_splits() -> List[Dict]:
-    with open(SPLITS_FILE) as f:
-        return json.load(f)
+def load_splits() -> Dict:
+    from picai_baseline.splits.picai import valid_splits
+    return valid_splits
 
 
 def _preprocess_nnunet(case_id: str, plans: dict):
@@ -434,12 +434,12 @@ def _make_forward_func_sigmoid(network: torch.nn.Module, fixed_mask: torch.Tenso
 
 
 def _make_forward_func_softmax(network: torch.nn.Module, fixed_mask: torch.Tensor):
-    """For nnUNet — softmax on channel 1, sum over masked voxels → (B,)."""
+    """For nnUNet — channel 1 is already softmaxed by the network's final_nonlin."""
     def _forward(inp: torch.Tensor) -> torch.Tensor:
         out = network(inp)
         if isinstance(out, (list, tuple)):
             out = out[0]
-        cancer_prob = torch.softmax(out, dim=1)[:, 1]
+        cancer_prob = out[:, 1]
         return (cancer_prob * fixed_mask).flatten(1).sum(dim=1)
     return _forward
 
@@ -459,6 +459,7 @@ def _build_progress_record(
     sal_np: Optional[np.ndarray],
     occ_np: Optional[np.ndarray],
     abl_np: Optional[np.ndarray] = None,
+    pred_crop: Optional[np.ndarray] = None,
     pred_cancer_voxels: int = 0,
     pred_max_prob: float = 0.0,
     confidence: float = 0.0,
@@ -480,6 +481,12 @@ def _build_progress_record(
         lbl_2d = lbl_crop[0]
         pca_pz = int((lbl_2d * (zones_crop == 1)).sum())
         pca_tz = int((lbl_2d * (zones_crop == 2)).sum())
+
+    pred_pz = pred_tz = 0
+    if predicted_pos and pred_crop is not None and zones_crop is not None and zones_crop.ndim == 3:
+        pred_mask = (pred_crop[0] > 0.5)
+        pred_pz = int((pred_mask * (zones_crop == 1)).sum())
+        pred_tz = int((pred_mask * (zones_crop == 2)).sum())
 
     zone_cat, primary_zone = _zone_category(pca_pz, pca_tz)
 
@@ -509,6 +516,8 @@ def _build_progress_record(
         "zone_category":           zone_cat,
         "pz_voxels":               pca_pz if has_pca else None,
         "tz_voxels":               pca_tz if has_pca else None,
+        "pred_pz_voxels":          pred_pz if predicted_pos else None,
+        "pred_tz_voxels":          pred_tz if predicted_pos else None,
         "saliency_ch_fraction":    sal_frac,
         "occlusion_ch_fraction":   occ_frac,
         "ablation_ch_fraction":    abl_frac,
@@ -556,8 +565,8 @@ def process_fold_monai(
     network = load_model(model_name, fold, device)
     print(f"Model ready on {device}.")
 
-    config = load_config(f"experiments/picai/{model_name}/config.yaml")
-    config.data.json_list          = f"json_datalists/picai/fold_{fold}.json"
+    config = load_config(f"U_MambaMTL_XAI/experiments/picai/{model_name}/config.yaml")
+    config.data.json_list          = str(UMAMBA_ROOT / f"json_datalists/picai/fold_{fold}.json")
     config.gpus                    = [device.index if device.type == "cuda" else 0]
     config.cache_rate              = 0.0
     config.transforms.label_keys  = ["pca", "prostate_pred", "zones"]
@@ -601,15 +610,19 @@ def process_fold_monai(
 
             print(f"    Predicted positive: {predicted_pos}  (cancer voxels={cancer_voxels}  max_prob={pred_max_prob:.3f})")
 
-            # ---- Depth crop coordinates (D is axis 3 in MONAI layout) ----
+            # ---- Depth crop coordinates based on prostate zones -----------
             D = x.shape[4]
-            if predicted_pos:
-                mask_np = fixed_mask[0].cpu().numpy()  # (H, W, D)
-                coords  = np.argwhere(mask_np)          # (N, 3): (h, w, d)
-                d_min   = int(coords[:, 2].min())
-                d_max   = int(coords[:, 2].max())
-                d0      = max(0, d_min - 1)
-                d1      = min(D, d_max + 2)
+            if "zones" in batch:
+                z = batch["zones"][0].cpu().numpy()  # (3, H, W, D)
+                zone_mask = (z[1] + z[2]) > 0.5      # PZ or TZ present, (H, W, D)
+                if zone_mask.any():
+                    coords = np.argwhere(zone_mask)   # (N, 3): (h, w, d)
+                    d_min  = int(coords[:, 2].min())
+                    d_max  = int(coords[:, 2].max())
+                    d0     = max(0, d_min - 1)
+                    d1     = min(D, d_max + 2)
+                else:
+                    d0, d1 = 0, D
             else:
                 d0, d1 = 0, D
 
@@ -648,11 +661,15 @@ def process_fold_monai(
                     sal_np = sal_np[:, d0:d1]                       # (3, D_crop, H, W)
 
                 if run_occlusion:
+                    # x is (1, 3, H, W, D); occ_window/stride are specified as (C, D, H, W)
+                    # → reorder to (C, H, W, D) to match monai tensor layout
+                    occ_window_monai = (occ_window[0], occ_window[2], occ_window[3], occ_window[1])
+                    occ_stride_monai = (occ_stride[0], occ_stride[2], occ_stride[3], occ_stride[1])
                     with torch.enable_grad():
                         occ_attr = Occlusion(forward_func).attribute(
                             x.detach().clone(),
-                            sliding_window_shapes=occ_window,
-                            strides=occ_stride,
+                            sliding_window_shapes=occ_window_monai,
+                            strides=occ_stride_monai,
                             baselines=0.0,
                             perturbations_per_eval=ppe,
                             show_progress=True,
@@ -727,6 +744,7 @@ def process_fold_monai(
             # ---- Record progress ------------------------------------------
             progress[case_id] = _build_progress_record(
                 predicted_pos, lbl_crop, zones_crop, sal_np, occ_np, abl_np,
+                pred_crop=pred_crop,
                 pred_cancer_voxels=cancer_voxels, pred_max_prob=pred_max_prob,
                 confidence=pred_max_prob,  # MONAI uses sigmoid — identical to pred_max_prob
             )
@@ -784,10 +802,10 @@ def process_fold_nnunet(
 
     plans     = load_plans()
     splits    = load_splits()
-    if fold >= len(splits):
-        print(f"WARNING: fold {fold} not in splits.json. Skipping.")
+    if fold not in splits:
+        print(f"WARNING: fold {fold} not in valid_splits. Skipping.")
         return
-    val_cases: List[str] = splits[fold]["val"]
+    val_cases: List[str] = splits[fold]["subject_list"]
     print(f"Validation cases: {len(val_cases)}")
 
     d_div, h_div, w_div = _compute_nnunet_divisors(plans)
@@ -827,25 +845,28 @@ def process_fold_nnunet(
                 out = network(x)
                 if isinstance(out, (list, tuple)):
                     out = out[0]
-                cancer_prob   = torch.softmax(out, dim=1)[:, 1]  # (1, D_pad, H_pad, W_pad)
+                cancer_prob   = out[:, 1]  # (1, D_pad, H_pad, W_pad) — already softmaxed by network
                 fixed_mask    = (cancer_prob > 0.5)
                 cancer_voxels = int(fixed_mask.sum().item())
                 pred_max_prob = float(cancer_prob.max().item())
-                confidence    = float(torch.sigmoid(out[:, 1]).max().item())
+                confidence    = pred_max_prob  # softmax already applied above
                 predicted_pos = cancer_voxels > 0
 
             print(f"    Predicted positive: {predicted_pos}  (cancer voxels={cancer_voxels}  max_prob={pred_max_prob:.3f})")
 
-            # ---- Crop coordinates -----------------------------------------
+            # ---- Load zones (full) to determine crop coordinates ----------
             D_orig = original_dhw[0]
-            if predicted_pos:
-                mask_np = fixed_mask[0].cpu().numpy()  # (D_pad, H_pad, W_pad)
-                coords  = np.argwhere(mask_np)          # (N, 3): (d, h, w)
-                d_min   = int(coords[:, 0].min())
-                d_max   = int(coords[:, 0].max())
-                d0      = max(0, d_min - 1)
-                d1      = min(D_orig, d_max + 2)
+            zones_full = _zones_from_nnunet(
+                case_id, plans, prep_props, 0, D_orig, 0, 0, None
+            )
 
+            # ---- Crop coordinates based on prostate zones -----------------
+            if zones_full is not None and zones_full.any():
+                coords = np.argwhere(zones_full > 0)   # (N, 3): (d, h, w)
+                d_min  = int(coords[:, 0].min())
+                d_max  = int(coords[:, 0].max())
+                d0     = max(0, d_min - 1)
+                d1     = min(D_orig, d_max + 2)
                 if occ_crop_hw is not None:
                     _, hc, wc = coords.mean(axis=0).astype(int)
                     h0 = int(np.clip(hc - occ_crop_hw // 2, 0, H_pad - occ_crop_hw))
@@ -860,22 +881,19 @@ def process_fold_nnunet(
 
             # ---- Always: image, prediction, label, zones ------------------
             prob_full  = _unpad(cancer_prob.cpu().numpy(), original_dhw)  # (1, D, H, W)
-            if occ_crop_hw is not None and predicted_pos:
+            if occ_crop_hw is not None:
                 image_crop = data[:, d0:d1, h0:h0 + occ_crop_hw, w0:w0 + occ_crop_hw]
                 pred_crop  = prob_full[:, d0:d1, h0:h0 + occ_crop_hw, w0:w0 + occ_crop_hw]
                 if label_np is not None:
                     lbl_crop: Optional[np.ndarray] = label_np[d0:d1, h0:h0 + occ_crop_hw, w0:w0 + occ_crop_hw][np.newaxis]
                 else:
                     lbl_crop = None
+                zones_crop = zones_full[d0:d1, h0:h0 + occ_crop_hw, w0:w0 + occ_crop_hw] if zones_full is not None else None
             else:
                 image_crop = data[:, d0:d1]
                 pred_crop  = prob_full[:, d0:d1]
                 lbl_crop   = label_np[d0:d1][np.newaxis] if label_np is not None else None
-
-            zones_crop = _zones_from_nnunet(
-                case_id, plans, prep_props, d0, d1, h0, w0,
-                occ_crop_hw if predicted_pos else None,
-            )
+                zones_crop = zones_full[d0:d1] if zones_full is not None else None
 
             # ---- XAI: only when predicted positive ------------------------
             sal_np = occ_np = abl_np = inp_abl = None
@@ -925,7 +943,7 @@ def process_fold_nnunet(
                         def _abl_target(output):
                             if isinstance(output, (list, tuple)):
                                 output = output[0]
-                            cancer_prob = torch.softmax(output.unsqueeze(0), dim=1)[0, 1]
+                            cancer_prob = output[1]  # already softmaxed by network
                             return (cancer_prob * _mask).sum()
 
                         abl_maps = cam(x_crop, targets=[_abl_target])  # (1, D_pad, H_crop, W_crop)
@@ -976,6 +994,7 @@ def process_fold_nnunet(
             # ---- Record progress ------------------------------------------
             progress[case_id] = _build_progress_record(
                 predicted_pos, lbl_crop, zones_crop, sal_np, occ_np, abl_np,
+                pred_crop=pred_crop,
                 pred_cancer_voxels=cancer_voxels, pred_max_prob=pred_max_prob,
                 confidence=confidence,
             )
@@ -1111,6 +1130,12 @@ def compute_metrics(xai_dir: Path, model_name: str, metrics_dir: Path) -> List[d
             else:
                 pca_pz = pca_tz = 0
 
+            pred_pz = pred_tz = 0
+            if predicted_pos and not _is_empty(zones) and zones.ndim == 3:
+                pred_mask = (pred[0] > 0.5)  # (D, H, W)
+                pred_pz   = int((pred_mask * (zones == 1)).sum())
+                pred_tz   = int((pred_mask * (zones == 2)).sum())
+
             zone_cat, primary_zone = _zone_category(pca_pz, pca_tz)
 
             record: dict = {
@@ -1124,6 +1149,8 @@ def compute_metrics(xai_dir: Path, model_name: str, metrics_dir: Path) -> List[d
                 "zone_category":     zone_cat,
                 "pz_voxels":         pca_pz if has_pca else None,
                 "tz_voxels":         pca_tz if has_pca else None,
+                "pred_pz_voxels":    pred_pz if predicted_pos else None,
+                "pred_tz_voxels":    pred_tz if predicted_pos else None,
             }
 
             # Channel attribution stats (only when XAI maps were computed)
@@ -1457,7 +1484,7 @@ def main() -> None:
     parser.add_argument(
         "--perturbations-per-eval",
         type=int,
-        default=2,
+        default=1,
         help="Number of occlusion perturbations per forward pass.",
     )
     parser.add_argument(

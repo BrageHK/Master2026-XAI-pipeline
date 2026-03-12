@@ -1,0 +1,4366 @@
+we are running from this directory: /cluster/home/bragehk/master
+the name of the job is: nnunet-XAI-metrics
+The job ID is 24124054
+The job was run on these nodes: idun-08-01
+Number of nodes: 1
+We are using 4 cores
+We are using 4 cores per node
+Total of 1 cores
+Models:           ['nnunet']
+Folds:            [4]
+Methods:          ablation, input_ablation, occlusion, saliency
+Output XAI dir:   /cluster/home/bragehk/master/results/xai
+Output metrics:   /cluster/home/bragehk/master/results/metrics
+Occlusion window: (1, 2, 12, 12)  stride: (1, 1, 6, 6)
+
+============================================================
+Model: nnunet  |  Fold 4
+2026-03-09 17:46:14.594794: Using dummy2d data augmentation
+Model ready on cuda.
+Validation cases: 252
+
+  [1/252] 10002_1000002
+before crop: (3, 22, 384, 384) after crop: (3, 22, 384, 384) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 22, 384, 384)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 22, 384, 384)} 
+
+    Preprocessed shape: (3, 22, 384, 384)
+no resampling necessary
+    Predicted positive: False  (cancer voxels=0  max_prob=0.320)
+no resampling necessary
+    Depth crop: d=3:21  h0=141  w0=136
+
+  [2/252] 10005_1000005
+before crop: (3, 19, 384, 384) after crop: (3, 19, 384, 383) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 19, 384, 383)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 19, 384, 383)} 
+
+    Preprocessed shape: (3, 19, 384, 383)
+no resampling necessary
+    Predicted positive: True  (cancer voxels=246  max_prob=0.621)
+no resampling necessary
+    Depth crop: d=0:17  h0=124  w0=124
+    Running 3D AblationCAM…
+    Target layer: Conv3d(out_channels=320)
+    Running Input Ablation…
+      ch 0: orig=1.2216 abl=0.2428 w=0.8012
+      ch 1: orig=1.2216 abl=0.0096 w=0.9922
+      ch 2: orig=1.2216 abl=0.0302 w=0.9753
+    Saved: /cluster/home/bragehk/master/results/xai/nnunet/fold_4/10005_1000005.npz
+
+  [3/252] 10007_1000007
+before crop: (3, 23, 384, 384) after crop: (3, 23, 384, 384) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 23, 384, 384)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 23, 384, 384)} 
+
+    Preprocessed shape: (3, 23, 384, 384)
+no resampling necessary
+    Predicted positive: False  (cancer voxels=0  max_prob=0.016)
+no resampling necessary
+    Depth crop: d=1:18  h0=140  w0=129
+
+  [4/252] 10012_1000012
+before crop: (3, 23, 384, 384) after crop: (3, 23, 384, 384) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 23, 384, 384)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 23, 384, 384)} 
+
+    Preprocessed shape: (3, 23, 384, 384)
+no resampling necessary
+    Predicted positive: True  (cancer voxels=86  max_prob=0.541)
+no resampling necessary
+    Depth crop: d=0:20  h0=179  w0=99
+    Running 3D AblationCAM…
+    Target layer: Conv3d(out_channels=320)
+    Running Input Ablation…
+      ch 0: orig=1.2989 abl=0.5990 w=0.5389
+      ch 1: orig=1.2989 abl=0.1774 w=0.8634
+      ch 2: orig=1.2989 abl=0.0131 w=0.9900
+    Saved: /cluster/home/bragehk/master/results/xai/nnunet/fold_4/10012_1000012.npz
+
+  [5/252] 10015_1000015
+before crop: (3, 27, 701, 701) after crop: (3, 27, 477, 701) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 27, 477, 701)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 27, 477, 701)} 
+
+    Preprocessed shape: (3, 27, 477, 701)
+no resampling necessary
+    Predicted positive: True  (cancer voxels=27  max_prob=0.545)
+no resampling necessary
+    Depth crop: d=3:21  h0=156  w0=286
+    Running 3D AblationCAM…
+    Target layer: Conv3d(out_channels=320)
+    Running Input Ablation…
+      ch 0: orig=5.7014 abl=2.8758 w=0.4956
+      ch 1: orig=5.7014 abl=2.9386 w=0.4846
+      ch 2: orig=5.7014 abl=0.0238 w=0.9958
+    Saved: /cluster/home/bragehk/master/results/xai/nnunet/fold_4/10015_1000015.npz
+
+  [6/252] 10018_1000018
+before crop: (3, 28, 400, 400) after crop: (3, 28, 400, 400) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 28, 400, 400)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 28, 400, 400)} 
+
+    Preprocessed shape: (3, 28, 400, 400)
+no resampling necessary
+    Predicted positive: True  (cancer voxels=426  max_prob=0.607)
+no resampling necessary
+    Depth crop: d=5:21  h0=126  w0=134
+    Running 3D AblationCAM…
+    Target layer: Conv3d(out_channels=320)
+    Running Input Ablation…
+      ch 0: orig=12.6138 abl=1.9459 w=0.8457
+      ch 1: orig=12.6138 abl=0.0429 w=0.9966
+      ch 2: orig=12.6138 abl=0.0721 w=0.9943
+    Saved: /cluster/home/bragehk/master/results/xai/nnunet/fold_4/10018_1000018.npz
+
+  [7/252] 10021_1000021
+before crop: (3, 19, 384, 384) after crop: (3, 19, 383, 383) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 19, 383, 383)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 19, 383, 383)} 
+
+    Preprocessed shape: (3, 19, 383, 383)
+no resampling necessary
+    Predicted positive: True  (cancer voxels=13777  max_prob=0.588)
+no resampling necessary
+    Depth crop: d=1:19  h0=146  w0=131
+    Running 3D AblationCAM…
+    Target layer: Conv3d(out_channels=320)
+    Running Input Ablation…
+      ch 0: orig=57.1974 abl=74.5404 w=-0.3032
+      ch 1: orig=57.1974 abl=19.4904 w=0.6592
+      ch 2: orig=57.1974 abl=3.3523 w=0.9414
+    Saved: /cluster/home/bragehk/master/results/xai/nnunet/fold_4/10021_1000021.npz
+
+  [8/252] 10025_1000025
+before crop: (3, 19, 384, 384) after crop: (3, 19, 384, 383) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 19, 384, 383)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 19, 384, 383)} 
+
+    Preprocessed shape: (3, 19, 384, 383)
+no resampling necessary
+    Predicted positive: False  (cancer voxels=0  max_prob=0.011)
+no resampling necessary
+    Depth crop: d=2:15  h0=119  w0=131
+
+  [9/252] 10057_1000057
+before crop: (3, 23, 384, 384) after crop: (3, 23, 384, 384) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 23, 384, 384)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 23, 384, 384)} 
+
+    Preprocessed shape: (3, 23, 384, 384)
+no resampling necessary
+    Predicted positive: False  (cancer voxels=0  max_prob=0.046)
+no resampling necessary
+    Depth crop: d=1:18  h0=131  w0=119
+
+  [10/252] 10064_1000064
+before crop: (3, 23, 384, 384) after crop: (3, 23, 384, 384) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 23, 384, 384)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 23, 384, 384)} 
+
+    Preprocessed shape: (3, 23, 384, 384)
+no resampling necessary
+    Predicted positive: False  (cancer voxels=0  max_prob=0.451)
+no resampling necessary
+    Depth crop: d=0:23  h0=134  w0=126
+
+  [11/252] 10066_1000066
+before crop: (3, 23, 384, 384) after crop: (3, 23, 383, 384) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 23, 383, 384)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 23, 383, 384)} 
+
+    Preprocessed shape: (3, 23, 383, 384)
+no resampling necessary
+    Predicted positive: False  (cancer voxels=0  max_prob=0.182)
+no resampling necessary
+    Depth crop: d=0:18  h0=145  w0=125
+
+  [12/252] 10086_1000086
+before crop: (3, 23, 384, 384) after crop: (3, 23, 384, 384) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 23, 384, 384)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 23, 384, 384)} 
+
+    Preprocessed shape: (3, 23, 384, 384)
+no resampling necessary
+    Predicted positive: False  (cancer voxels=0  max_prob=0.421)
+no resampling necessary
+    Depth crop: d=2:16  h0=128  w0=127
+
+  [13/252] 10088_1000088
+before crop: (3, 25, 384, 384) after crop: (3, 25, 384, 384) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 25, 384, 384)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 25, 384, 384)} 
+
+    Preprocessed shape: (3, 25, 384, 384)
+no resampling necessary
+    Predicted positive: False  (cancer voxels=0  max_prob=0.217)
+no resampling necessary
+    Depth crop: d=0:24  h0=99  w0=128
+
+  [14/252] 10091_1000091
+before crop: (3, 23, 384, 384) after crop: (3, 23, 384, 384) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 23, 384, 384)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 23, 384, 384)} 
+
+    Preprocessed shape: (3, 23, 384, 384)
+no resampling necessary
+    Predicted positive: False  (cancer voxels=0  max_prob=0.070)
+no resampling necessary
+    Depth crop: d=5:20  h0=121  w0=124
+
+  [15/252] 10095_1000095
+before crop: (3, 27, 701, 701) after crop: (3, 27, 473, 701) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 27, 473, 701)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 27, 473, 701)} 
+
+    Preprocessed shape: (3, 27, 473, 701)
+no resampling necessary
+    Predicted positive: True  (cancer voxels=376  max_prob=0.560)
+no resampling necessary
+    Depth crop: d=5:21  h0=169  w0=285
+    Running 3D AblationCAM…
+    Target layer: Conv3d(out_channels=320)
+    Running Input Ablation…
+      ch 0: orig=0.0876 abl=0.0693 w=0.2096
+      ch 1: orig=0.0876 abl=0.0253 w=0.7111
+      ch 2: orig=0.0876 abl=0.0269 w=0.6930
+    Saved: /cluster/home/bragehk/master/results/xai/nnunet/fold_4/10095_1000095.npz
+
+  [16/252] 10101_1000101
+before crop: (3, 25, 384, 384) after crop: (3, 25, 384, 384) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 25, 384, 384)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 25, 384, 384)} 
+
+    Preprocessed shape: (3, 25, 384, 384)
+no resampling necessary
+    Predicted positive: False  (cancer voxels=0  max_prob=0.325)
+no resampling necessary
+    Depth crop: d=1:24  h0=136  w0=136
+
+  [17/252] 10111_1000111
+before crop: (3, 27, 701, 701) after crop: (3, 27, 484, 701) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 27, 484, 701)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 27, 484, 701)} 
+
+    Preprocessed shape: (3, 27, 484, 701)
+no resampling necessary
+    Predicted positive: False  (cancer voxels=0  max_prob=0.215)
+no resampling necessary
+    Depth crop: d=3:22  h0=186  w0=281
+
+  [18/252] 10113_1000113
+before crop: (3, 23, 384, 384) after crop: (3, 23, 384, 383) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 23, 384, 383)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 23, 384, 383)} 
+
+    Preprocessed shape: (3, 23, 384, 383)
+no resampling necessary
+    Predicted positive: False  (cancer voxels=0  max_prob=0.028)
+no resampling necessary
+    Depth crop: d=0:23  h0=105  w0=128
+
+  [19/252] 10114_1000114
+before crop: (3, 27, 701, 701) after crop: (3, 27, 484, 701) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 27, 484, 701)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 27, 484, 701)} 
+
+    Preprocessed shape: (3, 27, 484, 701)
+no resampling necessary
+    Predicted positive: True  (cancer voxels=3170  max_prob=0.570)
+no resampling necessary
+    Depth crop: d=2:18  h0=176  w0=290
+    Running 3D AblationCAM…
+    Target layer: Conv3d(out_channels=320)
+    Running Input Ablation…
+      ch 0: orig=0.7169 abl=0.7607 w=-0.0611
+      ch 1: orig=0.7169 abl=0.0900 w=0.8744
+      ch 2: orig=0.7169 abl=0.2159 w=0.6989
+    Saved: /cluster/home/bragehk/master/results/xai/nnunet/fold_4/10114_1000114.npz
+
+  [20/252] 10121_1000121
+before crop: (3, 27, 360, 360) after crop: (3, 27, 360, 360) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 27, 360, 360)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 27, 360, 360)} 
+
+    Preprocessed shape: (3, 27, 360, 360)
+no resampling necessary
+    Predicted positive: True  (cancer voxels=3447  max_prob=0.597)
+no resampling necessary
+    Depth crop: d=6:20  h0=110  w0=118
+    Running 3D AblationCAM…
+    Target layer: Conv3d(out_channels=320)
+    Running Input Ablation…
+      ch 0: orig=26.8525 abl=54.8621 w=-1.0431
+      ch 1: orig=26.8525 abl=13.6746 w=0.4908
+      ch 2: orig=26.8525 abl=0.2299 w=0.9914
+    Saved: /cluster/home/bragehk/master/results/xai/nnunet/fold_4/10121_1000121.npz
+
+  [21/252] 10123_1000123
+before crop: (3, 21, 384, 384) after crop: (3, 21, 384, 383) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 21, 384, 383)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 21, 384, 383)} 
+
+    Preprocessed shape: (3, 21, 384, 383)
+no resampling necessary
+    Predicted positive: False  (cancer voxels=0  max_prob=0.468)
+no resampling necessary
+    Depth crop: d=0:20  h0=122  w0=132
+
+  [22/252] 10133_1000135
+before crop: (3, 27, 701, 701) after crop: (3, 27, 483, 701) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 27, 483, 701)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 27, 483, 701)} 
+
+    Preprocessed shape: (3, 27, 483, 701)
+no resampling necessary
+    Predicted positive: True  (cancer voxels=83  max_prob=0.536)
+no resampling necessary
+    Depth crop: d=2:20  h0=166  w0=293
+    Running 3D AblationCAM…
+    Target layer: Conv3d(out_channels=320)
+    Running Input Ablation…
+      ch 0: orig=0.0048 abl=0.0091 w=-0.8836
+      ch 1: orig=0.0048 abl=0.0112 w=-1.3354
+      ch 2: orig=0.0048 abl=0.0050 w=-0.0323
+    Saved: /cluster/home/bragehk/master/results/xai/nnunet/fold_4/10133_1000135.npz
+
+  [23/252] 10137_1000139
+before crop: (3, 23, 384, 384) after crop: (3, 23, 384, 384) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 23, 384, 384)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 23, 384, 384)} 
+
+    Preprocessed shape: (3, 23, 384, 384)
+no resampling necessary
+    Predicted positive: False  (cancer voxels=0  max_prob=0.009)
+no resampling necessary
+    Depth crop: d=3:21  h0=125  w0=131
+
+  [24/252] 10139_1000141
+before crop: (3, 27, 701, 701) after crop: (3, 27, 485, 701) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 27, 485, 701)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 27, 485, 701)} 
+
+    Preprocessed shape: (3, 27, 485, 701)
+no resampling necessary
+    Predicted positive: True  (cancer voxels=5641  max_prob=0.573)
+no resampling necessary
+    Depth crop: d=7:22  h0=172  w0=281
+    Running 3D AblationCAM…
+    Target layer: Conv3d(out_channels=320)
+    Running Input Ablation…
+      ch 0: orig=0.5392 abl=0.4439 w=0.1767
+      ch 1: orig=0.5392 abl=0.6341 w=-0.1760
+      ch 2: orig=0.5392 abl=1.2063 w=-1.2374
+    Saved: /cluster/home/bragehk/master/results/xai/nnunet/fold_4/10139_1000141.npz
+
+  [25/252] 10143_1000145
+before crop: (3, 29, 384, 384) after crop: (3, 29, 384, 384) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 29, 384, 384)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 29, 384, 384)} 
+
+    Preprocessed shape: (3, 29, 384, 384)
+no resampling necessary
+    Predicted positive: False  (cancer voxels=0  max_prob=0.290)
+no resampling necessary
+    Depth crop: d=0:29  h0=121  w0=135
+
+  [26/252] 10144_1000146
+before crop: (3, 23, 384, 384) after crop: (3, 23, 384, 384) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 23, 384, 384)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 23, 384, 384)} 
+
+    Preprocessed shape: (3, 23, 384, 384)
+no resampling necessary
+    Predicted positive: False  (cancer voxels=0  max_prob=0.069)
+no resampling necessary
+    Depth crop: d=1:18  h0=151  w0=129
+
+  [27/252] 10150_1000152
+before crop: (3, 23, 384, 384) after crop: (3, 23, 384, 384) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 23, 384, 384)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 23, 384, 384)} 
+
+    Preprocessed shape: (3, 23, 384, 384)
+no resampling necessary
+    Predicted positive: False  (cancer voxels=0  max_prob=0.397)
+no resampling necessary
+    Depth crop: d=0:21  h0=139  w0=135
+
+  [28/252] 10154_1000157
+before crop: (3, 19, 384, 384) after crop: (3, 19, 384, 383) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 19, 384, 383)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 19, 384, 383)} 
+
+    Preprocessed shape: (3, 19, 384, 383)
+no resampling necessary
+    Predicted positive: True  (cancer voxels=2222  max_prob=0.620)
+no resampling necessary
+    Depth crop: d=2:18  h0=155  w0=127
+    Running 3D AblationCAM…
+    Target layer: Conv3d(out_channels=320)
+    Running Input Ablation…
+      ch 0: orig=4.4403 abl=3.0087 w=0.3224
+      ch 1: orig=4.4403 abl=0.1871 w=0.9579
+      ch 2: orig=4.4403 abl=0.1803 w=0.9594
+    Saved: /cluster/home/bragehk/master/results/xai/nnunet/fold_4/10154_1000157.npz
+
+  [29/252] 10166_1000169
+before crop: (3, 19, 384, 384) after crop: (3, 19, 384, 384) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 19, 384, 384)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 19, 384, 384)} 
+
+    Preprocessed shape: (3, 19, 384, 384)
+no resampling necessary
+    Predicted positive: False  (cancer voxels=0  max_prob=0.024)
+no resampling necessary
+    Depth crop: d=1:16  h0=123  w0=129
+
+  [30/252] 10175_1000178
+before crop: (3, 23, 384, 384) after crop: (3, 23, 384, 384) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 23, 384, 384)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 23, 384, 384)} 
+
+    Preprocessed shape: (3, 23, 384, 384)
+no resampling necessary
+    Predicted positive: False  (cancer voxels=0  max_prob=0.419)
+no resampling necessary
+    Depth crop: d=2:20  h0=113  w0=143
+
+  [31/252] 10176_1000179
+before crop: (3, 25, 384, 384) after crop: (3, 25, 384, 384) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 25, 384, 384)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 25, 384, 384)} 
+
+    Preprocessed shape: (3, 25, 384, 384)
+no resampling necessary
+    Predicted positive: False  (cancer voxels=0  max_prob=0.363)
+no resampling necessary
+    Depth crop: d=3:20  h0=131  w0=115
+
+  [32/252] 10179_1000182
+before crop: (3, 26, 384, 384) after crop: (3, 26, 384, 384) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 26, 384, 384)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 26, 384, 384)} 
+
+    Preprocessed shape: (3, 26, 384, 384)
+no resampling necessary
+    Predicted positive: False  (cancer voxels=0  max_prob=0.468)
+no resampling necessary
+    Depth crop: d=3:25  h0=93  w0=124
+
+  [33/252] 10190_1000193
+before crop: (3, 19, 384, 384) after crop: (3, 19, 384, 383) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 19, 384, 383)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 19, 384, 383)} 
+
+    Preprocessed shape: (3, 19, 384, 383)
+no resampling necessary
+    Predicted positive: True  (cancer voxels=394  max_prob=0.599)
+no resampling necessary
+    Depth crop: d=0:18  h0=130  w0=133
+    Running 3D AblationCAM…
+    Target layer: Conv3d(out_channels=320)
+    Running Input Ablation…
+      ch 0: orig=18.1927 abl=1.8339 w=0.8992
+      ch 1: orig=18.1927 abl=7.4787 w=0.5889
+      ch 2: orig=18.1927 abl=0.0425 w=0.9977
+    Saved: /cluster/home/bragehk/master/results/xai/nnunet/fold_4/10190_1000193.npz
+
+  [34/252] 10194_1000198
+before crop: (3, 27, 701, 701) after crop: (3, 27, 473, 701) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 27, 473, 701)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 27, 473, 701)} 
+
+    Preprocessed shape: (3, 27, 473, 701)
+no resampling necessary
+    Predicted positive: True  (cancer voxels=3061  max_prob=0.548)
+no resampling necessary
+    Depth crop: d=2:26  h0=157  w0=291
+    Running 3D AblationCAM…
+    Target layer: Conv3d(out_channels=320)
+    Running Input Ablation…
+      ch 0: orig=1.5769 abl=1.0594 w=0.3282
+      ch 1: orig=1.5769 abl=0.1548 w=0.9018
+      ch 2: orig=1.5769 abl=0.2681 w=0.8300
+    Saved: /cluster/home/bragehk/master/results/xai/nnunet/fold_4/10194_1000198.npz
+
+  [35/252] 10203_1000207
+before crop: (3, 28, 384, 384) after crop: (3, 27, 384, 384) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 27, 384, 384)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 27, 384, 384)} 
+
+    Preprocessed shape: (3, 27, 384, 384)
+no resampling necessary
+    Predicted positive: False  (cancer voxels=0  max_prob=0.393)
+no resampling necessary
+    Depth crop: d=3:24  h0=132  w0=133
+
+  [36/252] 10207_1000211
+before crop: (3, 19, 384, 384) after crop: (3, 19, 384, 383) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 19, 384, 383)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 19, 384, 383)} 
+
+    Preprocessed shape: (3, 19, 384, 383)
+no resampling necessary
+    Predicted positive: False  (cancer voxels=0  max_prob=0.044)
+no resampling necessary
+    Depth crop: d=0:19  h0=130  w0=121
+
+  [37/252] 10210_1000214
+before crop: (3, 21, 384, 384) after crop: (3, 21, 384, 384) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 21, 384, 384)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 21, 384, 384)} 
+
+    Preprocessed shape: (3, 21, 384, 384)
+no resampling necessary
+    Predicted positive: False  (cancer voxels=0  max_prob=0.044)
+no resampling necessary
+    Depth crop: d=3:19  h0=114  w0=118
+
+  [38/252] 10215_1000219
+before crop: (3, 27, 701, 701) after crop: (3, 27, 484, 701) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 27, 484, 701)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 27, 484, 701)} 
+
+    Preprocessed shape: (3, 27, 484, 701)
+no resampling necessary
+    Predicted positive: False  (cancer voxels=0  max_prob=0.442)
+no resampling necessary
+    Depth crop: d=3:24  h0=186  w0=284
+
+  [39/252] 10216_1000220
+before crop: (3, 21, 360, 360) after crop: (3, 21, 360, 359) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 21, 360, 359)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 21, 360, 359)} 
+
+    Preprocessed shape: (3, 21, 360, 359)
+no resampling necessary
+    Predicted positive: True  (cancer voxels=1625  max_prob=0.683)
+no resampling necessary
+    Depth crop: d=1:19  h0=116  w0=122
+    Running 3D AblationCAM…
+    Target layer: Conv3d(out_channels=320)
+    Running Input Ablation…
+      ch 0: orig=84.2243 abl=8.5112 w=0.8989
+      ch 1: orig=84.2243 abl=374.2061 w=-3.4430
+      ch 2: orig=84.2243 abl=2.0539 w=0.9756
+    Saved: /cluster/home/bragehk/master/results/xai/nnunet/fold_4/10216_1000220.npz
+
+  [40/252] 10221_1000225
+before crop: (3, 29, 440, 440) after crop: (3, 29, 439, 439) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 29, 439, 439)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 29, 439, 439)} 
+
+    Preprocessed shape: (3, 29, 439, 439)
+no resampling necessary
+    Predicted positive: True  (cancer voxels=136  max_prob=0.600)
+no resampling necessary
+    Depth crop: d=5:25  h0=124  w0=164
+    Running 3D AblationCAM…
+    Target layer: Conv3d(out_channels=320)
+    Running Input Ablation…
+      ch 0: orig=46.3001 abl=38.9060 w=0.1597
+      ch 1: orig=46.3001 abl=0.0206 w=0.9996
+      ch 2: orig=46.3001 abl=0.0061 w=0.9999
+    Saved: /cluster/home/bragehk/master/results/xai/nnunet/fold_4/10221_1000225.npz
+
+  [41/252] 10244_1000248
+before crop: (3, 30, 360, 360) after crop: (3, 30, 360, 360) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 30, 360, 360)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 30, 360, 360)} 
+
+    Preprocessed shape: (3, 30, 360, 360)
+no resampling necessary
+    Predicted positive: True  (cancer voxels=194  max_prob=0.595)
+no resampling necessary
+    Depth crop: d=3:22  h0=94  w0=122
+    Running 3D AblationCAM…
+    Target layer: Conv3d(out_channels=320)
+    Running Input Ablation…
+      ch 0: orig=5.4905 abl=2.6261 w=0.5217
+      ch 1: orig=5.4905 abl=0.7795 w=0.8580
+      ch 2: orig=5.4905 abl=0.1567 w=0.9715
+    Saved: /cluster/home/bragehk/master/results/xai/nnunet/fold_4/10244_1000248.npz
+
+  [42/252] 10251_1000255
+before crop: (3, 25, 384, 384) after crop: (3, 25, 384, 384) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 25, 384, 384)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 25, 384, 384)} 
+
+    Preprocessed shape: (3, 25, 384, 384)
+no resampling necessary
+    Predicted positive: True  (cancer voxels=349  max_prob=0.613)
+no resampling necessary
+    Depth crop: d=3:24  h0=131  w0=129
+    Running 3D AblationCAM…
+    Target layer: Conv3d(out_channels=320)
+    Running Input Ablation…
+      ch 0: orig=0.0525 abl=15.0731 w=-286.1299
+      ch 1: orig=0.0525 abl=0.0527 w=-0.0044
+      ch 2: orig=0.0525 abl=0.0902 w=-0.7180
+    Saved: /cluster/home/bragehk/master/results/xai/nnunet/fold_4/10251_1000255.npz
+
+  [43/252] 10252_1000256
+before crop: (3, 27, 701, 701) after crop: (3, 27, 474, 701) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 27, 474, 701)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 27, 474, 701)} 
+
+    Preprocessed shape: (3, 27, 474, 701)
+no resampling necessary
+    Predicted positive: True  (cancer voxels=6556  max_prob=0.707)
+no resampling necessary
+    Depth crop: d=5:21  h0=160  w0=285
+    Running 3D AblationCAM…
+    Target layer: Conv3d(out_channels=320)
+    Running Input Ablation…
+      ch 0: orig=39.8789 abl=1.8538 w=0.9535
+      ch 1: orig=39.8789 abl=3.8274 w=0.9040
+      ch 2: orig=39.8789 abl=0.7214 w=0.9819
+    Saved: /cluster/home/bragehk/master/results/xai/nnunet/fold_4/10252_1000256.npz
+
+  [44/252] 10253_1000257
+before crop: (3, 27, 701, 701) after crop: (3, 27, 483, 701) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 27, 483, 701)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 27, 483, 701)} 
+
+    Preprocessed shape: (3, 27, 483, 701)
+no resampling necessary
+    Predicted positive: True  (cancer voxels=203  max_prob=0.574)
+no resampling necessary
+    Depth crop: d=5:23  h0=146  w0=284
+    Running 3D AblationCAM…
+    Target layer: Conv3d(out_channels=320)
+    Running Input Ablation…
+      ch 0: orig=0.1765 abl=0.4749 w=-1.6911
+      ch 1: orig=0.1765 abl=0.0779 w=0.5585
+      ch 2: orig=0.1765 abl=0.0162 w=0.9084
+    Saved: /cluster/home/bragehk/master/results/xai/nnunet/fold_4/10253_1000257.npz
+
+  [45/252] 10254_1000258
+before crop: (3, 21, 384, 384) after crop: (3, 21, 384, 384) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 21, 384, 384)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 21, 384, 384)} 
+
+    Preprocessed shape: (3, 21, 384, 384)
+no resampling necessary
+    Predicted positive: False  (cancer voxels=0  max_prob=0.389)
+no resampling necessary
+    Depth crop: d=4:20  h0=104  w0=127
+
+  [46/252] 10255_1000259
+before crop: (3, 23, 384, 384) after crop: (3, 23, 384, 384) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 23, 384, 384)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 23, 384, 384)} 
+
+    Preprocessed shape: (3, 23, 384, 384)
+no resampling necessary
+    Predicted positive: False  (cancer voxels=0  max_prob=0.153)
+no resampling necessary
+    Depth crop: d=0:23  h0=127  w0=124
+
+  [47/252] 10258_1000262
+before crop: (3, 21, 360, 360) after crop: (3, 21, 360, 360) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 21, 360, 360)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 21, 360, 360)} 
+
+    Preprocessed shape: (3, 21, 360, 360)
+no resampling necessary
+    Predicted positive: True  (cancer voxels=4887  max_prob=0.648)
+no resampling necessary
+    Depth crop: d=1:21  h0=121  w0=105
+    Running 3D AblationCAM…
+    Target layer: Conv3d(out_channels=320)
+    Running Input Ablation…
+      ch 0: orig=0.5287 abl=0.5779 w=-0.0930
+      ch 1: orig=0.5287 abl=8.9754 w=-15.9754
+      ch 2: orig=0.5287 abl=0.6474 w=-0.2245
+    Saved: /cluster/home/bragehk/master/results/xai/nnunet/fold_4/10258_1000262.npz
+
+  [48/252] 10261_1000265
+before crop: (3, 19, 384, 384) after crop: (3, 19, 384, 383) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 19, 384, 383)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 19, 384, 383)} 
+
+    Preprocessed shape: (3, 19, 384, 383)
+no resampling necessary
+    Predicted positive: False  (cancer voxels=0  max_prob=0.420)
+no resampling necessary
+    Depth crop: d=2:19  h0=135  w0=117
+
+  [49/252] 10262_1000266
+before crop: (3, 22, 360, 360) after crop: (3, 22, 360, 360) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 22, 360, 360)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 22, 360, 360)} 
+
+    Preprocessed shape: (3, 22, 360, 360)
+no resampling necessary
+    Predicted positive: True  (cancer voxels=5169  max_prob=0.636)
+no resampling necessary
+    Depth crop: d=2:21  h0=181  w0=99
+    Running 3D AblationCAM…
+    Target layer: Conv3d(out_channels=320)
+    Running Input Ablation…
+      ch 0: orig=57.1899 abl=97.8965 w=-0.7118
+      ch 1: orig=57.1899 abl=4.5306 w=0.9208
+      ch 2: orig=57.1899 abl=0.4116 w=0.9928
+    Saved: /cluster/home/bragehk/master/results/xai/nnunet/fold_4/10262_1000266.npz
+
+  [50/252] 10267_1000271
+before crop: (3, 27, 701, 701) after crop: (3, 27, 484, 701) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 27, 484, 701)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 27, 484, 701)} 
+
+    Preprocessed shape: (3, 27, 484, 701)
+no resampling necessary
+    Predicted positive: True  (cancer voxels=739  max_prob=0.581)
+no resampling necessary
+    Depth crop: d=5:19  h0=190  w0=286
+    Running 3D AblationCAM…
+    Target layer: Conv3d(out_channels=320)
+    Running Input Ablation…
+      ch 0: orig=3.3361 abl=3.2280 w=0.0324
+      ch 1: orig=3.3361 abl=4.6703 w=-0.3999
+      ch 2: orig=3.3361 abl=0.0474 w=0.9858
+    Saved: /cluster/home/bragehk/master/results/xai/nnunet/fold_4/10267_1000271.npz
+
+  [51/252] 10275_1000280
+before crop: (3, 28, 384, 384) after crop: (3, 28, 384, 384) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 28, 384, 384)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 28, 384, 384)} 
+
+    Preprocessed shape: (3, 28, 384, 384)
+no resampling necessary
+    Predicted positive: False  (cancer voxels=0  max_prob=0.243)
+no resampling necessary
+    Depth crop: d=4:26  h0=122  w0=121
+
+  [52/252] 10278_1000283
+before crop: (3, 27, 701, 701) after crop: (3, 27, 483, 701) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 27, 483, 701)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 27, 483, 701)} 
+
+    Preprocessed shape: (3, 27, 483, 701)
+no resampling necessary
+    Predicted positive: False  (cancer voxels=0  max_prob=0.248)
+no resampling necessary
+    Depth crop: d=5:23  h0=191  w0=295
+
+  [53/252] 10284_1000290
+before crop: (3, 23, 384, 384) after crop: (3, 23, 384, 384) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 23, 384, 384)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 23, 384, 384)} 
+
+    Preprocessed shape: (3, 23, 384, 384)
+no resampling necessary
+    Predicted positive: True  (cancer voxels=87  max_prob=0.586)
+no resampling necessary
+    Depth crop: d=1:21  h0=130  w0=133
+    Running 3D AblationCAM…
+    Target layer: Conv3d(out_channels=320)
+    Running Input Ablation…
+      ch 0: orig=0.3631 abl=0.0939 w=0.7415
+      ch 1: orig=0.3631 abl=0.5678 w=-0.5636
+      ch 2: orig=0.3631 abl=0.0909 w=0.7498
+    Saved: /cluster/home/bragehk/master/results/xai/nnunet/fold_4/10284_1000290.npz
+
+  [54/252] 10286_1000292
+before crop: (3, 27, 701, 701) after crop: (3, 27, 484, 701) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 27, 484, 701)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 27, 484, 701)} 
+
+    Preprocessed shape: (3, 27, 484, 701)
+no resampling necessary
+    Predicted positive: False  (cancer voxels=0  max_prob=0.305)
+no resampling necessary
+    Depth crop: d=2:19  h0=183  w0=287
+
+  [55/252] 10289_1000295
+before crop: (3, 27, 701, 701) after crop: (3, 27, 484, 701) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 27, 484, 701)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 27, 484, 701)} 
+
+    Preprocessed shape: (3, 27, 484, 701)
+no resampling necessary
+    Predicted positive: True  (cancer voxels=2030  max_prob=0.642)
+no resampling necessary
+    Depth crop: d=3:23  h0=187  w0=279
+    Running 3D AblationCAM…
+    Target layer: Conv3d(out_channels=320)
+    Running Input Ablation…
+      ch 0: orig=194.1783 abl=134.6584 w=0.3065
+      ch 1: orig=194.1783 abl=0.2043 w=0.9989
+      ch 2: orig=194.1783 abl=0.1351 w=0.9993
+    Saved: /cluster/home/bragehk/master/results/xai/nnunet/fold_4/10289_1000295.npz
+
+  [56/252] 10292_1000298
+before crop: (3, 23, 384, 384) after crop: (3, 23, 384, 384) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 23, 384, 384)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 23, 384, 384)} 
+
+    Preprocessed shape: (3, 23, 384, 384)
+no resampling necessary
+    Predicted positive: False  (cancer voxels=0  max_prob=0.071)
+no resampling necessary
+    Depth crop: d=1:22  h0=133  w0=128
+
+  [57/252] 10295_1000301
+before crop: (3, 23, 384, 384) after crop: (3, 23, 384, 384) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 23, 384, 384)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 23, 384, 384)} 
+
+    Preprocessed shape: (3, 23, 384, 384)
+no resampling necessary
+    Predicted positive: False  (cancer voxels=0  max_prob=0.070)
+no resampling necessary
+    Depth crop: d=2:20  h0=86  w0=144
+
+  [58/252] 10299_1000305
+before crop: (3, 23, 384, 384) after crop: (3, 23, 384, 384) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 23, 384, 384)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 23, 384, 384)} 
+
+    Preprocessed shape: (3, 23, 384, 384)
+no resampling necessary
+    Predicted positive: False  (cancer voxels=0  max_prob=0.015)
+no resampling necessary
+    Depth crop: d=1:23  h0=120  w0=119
+
+  [59/252] 10304_1000310
+before crop: (3, 27, 360, 360) after crop: (3, 27, 360, 360) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 27, 360, 360)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 27, 360, 360)} 
+
+    Preprocessed shape: (3, 27, 360, 360)
+no resampling necessary
+    Predicted positive: True  (cancer voxels=709  max_prob=0.608)
+no resampling necessary
+    Depth crop: d=4:24  h0=118  w0=115
+    Running 3D AblationCAM…
+    Target layer: Conv3d(out_channels=320)
+    Running Input Ablation…
+      ch 0: orig=0.5700 abl=0.1492 w=0.7383
+      ch 1: orig=0.5700 abl=0.1134 w=0.8011
+      ch 2: orig=0.5700 abl=0.1605 w=0.7184
+    Saved: /cluster/home/bragehk/master/results/xai/nnunet/fold_4/10304_1000310.npz
+
+  [60/252] 10322_1000328
+before crop: (3, 19, 384, 384) after crop: (3, 19, 384, 384) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 19, 384, 384)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 19, 384, 384)} 
+
+    Preprocessed shape: (3, 19, 384, 384)
+no resampling necessary
+    Predicted positive: True  (cancer voxels=1722  max_prob=0.705)
+no resampling necessary
+    Depth crop: d=1:15  h0=165  w0=120
+    Running 3D AblationCAM…
+    Target layer: Conv3d(out_channels=320)
+    Running Input Ablation…
+      ch 0: orig=34.9762 abl=19.8591 w=0.4322
+      ch 1: orig=34.9762 abl=0.2042 w=0.9942
+      ch 2: orig=34.9762 abl=2.4954 w=0.9287
+    Saved: /cluster/home/bragehk/master/results/xai/nnunet/fold_4/10322_1000328.npz
+
+  [61/252] 10325_1000331
+before crop: (3, 23, 384, 384) after crop: (3, 23, 384, 383) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 23, 384, 383)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 23, 384, 383)} 
+
+    Preprocessed shape: (3, 23, 384, 383)
+no resampling necessary
+    Predicted positive: False  (cancer voxels=0  max_prob=0.090)
+no resampling necessary
+    Depth crop: d=1:23  h0=132  w0=118
+
+  [62/252] 10330_1000336
+before crop: (3, 27, 701, 701) after crop: (3, 27, 483, 701) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 27, 483, 701)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 27, 483, 701)} 
+
+    Preprocessed shape: (3, 27, 483, 701)
+no resampling necessary
+    Predicted positive: True  (cancer voxels=384  max_prob=0.594)
+no resampling necessary
+    Depth crop: d=2:22  h0=179  w0=290
+    Running 3D AblationCAM…
+    Target layer: Conv3d(out_channels=320)
+    Running Input Ablation…
+      ch 0: orig=7.2444 abl=38.7212 w=-4.3450
+      ch 1: orig=7.2444 abl=0.1247 w=0.9828
+      ch 2: orig=7.2444 abl=0.0306 w=0.9958
+    Saved: /cluster/home/bragehk/master/results/xai/nnunet/fold_4/10330_1000336.npz
+
+  [63/252] 10340_1000346
+before crop: (3, 23, 384, 384) after crop: (3, 23, 383, 383) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 23, 383, 383)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 23, 383, 383)} 
+
+    Preprocessed shape: (3, 23, 383, 383)
+no resampling necessary
+    Predicted positive: True  (cancer voxels=609  max_prob=0.607)
+no resampling necessary
+    Depth crop: d=5:17  h0=139  w0=125
+    Running 3D AblationCAM…
+    Target layer: Conv3d(out_channels=320)
+    Running Input Ablation…
+      ch 0: orig=12.0720 abl=6.4140 w=0.4687
+      ch 1: orig=12.0720 abl=0.1280 w=0.9894
+      ch 2: orig=12.0720 abl=0.1144 w=0.9905
+    Saved: /cluster/home/bragehk/master/results/xai/nnunet/fold_4/10340_1000346.npz
+
+  [64/252] 10344_1000350
+before crop: (3, 27, 701, 701) after crop: (3, 27, 484, 701) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 27, 484, 701)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 27, 484, 701)} 
+
+    Preprocessed shape: (3, 27, 484, 701)
+no resampling necessary
+    Predicted positive: True  (cancer voxels=203  max_prob=0.567)
+no resampling necessary
+    Depth crop: d=4:19  h0=175  w0=281
+    Running 3D AblationCAM…
+    Target layer: Conv3d(out_channels=320)
+    Running Input Ablation…
+      ch 0: orig=2.6670 abl=0.3143 w=0.8821
+      ch 1: orig=2.6670 abl=4.7977 w=-0.7989
+      ch 2: orig=2.6670 abl=0.0154 w=0.9942
+    Saved: /cluster/home/bragehk/master/results/xai/nnunet/fold_4/10344_1000350.npz
+
+  [65/252] 10346_1000352
+before crop: (3, 19, 384, 384) after crop: (3, 19, 384, 383) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 19, 384, 383)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 19, 384, 383)} 
+
+    Preprocessed shape: (3, 19, 384, 383)
+no resampling necessary
+    Predicted positive: True  (cancer voxels=122  max_prob=0.598)
+no resampling necessary
+    Depth crop: d=4:19  h0=120  w0=119
+    Running 3D AblationCAM…
+    Target layer: Conv3d(out_channels=320)
+    Running Input Ablation…
+      ch 0: orig=6.6663 abl=0.6727 w=0.8991
+      ch 1: orig=6.6663 abl=0.0161 w=0.9976
+      ch 2: orig=6.6663 abl=0.0246 w=0.9963
+    Saved: /cluster/home/bragehk/master/results/xai/nnunet/fold_4/10346_1000352.npz
+
+  [66/252] 10353_1000359
+before crop: (3, 28, 400, 400) after crop: (3, 28, 400, 400) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 28, 400, 400)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 28, 400, 400)} 
+
+    Preprocessed shape: (3, 28, 400, 400)
+no resampling necessary
+    Predicted positive: True  (cancer voxels=2618  max_prob=0.619)
+no resampling necessary
+    Depth crop: d=4:25  h0=125  w0=128
+    Running 3D AblationCAM…
+    Target layer: Conv3d(out_channels=320)
+    Running Input Ablation…
+      ch 0: orig=12.0766 abl=46.1352 w=-2.8202
+      ch 1: orig=12.0766 abl=0.3306 w=0.9726
+      ch 2: orig=12.0766 abl=0.3143 w=0.9740
+    Saved: /cluster/home/bragehk/master/results/xai/nnunet/fold_4/10353_1000359.npz
+
+  [67/252] 10355_1000361
+before crop: (3, 19, 384, 384) after crop: (3, 19, 384, 384) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 19, 384, 384)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 19, 384, 384)} 
+
+    Preprocessed shape: (3, 19, 384, 384)
+no resampling necessary
+    Predicted positive: True  (cancer voxels=1529  max_prob=0.609)
+no resampling necessary
+    Depth crop: d=3:16  h0=198  w0=127
+    Running 3D AblationCAM…
+    Target layer: Conv3d(out_channels=320)
+    Running Input Ablation…
+      ch 0: orig=29.3953 abl=26.1052 w=0.1119
+      ch 1: orig=29.3953 abl=0.2584 w=0.9912
+      ch 2: orig=29.3953 abl=0.0569 w=0.9981
+    Saved: /cluster/home/bragehk/master/results/xai/nnunet/fold_4/10355_1000361.npz
+
+  [68/252] 10361_1000367
+before crop: (3, 23, 360, 360) after crop: (3, 23, 360, 359) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 23, 360, 359)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 23, 360, 359)} 
+
+    Preprocessed shape: (3, 23, 360, 359)
+no resampling necessary
+    Predicted positive: False  (cancer voxels=0  max_prob=0.195)
+no resampling necessary
+    Depth crop: d=1:22  h0=77  w0=116
+
+  [69/252] 10364_1000370
+before crop: (3, 23, 384, 384) after crop: (3, 23, 384, 384) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 23, 384, 384)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 23, 384, 384)} 
+
+    Preprocessed shape: (3, 23, 384, 384)
+no resampling necessary
+    Predicted positive: False  (cancer voxels=0  max_prob=0.273)
+no resampling necessary
+    Depth crop: d=3:20  h0=131  w0=134
+
+  [70/252] 10381_1000387
+before crop: (3, 23, 384, 384) after crop: (3, 23, 384, 384) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 23, 384, 384)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 23, 384, 384)} 
+
+    Preprocessed shape: (3, 23, 384, 384)
+no resampling necessary
+    Predicted positive: False  (cancer voxels=0  max_prob=0.363)
+no resampling necessary
+    Depth crop: d=2:21  h0=117  w0=124
+
+  [71/252] 10383_1000389
+before crop: (3, 21, 384, 384) after crop: (3, 21, 384, 383) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 21, 384, 383)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 21, 384, 383)} 
+
+    Preprocessed shape: (3, 21, 384, 383)
+no resampling necessary
+    Predicted positive: True  (cancer voxels=1977  max_prob=0.591)
+no resampling necessary
+    Depth crop: d=2:19  h0=136  w0=114
+    Running 3D AblationCAM…
+    Target layer: Conv3d(out_channels=320)
+    Running Input Ablation…
+      ch 0: orig=0.2366 abl=0.2140 w=0.0952
+      ch 1: orig=0.2366 abl=0.2530 w=-0.0695
+      ch 2: orig=0.2366 abl=0.2379 w=-0.0056
+    Saved: /cluster/home/bragehk/master/results/xai/nnunet/fold_4/10383_1000389.npz
+
+  [72/252] 10384_1000390
+before crop: (3, 28, 384, 384) after crop: (3, 27, 384, 384) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 27, 384, 384)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 27, 384, 384)} 
+
+    Preprocessed shape: (3, 27, 384, 384)
+no resampling necessary
+    Predicted positive: False  (cancer voxels=0  max_prob=0.423)
+no resampling necessary
+    Depth crop: d=1:25  h0=118  w0=131
+
+  [73/252] 10386_1000392
+before crop: (3, 23, 384, 384) after crop: (3, 23, 384, 384) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 23, 384, 384)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 23, 384, 384)} 
+
+    Preprocessed shape: (3, 23, 384, 384)
+no resampling necessary
+    Predicted positive: False  (cancer voxels=0  max_prob=0.016)
+no resampling necessary
+    Depth crop: d=3:15  h0=120  w0=121
+
+  [74/252] 10390_1000396
+before crop: (3, 27, 701, 701) after crop: (3, 27, 486, 701) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 27, 486, 701)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 27, 486, 701)} 
+
+    Preprocessed shape: (3, 27, 486, 701)
+no resampling necessary
+    Predicted positive: True  (cancer voxels=1523  max_prob=0.642)
+no resampling necessary
+    Depth crop: d=6:21  h0=155  w0=277
+    Running 3D AblationCAM…
+    Target layer: Conv3d(out_channels=320)
+    Running Input Ablation…
+      ch 0: orig=3.2421 abl=3.4551 w=-0.0657
+      ch 1: orig=3.2421 abl=0.0960 w=0.9704
+      ch 2: orig=3.2421 abl=0.1787 w=0.9449
+    Saved: /cluster/home/bragehk/master/results/xai/nnunet/fold_4/10390_1000396.npz
+
+  [75/252] 10403_1000409
+before crop: (3, 23, 384, 384) after crop: (3, 23, 384, 384) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 23, 384, 384)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 23, 384, 384)} 
+
+    Preprocessed shape: (3, 23, 384, 384)
+no resampling necessary
+    Predicted positive: True  (cancer voxels=1210  max_prob=0.615)
+no resampling necessary
+    Depth crop: d=2:19  h0=134  w0=130
+    Running 3D AblationCAM…
+    Target layer: Conv3d(out_channels=320)
+    Running Input Ablation…
+      ch 0: orig=2.3595 abl=3.2982 w=-0.3978
+      ch 1: orig=2.3595 abl=0.5562 w=0.7642
+      ch 2: orig=2.3595 abl=0.1775 w=0.9248
+    Saved: /cluster/home/bragehk/master/results/xai/nnunet/fold_4/10403_1000409.npz
+
+  [76/252] 10407_1000414
+before crop: (3, 23, 384, 384) after crop: (3, 23, 384, 383) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 23, 384, 383)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 23, 384, 383)} 
+
+    Preprocessed shape: (3, 23, 384, 383)
+no resampling necessary
+    Predicted positive: True  (cancer voxels=1  max_prob=0.500)
+no resampling necessary
+    Depth crop: d=0:22  h0=139  w0=126
+    Running 3D AblationCAM…
+    Target layer: Conv3d(out_channels=320)
+    Running Input Ablation…
+      ch 0: orig=0.0755 abl=0.0053 w=0.9295
+      ch 1: orig=0.0755 abl=0.0023 w=0.9700
+      ch 2: orig=0.0755 abl=0.0035 w=0.9540
+    Saved: /cluster/home/bragehk/master/results/xai/nnunet/fold_4/10407_1000414.npz
+
+  [77/252] 10411_1000418
+before crop: (3, 27, 384, 384) after crop: (3, 27, 384, 384) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 27, 384, 384)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 27, 384, 384)} 
+
+    Preprocessed shape: (3, 27, 384, 384)
+no resampling necessary
+    Predicted positive: False  (cancer voxels=0  max_prob=0.176)
+no resampling necessary
+    Depth crop: d=1:26  h0=128  w0=125
+
+  [78/252] 10415_1000422
+before crop: (3, 24, 384, 384) after crop: (3, 24, 384, 384) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 24, 384, 384)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 24, 384, 384)} 
+
+    Preprocessed shape: (3, 24, 384, 384)
+no resampling necessary
+    Predicted positive: False  (cancer voxels=0  max_prob=0.138)
+no resampling necessary
+    Depth crop: d=4:23  h0=101  w0=126
+
+  [79/252] 10419_1000427
+before crop: (3, 23, 384, 384) after crop: (3, 23, 384, 384) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 23, 384, 384)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 23, 384, 384)} 
+
+    Preprocessed shape: (3, 23, 384, 384)
+no resampling necessary
+    Predicted positive: True  (cancer voxels=63  max_prob=0.583)
+no resampling necessary
+    Depth crop: d=2:22  h0=100  w0=128
+    Running 3D AblationCAM…
+    Target layer: Conv3d(out_channels=320)
+    Running Input Ablation…
+      ch 0: orig=17.0966 abl=2.3140 w=0.8647
+      ch 1: orig=17.0966 abl=3.5790 w=0.7907
+      ch 2: orig=17.0966 abl=1.2994 w=0.9240
+    Saved: /cluster/home/bragehk/master/results/xai/nnunet/fold_4/10419_1000427.npz
+
+  [80/252] 10434_1000442
+before crop: (3, 21, 384, 384) after crop: (3, 21, 384, 384) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 21, 384, 384)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 21, 384, 384)} 
+
+    Preprocessed shape: (3, 21, 384, 384)
+no resampling necessary
+    Predicted positive: True  (cancer voxels=2967  max_prob=0.672)
+no resampling necessary
+    Depth crop: d=3:18  h0=131  w0=105
+    Running 3D AblationCAM…
+    Target layer: Conv3d(out_channels=320)
+    Running Input Ablation…
+      ch 0: orig=21.3374 abl=89.4952 w=-3.1943
+      ch 1: orig=21.3374 abl=0.4758 w=0.9777
+      ch 2: orig=21.3374 abl=0.5496 w=0.9742
+    Saved: /cluster/home/bragehk/master/results/xai/nnunet/fold_4/10434_1000442.npz
+
+  [81/252] 10440_1000448
+before crop: (3, 23, 384, 384) after crop: (3, 23, 384, 384) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 23, 384, 384)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 23, 384, 384)} 
+
+    Preprocessed shape: (3, 23, 384, 384)
+no resampling necessary
+    Predicted positive: False  (cancer voxels=0  max_prob=0.166)
+no resampling necessary
+    Depth crop: d=4:20  h0=121  w0=120
+
+  [82/252] 10445_1000453
+before crop: (3, 23, 384, 384) after crop: (3, 23, 384, 384) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 23, 384, 384)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 23, 384, 384)} 
+
+    Preprocessed shape: (3, 23, 384, 384)
+no resampling necessary
+    Predicted positive: False  (cancer voxels=0  max_prob=0.042)
+no resampling necessary
+    Depth crop: d=1:22  h0=138  w0=123
+
+  [83/252] 10447_1000455
+before crop: (3, 27, 701, 701) after crop: (3, 27, 484, 701) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 27, 484, 701)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 27, 484, 701)} 
+
+    Preprocessed shape: (3, 27, 484, 701)
+no resampling necessary
+    Predicted positive: True  (cancer voxels=230  max_prob=0.552)
+no resampling necessary
+    Depth crop: d=2:17  h0=181  w0=283
+    Running 3D AblationCAM…
+    Target layer: Conv3d(out_channels=320)
+    Running Input Ablation…
+      ch 0: orig=0.0000 abl=0.0000 w=0.0000
+      ch 1: orig=0.0000 abl=0.0000 w=0.0000
+      ch 2: orig=0.0000 abl=0.0000 w=0.0000
+    Saved: /cluster/home/bragehk/master/results/xai/nnunet/fold_4/10447_1000455.npz
+
+  [84/252] 10451_1000459
+before crop: (3, 19, 384, 384) after crop: (3, 19, 384, 383) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 19, 384, 383)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 19, 384, 383)} 
+
+    Preprocessed shape: (3, 19, 384, 383)
+no resampling necessary
+    Predicted positive: False  (cancer voxels=0  max_prob=0.089)
+no resampling necessary
+    Depth crop: d=2:19  h0=105  w0=123
+
+  [85/252] 10455_1000463
+before crop: (3, 23, 384, 384) after crop: (3, 23, 384, 383) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 23, 384, 383)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 23, 384, 383)} 
+
+    Preprocessed shape: (3, 23, 384, 383)
+no resampling necessary
+    Predicted positive: False  (cancer voxels=0  max_prob=0.088)
+no resampling necessary
+    Depth crop: d=4:21  h0=128  w0=123
+
+  [86/252] 10457_1000465
+before crop: (3, 30, 701, 701) after crop: (3, 30, 484, 701) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 30, 484, 701)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 30, 484, 701)} 
+
+    Preprocessed shape: (3, 30, 484, 701)
+no resampling necessary
+    Predicted positive: False  (cancer voxels=0  max_prob=0.389)
+no resampling necessary
+    Depth crop: d=4:29  h0=176  w0=288
+
+  [87/252] 10470_1000478
+before crop: (3, 19, 384, 384) after crop: (3, 19, 384, 384) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 19, 384, 384)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 19, 384, 384)} 
+
+    Preprocessed shape: (3, 19, 384, 384)
+no resampling necessary
+    Predicted positive: True  (cancer voxels=319  max_prob=0.658)
+no resampling necessary
+    Depth crop: d=2:19  h0=141  w0=128
+    Running 3D AblationCAM…
+    Target layer: Conv3d(out_channels=320)
+    Running Input Ablation…
+      ch 0: orig=19.9286 abl=2.9215 w=0.8534
+      ch 1: orig=19.9286 abl=0.0184 w=0.9991
+      ch 2: orig=19.9286 abl=8.6266 w=0.5671
+    Saved: /cluster/home/bragehk/master/results/xai/nnunet/fold_4/10470_1000478.npz
+
+  [88/252] 10475_1000483
+before crop: (3, 32, 384, 384) after crop: (3, 32, 384, 384) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 32, 384, 384)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 32, 384, 384)} 
+
+    Preprocessed shape: (3, 32, 384, 384)
+no resampling necessary
+    Predicted positive: False  (cancer voxels=0  max_prob=0.034)
+no resampling necessary
+    Depth crop: d=1:31  h0=133  w0=129
+
+  [89/252] 10478_1000486
+before crop: (3, 28, 400, 400) after crop: (3, 28, 400, 400) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 28, 400, 400)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 28, 400, 400)} 
+
+    Preprocessed shape: (3, 28, 400, 400)
+no resampling necessary
+    Predicted positive: True  (cancer voxels=1097  max_prob=0.677)
+no resampling necessary
+    Depth crop: d=5:24  h0=135  w0=130
+    Running 3D AblationCAM…
+    Target layer: Conv3d(out_channels=320)
+    Running Input Ablation…
+      ch 0: orig=7.2459 abl=0.2745 w=0.9621
+      ch 1: orig=7.2459 abl=0.1224 w=0.9831
+      ch 2: orig=7.2459 abl=0.5543 w=0.9235
+    Saved: /cluster/home/bragehk/master/results/xai/nnunet/fold_4/10478_1000486.npz
+
+  [90/252] 10480_1000488
+before crop: (3, 21, 384, 384) after crop: (3, 21, 384, 384) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 21, 384, 384)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 21, 384, 384)} 
+
+    Preprocessed shape: (3, 21, 384, 384)
+no resampling necessary
+    Predicted positive: False  (cancer voxels=0  max_prob=0.371)
+no resampling necessary
+    Depth crop: d=1:18  h0=129  w0=122
+
+  [91/252] 10482_1000490
+before crop: (3, 27, 701, 701) after crop: (3, 27, 483, 701) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 27, 483, 701)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 27, 483, 701)} 
+
+    Preprocessed shape: (3, 27, 483, 701)
+no resampling necessary
+    Predicted positive: True  (cancer voxels=610  max_prob=0.601)
+no resampling necessary
+    Depth crop: d=8:26  h0=182  w0=290
+    Running 3D AblationCAM…
+    Target layer: Conv3d(out_channels=320)
+    Running Input Ablation…
+      ch 0: orig=7.7281 abl=4.8499 w=0.3724
+      ch 1: orig=7.7281 abl=2.7680 w=0.6418
+      ch 2: orig=7.7281 abl=0.0304 w=0.9961
+    Saved: /cluster/home/bragehk/master/results/xai/nnunet/fold_4/10482_1000490.npz
+
+  [92/252] 10483_1000491
+before crop: (3, 19, 384, 384) after crop: (3, 19, 384, 384) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 19, 384, 384)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 19, 384, 384)} 
+
+    Preprocessed shape: (3, 19, 384, 384)
+no resampling necessary
+    Predicted positive: True  (cancer voxels=6352  max_prob=0.598)
+no resampling necessary
+    Depth crop: d=3:19  h0=203  w0=83
+    Running 3D AblationCAM…
+    Target layer: Conv3d(out_channels=320)
+    Running Input Ablation…
+      ch 0: orig=53.4881 abl=26.3120 w=0.5081
+      ch 1: orig=53.4881 abl=9.5514 w=0.8214
+      ch 2: orig=53.4881 abl=0.6517 w=0.9878
+    Saved: /cluster/home/bragehk/master/results/xai/nnunet/fold_4/10483_1000491.npz
+
+  [93/252] 10485_1000493
+before crop: (3, 19, 360, 360) after crop: (3, 19, 360, 359) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 19, 360, 359)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 19, 360, 359)} 
+
+    Preprocessed shape: (3, 19, 360, 359)
+no resampling necessary
+    Predicted positive: True  (cancer voxels=1196  max_prob=0.646)
+no resampling necessary
+    Depth crop: d=2:17  h0=122  w0=116
+    Running 3D AblationCAM…
+    Target layer: Conv3d(out_channels=320)
+    Running Input Ablation…
+      ch 0: orig=1.1730 abl=0.7528 w=0.3583
+      ch 1: orig=1.1730 abl=3.2009 w=-1.7287
+      ch 2: orig=1.1730 abl=0.1300 w=0.8892
+    Saved: /cluster/home/bragehk/master/results/xai/nnunet/fold_4/10485_1000493.npz
+
+  [94/252] 10486_1000494
+before crop: (3, 27, 701, 701) after crop: (3, 27, 484, 701) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 27, 484, 701)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 27, 484, 701)} 
+
+    Preprocessed shape: (3, 27, 484, 701)
+no resampling necessary
+    Predicted positive: True  (cancer voxels=231  max_prob=0.585)
+no resampling necessary
+    Depth crop: d=6:25  h0=187  w0=283
+    Running 3D AblationCAM…
+    Target layer: Conv3d(out_channels=320)
+    Running Input Ablation…
+      ch 0: orig=4.5428 abl=0.1173 w=0.9742
+      ch 1: orig=4.5428 abl=0.0051 w=0.9989
+      ch 2: orig=4.5428 abl=0.0443 w=0.9903
+    Saved: /cluster/home/bragehk/master/results/xai/nnunet/fold_4/10486_1000494.npz
+
+  [95/252] 10527_1000537
+before crop: (3, 29, 440, 440) after crop: (3, 29, 439, 439) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 29, 439, 439)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 29, 439, 439)} 
+
+    Preprocessed shape: (3, 29, 439, 439)
+no resampling necessary
+    Predicted positive: True  (cancer voxels=33  max_prob=0.539)
+no resampling necessary
+    Depth crop: d=5:23  h0=173  w0=156
+    Running 3D AblationCAM…
+    Target layer: Conv3d(out_channels=320)
+    Running Input Ablation…
+      ch 0: orig=1.2168 abl=0.1890 w=0.8447
+      ch 1: orig=1.2168 abl=0.2261 w=0.8142
+      ch 2: orig=1.2168 abl=0.0048 w=0.9960
+    Saved: /cluster/home/bragehk/master/results/xai/nnunet/fold_4/10527_1000537.npz
+
+  [96/252] 10534_1000544
+before crop: (3, 21, 384, 384) after crop: (3, 21, 384, 384) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 21, 384, 384)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 21, 384, 384)} 
+
+    Preprocessed shape: (3, 21, 384, 384)
+no resampling necessary
+    Predicted positive: False  (cancer voxels=0  max_prob=0.028)
+no resampling necessary
+    Depth crop: d=4:20  h0=118  w0=140
+
+  [97/252] 10544_1000555
+before crop: (3, 21, 384, 384) after crop: (3, 21, 384, 384) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 21, 384, 384)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 21, 384, 384)} 
+
+    Preprocessed shape: (3, 21, 384, 384)
+no resampling necessary
+    Predicted positive: True  (cancer voxels=1553  max_prob=0.573)
+no resampling necessary
+    Depth crop: d=2:16  h0=92  w0=123
+    Running 3D AblationCAM…
+    Target layer: Conv3d(out_channels=320)
+    Running Input Ablation…
+      ch 0: orig=0.1851 abl=0.4563 w=-1.4647
+      ch 1: orig=0.1851 abl=10.5155 w=-55.7972
+      ch 2: orig=0.1851 abl=0.0856 w=0.5378
+    Saved: /cluster/home/bragehk/master/results/xai/nnunet/fold_4/10544_1000555.npz
+
+  [98/252] 10557_1000569
+before crop: (3, 27, 360, 360) after crop: (3, 27, 360, 360) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 27, 360, 360)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 27, 360, 360)} 
+
+    Preprocessed shape: (3, 27, 360, 360)
+no resampling necessary
+    Predicted positive: False  (cancer voxels=0  max_prob=0.227)
+no resampling necessary
+    Depth crop: d=5:23  h0=116  w0=115
+
+  [99/252] 10561_1000573
+before crop: (3, 25, 384, 384) after crop: (3, 25, 384, 384) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 25, 384, 384)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 25, 384, 384)} 
+
+    Preprocessed shape: (3, 25, 384, 384)
+no resampling necessary
+    Predicted positive: False  (cancer voxels=0  max_prob=0.097)
+no resampling necessary
+    Depth crop: d=2:25  h0=130  w0=126
+
+  [100/252] 10564_1000576
+before crop: (3, 20, 384, 384) after crop: (3, 20, 384, 383) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 20, 384, 383)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 20, 384, 383)} 
+
+    Preprocessed shape: (3, 20, 384, 383)
+no resampling necessary
+    Predicted positive: False  (cancer voxels=0  max_prob=0.145)
+no resampling necessary
+    Depth crop: d=2:19  h0=123  w0=128
+
+  [101/252] 10566_1000578
+before crop: (3, 19, 384, 384) after crop: (3, 19, 384, 383) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 19, 384, 383)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 19, 384, 383)} 
+
+    Preprocessed shape: (3, 19, 384, 383)
+no resampling necessary
+    Predicted positive: True  (cancer voxels=10226  max_prob=0.597)
+no resampling necessary
+    Depth crop: d=2:17  h0=142  w0=129
+    Running 3D AblationCAM…
+    Target layer: Conv3d(out_channels=320)
+    Running Input Ablation…
+      ch 0: orig=37.6409 abl=61.6478 w=-0.6378
+      ch 1: orig=37.6409 abl=27.8145 w=0.2611
+      ch 2: orig=37.6409 abl=6.5404 w=0.8262
+    Saved: /cluster/home/bragehk/master/results/xai/nnunet/fold_4/10566_1000578.npz
+
+  [102/252] 10569_1000581
+before crop: (3, 30, 701, 701) after crop: (3, 30, 481, 701) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 30, 481, 701)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 30, 481, 701)} 
+
+    Preprocessed shape: (3, 30, 481, 701)
+no resampling necessary
+    Predicted positive: False  (cancer voxels=0  max_prob=0.447)
+no resampling necessary
+    Depth crop: d=5:26  h0=175  w0=280
+
+  [103/252] 10578_1000591
+before crop: (3, 21, 384, 384) after crop: (3, 21, 384, 384) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 21, 384, 384)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 21, 384, 384)} 
+
+    Preprocessed shape: (3, 21, 384, 384)
+no resampling necessary
+    Predicted positive: False  (cancer voxels=0  max_prob=0.327)
+no resampling necessary
+    Depth crop: d=3:21  h0=133  w0=134
+
+  [104/252] 10589_1000603
+before crop: (3, 27, 701, 701) after crop: (3, 27, 489, 701) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 27, 489, 701)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 27, 489, 701)} 
+
+    Preprocessed shape: (3, 27, 489, 701)
+no resampling necessary
+    Predicted positive: True  (cancer voxels=3021  max_prob=0.693)
+no resampling necessary
+    Depth crop: d=5:22  h0=178  w0=290
+    Running 3D AblationCAM…
+    Target layer: Conv3d(out_channels=320)
+    Running Input Ablation…
+      ch 0: orig=148.8607 abl=487.7473 w=-2.2765
+      ch 1: orig=148.8607 abl=1.2924 w=0.9913
+      ch 2: orig=148.8607 abl=0.7425 w=0.9950
+    Saved: /cluster/home/bragehk/master/results/xai/nnunet/fold_4/10589_1000603.npz
+
+  [105/252] 10596_1000610
+before crop: (3, 25, 384, 384) after crop: (3, 25, 384, 384) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 25, 384, 384)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 25, 384, 384)} 
+
+    Preprocessed shape: (3, 25, 384, 384)
+no resampling necessary
+    Predicted positive: False  (cancer voxels=0  max_prob=0.253)
+no resampling necessary
+    Depth crop: d=2:22  h0=110  w0=111
+
+  [106/252] 10616_1000630
+before crop: (3, 21, 384, 384) after crop: (3, 21, 384, 383) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 21, 384, 383)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 21, 384, 383)} 
+
+    Preprocessed shape: (3, 21, 384, 383)
+no resampling necessary
+    Predicted positive: False  (cancer voxels=0  max_prob=0.495)
+no resampling necessary
+    Depth crop: d=3:21  h0=124  w0=130
+
+  [107/252] 10619_1000633
+before crop: (3, 27, 701, 701) after crop: (3, 27, 483, 701) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 27, 483, 701)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 27, 483, 701)} 
+
+    Preprocessed shape: (3, 27, 483, 701)
+no resampling necessary
+    Predicted positive: False  (cancer voxels=0  max_prob=0.243)
+no resampling necessary
+    Depth crop: d=3:24  h0=183  w0=288
+
+  [108/252] 10627_1000641
+before crop: (3, 27, 701, 701) after crop: (3, 27, 473, 701) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 27, 473, 701)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 27, 473, 701)} 
+
+    Preprocessed shape: (3, 27, 473, 701)
+no resampling necessary
+    Predicted positive: False  (cancer voxels=0  max_prob=0.479)
+no resampling necessary
+    Depth crop: d=4:20  h0=154  w0=290
+
+  [109/252] 10637_1000653
+before crop: (3, 27, 360, 360) after crop: (3, 27, 360, 360) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 27, 360, 360)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 27, 360, 360)} 
+
+    Preprocessed shape: (3, 27, 360, 360)
+no resampling necessary
+    Predicted positive: True  (cancer voxels=554  max_prob=0.577)
+no resampling necessary
+    Depth crop: d=7:24  h0=106  w0=116
+    Running 3D AblationCAM…
+    Target layer: Conv3d(out_channels=320)
+    Running Input Ablation…
+      ch 0: orig=2.0273 abl=0.7657 w=0.6223
+      ch 1: orig=2.0273 abl=0.1104 w=0.9456
+      ch 2: orig=2.0273 abl=0.0261 w=0.9871
+    Saved: /cluster/home/bragehk/master/results/xai/nnunet/fold_4/10637_1000653.npz
+
+  [110/252] 10641_1000657
+before crop: (3, 19, 384, 384) after crop: (3, 19, 384, 383) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 19, 384, 383)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 19, 384, 383)} 
+
+    Preprocessed shape: (3, 19, 384, 383)
+no resampling necessary
+    Predicted positive: True  (cancer voxels=1323  max_prob=0.630)
+no resampling necessary
+    Depth crop: d=1:15  h0=150  w0=128
+    Running 3D AblationCAM…
+    Target layer: Conv3d(out_channels=320)
+    Running Input Ablation…
+      ch 0: orig=3.2179 abl=10.8493 w=-2.3715
+      ch 1: orig=3.2179 abl=0.2271 w=0.9294
+      ch 2: orig=3.2179 abl=0.1841 w=0.9428
+    Saved: /cluster/home/bragehk/master/results/xai/nnunet/fold_4/10641_1000657.npz
+
+  [111/252] 10645_1000661
+before crop: (3, 27, 360, 360) after crop: (3, 27, 360, 360) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 27, 360, 360)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 27, 360, 360)} 
+
+    Preprocessed shape: (3, 27, 360, 360)
+no resampling necessary
+    Predicted positive: True  (cancer voxels=114  max_prob=0.561)
+no resampling necessary
+    Depth crop: d=2:22  h0=115  w0=113
+    Running 3D AblationCAM…
+    Target layer: Conv3d(out_channels=320)
+    Running Input Ablation…
+      ch 0: orig=0.7880 abl=0.5895 w=0.2519
+      ch 1: orig=0.7880 abl=0.0137 w=0.9826
+      ch 2: orig=0.7880 abl=0.0064 w=0.9918
+    Saved: /cluster/home/bragehk/master/results/xai/nnunet/fold_4/10645_1000661.npz
+
+  [112/252] 10646_1000662
+before crop: (3, 27, 360, 360) after crop: (3, 27, 360, 360) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 27, 360, 360)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 27, 360, 360)} 
+
+    Preprocessed shape: (3, 27, 360, 360)
+no resampling necessary
+    Predicted positive: True  (cancer voxels=2406  max_prob=0.608)
+no resampling necessary
+    Depth crop: d=3:21  h0=133  w0=103
+    Running 3D AblationCAM…
+    Target layer: Conv3d(out_channels=320)
+    Running Input Ablation…
+      ch 0: orig=0.9340 abl=1.9913 w=-1.1320
+      ch 1: orig=0.9340 abl=1.5473 w=-0.6566
+      ch 2: orig=0.9340 abl=0.3501 w=0.6252
+    Saved: /cluster/home/bragehk/master/results/xai/nnunet/fold_4/10646_1000662.npz
+
+  [113/252] 10654_1000670
+before crop: (3, 23, 384, 384) after crop: (3, 23, 384, 384) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 23, 384, 384)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 23, 384, 384)} 
+
+    Preprocessed shape: (3, 23, 384, 384)
+no resampling necessary
+    Predicted positive: False  (cancer voxels=0  max_prob=0.040)
+no resampling necessary
+    Depth crop: d=2:22  h0=117  w0=128
+
+  [114/252] 10668_1000684
+before crop: (3, 27, 701, 701) after crop: (3, 27, 478, 701) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 27, 478, 701)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 27, 478, 701)} 
+
+    Preprocessed shape: (3, 27, 478, 701)
+no resampling necessary
+    Predicted positive: True  (cancer voxels=3070  max_prob=0.637)
+no resampling necessary
+    Depth crop: d=3:19  h0=155  w0=275
+    Running 3D AblationCAM…
+    Target layer: Conv3d(out_channels=320)
+    Running Input Ablation…
+      ch 0: orig=1402.1965 abl=348.7049 w=0.7513
+      ch 1: orig=1402.1965 abl=278.1314 w=0.8016
+      ch 2: orig=1402.1965 abl=0.3399 w=0.9998
+    Saved: /cluster/home/bragehk/master/results/xai/nnunet/fold_4/10668_1000684.npz
+
+  [115/252] 10670_1000686
+before crop: (3, 27, 701, 701) after crop: (3, 27, 486, 701) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 27, 486, 701)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 27, 486, 701)} 
+
+    Preprocessed shape: (3, 27, 486, 701)
+no resampling necessary
+    Predicted positive: True  (cancer voxels=6372  max_prob=0.714)
+no resampling necessary
+    Depth crop: d=4:21  h0=180  w0=289
+    Running 3D AblationCAM…
+    Target layer: Conv3d(out_channels=320)
+    Running Input Ablation…
+      ch 0: orig=23.7536 abl=32.8278 w=-0.3820
+      ch 1: orig=23.7536 abl=6.8027 w=0.7136
+      ch 2: orig=23.7536 abl=1.5237 w=0.9359
+    Saved: /cluster/home/bragehk/master/results/xai/nnunet/fold_4/10670_1000686.npz
+
+  [116/252] 10676_1000692
+before crop: (3, 27, 701, 701) after crop: (3, 27, 486, 701) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 27, 486, 701)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 27, 486, 701)} 
+
+    Preprocessed shape: (3, 27, 486, 701)
+no resampling necessary
+    Predicted positive: True  (cancer voxels=26  max_prob=0.555)
+no resampling necessary
+    Depth crop: d=3:24  h0=193  w0=288
+    Running 3D AblationCAM…
+    Target layer: Conv3d(out_channels=320)
+    Running Input Ablation…
+      ch 0: orig=0.5328 abl=1.7941 w=-2.3675
+      ch 1: orig=0.5328 abl=0.0072 w=0.9864
+      ch 2: orig=0.5328 abl=0.0011 w=0.9979
+    Saved: /cluster/home/bragehk/master/results/xai/nnunet/fold_4/10676_1000692.npz
+
+  [117/252] 10678_1000694
+before crop: (3, 27, 360, 360) after crop: (3, 27, 360, 360) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 27, 360, 360)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 27, 360, 360)} 
+
+    Preprocessed shape: (3, 27, 360, 360)
+no resampling necessary
+    Predicted positive: True  (cancer voxels=99  max_prob=0.552)
+no resampling necessary
+    Depth crop: d=3:23  h0=111  w0=109
+    Running 3D AblationCAM…
+    Target layer: Conv3d(out_channels=320)
+    Running Input Ablation…
+      ch 0: orig=2.0038 abl=0.5956 w=0.7028
+      ch 1: orig=2.0038 abl=0.0098 w=0.9951
+      ch 2: orig=2.0038 abl=0.0318 w=0.9841
+    Saved: /cluster/home/bragehk/master/results/xai/nnunet/fold_4/10678_1000694.npz
+
+  [118/252] 10689_1000705
+before crop: (3, 28, 384, 384) after crop: (3, 28, 384, 384) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 28, 384, 384)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 28, 384, 384)} 
+
+    Preprocessed shape: (3, 28, 384, 384)
+no resampling necessary
+    Predicted positive: False  (cancer voxels=0  max_prob=0.221)
+no resampling necessary
+    Depth crop: d=1:25  h0=96  w0=129
+
+  [119/252] 10694_1000710
+before crop: (3, 27, 701, 701) after crop: (3, 27, 486, 701) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 27, 486, 701)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 27, 486, 701)} 
+
+    Preprocessed shape: (3, 27, 486, 701)
+no resampling necessary
+    Predicted positive: True  (cancer voxels=91  max_prob=0.527)
+no resampling necessary
+    Depth crop: d=4:22  h0=189  w0=286
+    Running 3D AblationCAM…
+    Target layer: Conv3d(out_channels=320)
+    Running Input Ablation…
+      ch 0: orig=0.8529 abl=0.1618 w=0.8103
+      ch 1: orig=0.8529 abl=0.2375 w=0.7215
+      ch 2: orig=0.8529 abl=0.0091 w=0.9893
+    Saved: /cluster/home/bragehk/master/results/xai/nnunet/fold_4/10694_1000710.npz
+
+  [120/252] 10702_1000718
+before crop: (3, 25, 384, 384) after crop: (3, 25, 384, 384) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 25, 384, 384)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 25, 384, 384)} 
+
+    Preprocessed shape: (3, 25, 384, 384)
+no resampling necessary
+    Predicted positive: False  (cancer voxels=0  max_prob=0.018)
+no resampling necessary
+    Depth crop: d=1:22  h0=133  w0=125
+
+  [121/252] 10703_1000719
+before crop: (3, 23, 384, 384) after crop: (3, 23, 384, 384) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 23, 384, 384)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 23, 384, 384)} 
+
+    Preprocessed shape: (3, 23, 384, 384)
+no resampling necessary
+    Predicted positive: False  (cancer voxels=0  max_prob=0.420)
+no resampling necessary
+    Depth crop: d=6:21  h0=126  w0=76
+
+  [122/252] 10709_1000725
+before crop: (3, 23, 384, 384) after crop: (3, 23, 384, 384) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 23, 384, 384)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 23, 384, 384)} 
+
+    Preprocessed shape: (3, 23, 384, 384)
+no resampling necessary
+    Predicted positive: False  (cancer voxels=0  max_prob=0.129)
+no resampling necessary
+    Depth crop: d=3:20  h0=89  w0=125
+
+  [123/252] 10716_1000732
+before crop: (3, 23, 384, 384) after crop: (3, 23, 384, 384) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 23, 384, 384)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 23, 384, 384)} 
+
+    Preprocessed shape: (3, 23, 384, 384)
+no resampling necessary
+    Predicted positive: False  (cancer voxels=0  max_prob=0.152)
+no resampling necessary
+    Depth crop: d=4:20  h0=132  w0=131
+
+  [124/252] 10732_1000748
+before crop: (3, 23, 384, 384) after crop: (3, 23, 384, 383) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 23, 384, 383)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 23, 384, 383)} 
+
+    Preprocessed shape: (3, 23, 384, 383)
+no resampling necessary
+    Predicted positive: False  (cancer voxels=0  max_prob=0.026)
+no resampling necessary
+    Depth crop: d=1:20  h0=147  w0=123
+
+  [125/252] 10733_1000749
+before crop: (3, 27, 384, 384) after crop: (3, 27, 384, 384) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 27, 384, 384)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 27, 384, 384)} 
+
+    Preprocessed shape: (3, 27, 384, 384)
+no resampling necessary
+    Predicted positive: True  (cancer voxels=37  max_prob=0.559)
+no resampling necessary
+    Depth crop: d=0:24  h0=144  w0=118
+    Running 3D AblationCAM…
+    Target layer: Conv3d(out_channels=320)
+    Running Input Ablation…
+      ch 0: orig=1.0869 abl=0.9160 w=0.1573
+      ch 1: orig=1.0869 abl=0.2353 w=0.7835
+      ch 2: orig=1.0869 abl=0.3181 w=0.7074
+    Saved: /cluster/home/bragehk/master/results/xai/nnunet/fold_4/10733_1000749.npz
+
+  [126/252] 10735_1000751
+before crop: (3, 27, 701, 701) after crop: (3, 27, 472, 701) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 27, 472, 701)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 27, 472, 701)} 
+
+    Preprocessed shape: (3, 27, 472, 701)
+no resampling necessary
+    Predicted positive: False  (cancer voxels=0  max_prob=0.270)
+no resampling necessary
+    Depth crop: d=4:20  h0=150  w0=291
+
+  [127/252] 10740_1000756
+before crop: (3, 21, 384, 384) after crop: (3, 21, 384, 383) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 21, 384, 383)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 21, 384, 383)} 
+
+    Preprocessed shape: (3, 21, 384, 383)
+no resampling necessary
+    Predicted positive: True  (cancer voxels=397  max_prob=0.568)
+no resampling necessary
+    Depth crop: d=5:19  h0=115  w0=130
+    Running 3D AblationCAM…
+    Target layer: Conv3d(out_channels=320)
+    Running Input Ablation…
+      ch 0: orig=0.0465 abl=0.0410 w=0.1186
+      ch 1: orig=0.0465 abl=0.0497 w=-0.0680
+      ch 2: orig=0.0465 abl=0.0198 w=0.5748
+    Saved: /cluster/home/bragehk/master/results/xai/nnunet/fold_4/10740_1000756.npz
+
+  [128/252] 10741_1000757
+before crop: (3, 27, 384, 384) after crop: (3, 27, 384, 384) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 27, 384, 384)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 27, 384, 384)} 
+
+    Preprocessed shape: (3, 27, 384, 384)
+no resampling necessary
+    Predicted positive: False  (cancer voxels=0  max_prob=0.487)
+no resampling necessary
+    Depth crop: d=1:26  h0=124  w0=129
+
+  [129/252] 10746_1000762
+before crop: (3, 21, 384, 384) after crop: (3, 21, 384, 384) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 21, 384, 384)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 21, 384, 384)} 
+
+    Preprocessed shape: (3, 21, 384, 384)
+no resampling necessary
+    Predicted positive: False  (cancer voxels=0  max_prob=0.497)
+no resampling necessary
+    Depth crop: d=2:18  h0=90  w0=91
+
+  [130/252] 10752_1000768
+before crop: (3, 19, 384, 384) after crop: (3, 19, 384, 384) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 19, 384, 384)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 19, 384, 384)} 
+
+    Preprocessed shape: (3, 19, 384, 384)
+no resampling necessary
+    Predicted positive: False  (cancer voxels=0  max_prob=0.344)
+no resampling necessary
+    Depth crop: d=2:16  h0=109  w0=128
+
+  [131/252] 10778_1000794
+before crop: (3, 23, 384, 384) after crop: (3, 23, 384, 384) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 23, 384, 384)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 23, 384, 384)} 
+
+    Preprocessed shape: (3, 23, 384, 384)
+no resampling necessary
+    Predicted positive: False  (cancer voxels=0  max_prob=0.285)
+no resampling necessary
+    Depth crop: d=2:23  h0=130  w0=131
+
+  [132/252] 10785_1000801
+before crop: (3, 24, 400, 400) after crop: (3, 24, 400, 400) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 24, 400, 400)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 24, 400, 400)} 
+
+    Preprocessed shape: (3, 24, 400, 400)
+no resampling necessary
+    Predicted positive: True  (cancer voxels=5009  max_prob=0.646)
+no resampling necessary
+    Depth crop: d=0:17  h0=131  w0=135
+    Running 3D AblationCAM…
+    Target layer: Conv3d(out_channels=320)
+    Running Input Ablation…
+      ch 0: orig=60.5918 abl=80.7226 w=-0.3322
+      ch 1: orig=60.5918 abl=0.6389 w=0.9895
+      ch 2: orig=60.5918 abl=3.6088 w=0.9404
+    Saved: /cluster/home/bragehk/master/results/xai/nnunet/fold_4/10785_1000801.npz
+
+  [133/252] 10798_1000814
+before crop: (3, 27, 701, 701) after crop: (3, 27, 481, 701) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 27, 481, 701)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 27, 481, 701)} 
+
+    Preprocessed shape: (3, 27, 481, 701)
+no resampling necessary
+    Predicted positive: True  (cancer voxels=28467  max_prob=0.610)
+no resampling necessary
+    Depth crop: d=6:23  h0=186  w0=287
+    Running 3D AblationCAM…
+    Target layer: Conv3d(out_channels=320)
+    Running Input Ablation…
+      ch 0: orig=5936.5532 abl=31.4240 w=0.9947
+      ch 1: orig=5936.5532 abl=147.0263 w=0.9752
+      ch 2: orig=5936.5532 abl=2.7347 w=0.9995
+    Saved: /cluster/home/bragehk/master/results/xai/nnunet/fold_4/10798_1000814.npz
+
+  [134/252] 10800_1000816
+before crop: (3, 23, 384, 384) after crop: (3, 23, 384, 384) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 23, 384, 384)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 23, 384, 384)} 
+
+    Preprocessed shape: (3, 23, 384, 384)
+no resampling necessary
+    Predicted positive: True  (cancer voxels=264  max_prob=0.605)
+no resampling necessary
+    Depth crop: d=2:23  h0=151  w0=124
+    Running 3D AblationCAM…
+    Target layer: Conv3d(out_channels=320)
+    Running Input Ablation…
+      ch 0: orig=20.8214 abl=13.0901 w=0.3713
+      ch 1: orig=20.8214 abl=0.5028 w=0.9759
+      ch 2: orig=20.8214 abl=0.0897 w=0.9957
+    Saved: /cluster/home/bragehk/master/results/xai/nnunet/fold_4/10800_1000816.npz
+
+  [135/252] 10808_1000824
+before crop: (3, 27, 701, 701) after crop: (3, 27, 484, 701) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 27, 484, 701)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 27, 484, 701)} 
+
+    Preprocessed shape: (3, 27, 484, 701)
+no resampling necessary
+    Predicted positive: True  (cancer voxels=88  max_prob=0.563)
+no resampling necessary
+    Depth crop: d=1:16  h0=189  w0=287
+    Running 3D AblationCAM…
+    Target layer: Conv3d(out_channels=320)
+    Running Input Ablation…
+      ch 0: orig=1.2960 abl=1.7829 w=-0.3757
+      ch 1: orig=1.2960 abl=0.0093 w=0.9928
+      ch 2: orig=1.2960 abl=0.0087 w=0.9933
+    Saved: /cluster/home/bragehk/master/results/xai/nnunet/fold_4/10808_1000824.npz
+
+  [136/252] 10812_1000828
+before crop: (3, 27, 701, 701) after crop: (3, 27, 484, 701) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 27, 484, 701)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 27, 484, 701)} 
+
+    Preprocessed shape: (3, 27, 484, 701)
+no resampling necessary
+    Predicted positive: True  (cancer voxels=4  max_prob=0.504)
+no resampling necessary
+    Depth crop: d=4:23  h0=183  w0=284
+    Running 3D AblationCAM…
+    Target layer: Conv3d(out_channels=320)
+    Running Input Ablation…
+      ch 0: orig=0.0663 abl=0.0097 w=0.8536
+      ch 1: orig=0.0663 abl=0.0005 w=0.9925
+      ch 2: orig=0.0663 abl=0.0003 w=0.9948
+    Saved: /cluster/home/bragehk/master/results/xai/nnunet/fold_4/10812_1000828.npz
+
+  [137/252] 10814_1000830
+before crop: (3, 21, 384, 384) after crop: (3, 21, 384, 384) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 21, 384, 384)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 21, 384, 384)} 
+
+    Preprocessed shape: (3, 21, 384, 384)
+no resampling necessary
+    Predicted positive: False  (cancer voxels=0  max_prob=0.104)
+no resampling necessary
+    Depth crop: d=2:19  h0=115  w0=129
+
+  [138/252] 10817_1000833
+before crop: (3, 22, 384, 384) after crop: (3, 22, 384, 383) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 22, 384, 383)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 22, 384, 383)} 
+
+    Preprocessed shape: (3, 22, 384, 383)
+no resampling necessary
+    Predicted positive: False  (cancer voxels=0  max_prob=0.179)
+no resampling necessary
+    Depth crop: d=1:18  h0=104  w0=134
+
+  [139/252] 10819_1000835
+before crop: (3, 27, 701, 701) after crop: (3, 27, 484, 701) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 27, 484, 701)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 27, 484, 701)} 
+
+    Preprocessed shape: (3, 27, 484, 701)
+no resampling necessary
+    Predicted positive: False  (cancer voxels=0  max_prob=0.296)
+no resampling necessary
+    Depth crop: d=5:22  h0=157  w0=270
+
+  [140/252] 10820_1000836
+before crop: (3, 19, 384, 384) after crop: (3, 19, 383, 383) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 19, 383, 383)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 19, 383, 383)} 
+
+    Preprocessed shape: (3, 19, 383, 383)
+no resampling necessary
+    Predicted positive: False  (cancer voxels=0  max_prob=0.214)
+no resampling necessary
+    Depth crop: d=1:19  h0=124  w0=126
+
+  [141/252] 10838_1000854
+before crop: (3, 19, 384, 384) after crop: (3, 19, 384, 384) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 19, 384, 384)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 19, 384, 384)} 
+
+    Preprocessed shape: (3, 19, 384, 384)
+no resampling necessary
+    Predicted positive: False  (cancer voxels=0  max_prob=0.015)
+no resampling necessary
+    Depth crop: d=2:17  h0=103  w0=128
+
+  [142/252] 10846_1000862
+before crop: (3, 19, 384, 384) after crop: (3, 19, 384, 383) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 19, 384, 383)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 19, 384, 383)} 
+
+    Preprocessed shape: (3, 19, 384, 383)
+no resampling necessary
+    Predicted positive: False  (cancer voxels=0  max_prob=0.376)
+no resampling necessary
+    Depth crop: d=2:19  h0=125  w0=120
+
+  [143/252] 10849_1000865
+before crop: (3, 25, 384, 384) after crop: (3, 25, 384, 384) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 25, 384, 384)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 25, 384, 384)} 
+
+    Preprocessed shape: (3, 25, 384, 384)
+no resampling necessary
+    Predicted positive: True  (cancer voxels=171  max_prob=0.613)
+no resampling necessary
+    Depth crop: d=1:20  h0=121  w0=130
+    Running 3D AblationCAM…
+    Target layer: Conv3d(out_channels=320)
+    Running Input Ablation…
+      ch 0: orig=38.4749 abl=4.5941 w=0.8806
+      ch 1: orig=38.4749 abl=0.0340 w=0.9991
+      ch 2: orig=38.4749 abl=0.0848 w=0.9978
+    Saved: /cluster/home/bragehk/master/results/xai/nnunet/fold_4/10849_1000865.npz
+
+  [144/252] 10854_1000870
+before crop: (3, 19, 384, 384) after crop: (3, 19, 384, 383) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 19, 384, 383)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 19, 384, 383)} 
+
+    Preprocessed shape: (3, 19, 384, 383)
+no resampling necessary
+    Predicted positive: True  (cancer voxels=2918  max_prob=0.620)
+no resampling necessary
+    Depth crop: d=4:18  h0=139  w0=125
+    Running 3D AblationCAM…
+    Target layer: Conv3d(out_channels=320)
+    Running Input Ablation…
+      ch 0: orig=30.5072 abl=20.3602 w=0.3326
+      ch 1: orig=30.5072 abl=4.8899 w=0.8397
+      ch 2: orig=30.5072 abl=0.2452 w=0.9920
+    Saved: /cluster/home/bragehk/master/results/xai/nnunet/fold_4/10854_1000870.npz
+
+  [145/252] 10859_1000875
+before crop: (3, 27, 701, 701) after crop: (3, 27, 484, 701) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 27, 484, 701)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 27, 484, 701)} 
+
+    Preprocessed shape: (3, 27, 484, 701)
+no resampling necessary
+    Predicted positive: False  (cancer voxels=0  max_prob=0.277)
+no resampling necessary
+    Depth crop: d=5:26  h0=191  w0=289
+
+  [146/252] 10860_1000876
+before crop: (3, 21, 384, 384) after crop: (3, 21, 384, 384) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 21, 384, 384)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 21, 384, 384)} 
+
+    Preprocessed shape: (3, 21, 384, 384)
+no resampling necessary
+    Predicted positive: False  (cancer voxels=0  max_prob=0.471)
+no resampling necessary
+    Depth crop: d=5:20  h0=112  w0=121
+
+  [147/252] 10869_1000885
+before crop: (3, 21, 384, 384) after crop: (3, 21, 384, 383) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 21, 384, 383)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 21, 384, 383)} 
+
+    Preprocessed shape: (3, 21, 384, 383)
+no resampling necessary
+    Predicted positive: True  (cancer voxels=3682  max_prob=0.672)
+no resampling necessary
+    Depth crop: d=4:20  h0=143  w0=125
+    Running 3D AblationCAM…
+    Target layer: Conv3d(out_channels=320)
+    Running Input Ablation…
+      ch 0: orig=11.6219 abl=19.4050 w=-0.6697
+      ch 1: orig=11.6219 abl=0.4605 w=0.9604
+      ch 2: orig=11.6219 abl=2.5081 w=0.7842
+    Saved: /cluster/home/bragehk/master/results/xai/nnunet/fold_4/10869_1000885.npz
+
+  [148/252] 10870_1000886
+before crop: (3, 23, 384, 384) after crop: (3, 23, 384, 384) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 23, 384, 384)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 23, 384, 384)} 
+
+    Preprocessed shape: (3, 23, 384, 384)
+no resampling necessary
+    Predicted positive: False  (cancer voxels=0  max_prob=0.184)
+no resampling necessary
+    Depth crop: d=1:23  h0=117  w0=128
+
+  [149/252] 10884_1000900
+before crop: (3, 23, 384, 384) after crop: (3, 23, 384, 384) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 23, 384, 384)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 23, 384, 384)} 
+
+    Preprocessed shape: (3, 23, 384, 384)
+no resampling necessary
+    Predicted positive: False  (cancer voxels=0  max_prob=0.019)
+no resampling necessary
+    Depth crop: d=0:20  h0=133  w0=126
+
+  [150/252] 10885_1000901
+before crop: (3, 27, 701, 701) after crop: (3, 27, 472, 701) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 27, 472, 701)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 27, 472, 701)} 
+
+    Preprocessed shape: (3, 27, 472, 701)
+no resampling necessary
+    Predicted positive: True  (cancer voxels=1312  max_prob=0.676)
+no resampling necessary
+    Depth crop: d=5:23  h0=139  w0=286
+    Running 3D AblationCAM…
+    Target layer: Conv3d(out_channels=320)
+    Running Input Ablation…
+      ch 0: orig=133.4021 abl=149.2890 w=-0.1191
+      ch 1: orig=133.4021 abl=0.2153 w=0.9984
+      ch 2: orig=133.4021 abl=0.1890 w=0.9986
+    Saved: /cluster/home/bragehk/master/results/xai/nnunet/fold_4/10885_1000901.npz
+
+  [151/252] 10886_1000902
+before crop: (3, 27, 360, 360) after crop: (3, 27, 360, 360) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 27, 360, 360)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 27, 360, 360)} 
+
+    Preprocessed shape: (3, 27, 360, 360)
+no resampling necessary
+    Predicted positive: True  (cancer voxels=311  max_prob=0.615)
+no resampling necessary
+    Depth crop: d=2:22  h0=117  w0=112
+    Running 3D AblationCAM…
+    Target layer: Conv3d(out_channels=320)
+    Running Input Ablation…
+      ch 0: orig=1.9468 abl=0.3989 w=0.7951
+      ch 1: orig=1.9468 abl=5.4649 w=-1.8072
+      ch 2: orig=1.9468 abl=0.0147 w=0.9925
+    Saved: /cluster/home/bragehk/master/results/xai/nnunet/fold_4/10886_1000902.npz
+
+  [152/252] 10896_1000912
+before crop: (3, 23, 384, 384) after crop: (3, 23, 384, 384) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 23, 384, 384)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 23, 384, 384)} 
+
+    Preprocessed shape: (3, 23, 384, 384)
+no resampling necessary
+    Predicted positive: False  (cancer voxels=0  max_prob=0.105)
+no resampling necessary
+    Depth crop: d=4:19  h0=132  w0=128
+
+  [153/252] 10897_1000913
+before crop: (3, 31, 400, 400) after crop: (3, 31, 400, 400) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 31, 400, 400)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 31, 400, 400)} 
+
+    Preprocessed shape: (3, 31, 400, 400)
+no resampling necessary
+    Predicted positive: True  (cancer voxels=468  max_prob=0.613)
+no resampling necessary
+    Depth crop: d=1:27  h0=155  w0=122
+    Running 3D AblationCAM…
+    Target layer: Conv3d(out_channels=320)
+    Running Input Ablation…
+      ch 0: orig=0.3994 abl=0.4152 w=-0.0394
+      ch 1: orig=0.3994 abl=2.1193 w=-4.3058
+      ch 2: orig=0.3994 abl=0.0133 w=0.9667
+    Saved: /cluster/home/bragehk/master/results/xai/nnunet/fold_4/10897_1000913.npz
+
+  [154/252] 10901_1000917
+before crop: (3, 27, 701, 701) after crop: (3, 27, 484, 701) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 27, 484, 701)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 27, 484, 701)} 
+
+    Preprocessed shape: (3, 27, 484, 701)
+no resampling necessary
+    Predicted positive: False  (cancer voxels=0  max_prob=0.060)
+no resampling necessary
+    Depth crop: d=1:17  h0=192  w0=293
+
+  [155/252] 10911_1000928
+before crop: (3, 23, 384, 384) after crop: (3, 23, 384, 383) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 23, 384, 383)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 23, 384, 383)} 
+
+    Preprocessed shape: (3, 23, 384, 383)
+no resampling necessary
+    Predicted positive: True  (cancer voxels=1856  max_prob=0.712)
+no resampling necessary
+    Depth crop: d=5:18  h0=115  w0=124
+    Running 3D AblationCAM…
+    Target layer: Conv3d(out_channels=320)
+    Running Input Ablation…
+      ch 0: orig=17.3429 abl=5.2532 w=0.6971
+      ch 1: orig=17.3429 abl=0.3041 w=0.9825
+      ch 2: orig=17.3429 abl=0.2667 w=0.9846
+    Saved: /cluster/home/bragehk/master/results/xai/nnunet/fold_4/10911_1000928.npz
+
+  [156/252] 10912_1000929
+before crop: (3, 28, 360, 360) after crop: (3, 28, 360, 360) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 28, 360, 360)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 28, 360, 360)} 
+
+    Preprocessed shape: (3, 28, 360, 360)
+no resampling necessary
+    Predicted positive: True  (cancer voxels=383  max_prob=0.561)
+no resampling necessary
+    Depth crop: d=3:21  h0=117  w0=114
+    Running 3D AblationCAM…
+    Target layer: Conv3d(out_channels=320)
+    Running Input Ablation…
+      ch 0: orig=12.7782 abl=11.7312 w=0.0819
+      ch 1: orig=12.7782 abl=0.0354 w=0.9972
+      ch 2: orig=12.7782 abl=0.3766 w=0.9705
+    Saved: /cluster/home/bragehk/master/results/xai/nnunet/fold_4/10912_1000929.npz
+
+  [157/252] 10915_1000932
+before crop: (3, 27, 701, 701) after crop: (3, 27, 486, 701) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 27, 486, 701)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 27, 486, 701)} 
+
+    Preprocessed shape: (3, 27, 486, 701)
+no resampling necessary
+    Predicted positive: True  (cancer voxels=14  max_prob=0.521)
+no resampling necessary
+    Depth crop: d=3:21  h0=170  w0=296
+    Running 3D AblationCAM…
+    Target layer: Conv3d(out_channels=320)
+    Running Input Ablation…
+      ch 0: orig=0.9006 abl=0.2692 w=0.7011
+      ch 1: orig=0.9006 abl=0.0228 w=0.9747
+      ch 2: orig=0.9006 abl=0.2232 w=0.7522
+    Saved: /cluster/home/bragehk/master/results/xai/nnunet/fold_4/10915_1000932.npz
+
+  [158/252] 10917_1000934
+before crop: (3, 19, 384, 384) after crop: (3, 19, 384, 383) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 19, 384, 383)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 19, 384, 383)} 
+
+    Preprocessed shape: (3, 19, 384, 383)
+no resampling necessary
+    Predicted positive: True  (cancer voxels=182  max_prob=0.576)
+no resampling necessary
+    Depth crop: d=0:19  h0=114  w0=126
+    Running 3D AblationCAM…
+    Target layer: Conv3d(out_channels=320)
+    Running Input Ablation…
+      ch 0: orig=0.0199 abl=0.0089 w=0.5540
+      ch 1: orig=0.0199 abl=0.0161 w=0.1897
+      ch 2: orig=0.0199 abl=0.0373 w=-0.8803
+    Saved: /cluster/home/bragehk/master/results/xai/nnunet/fold_4/10917_1000934.npz
+
+  [159/252] 10926_1000943
+before crop: (3, 25, 384, 384) after crop: (3, 25, 384, 384) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 25, 384, 384)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 25, 384, 384)} 
+
+    Preprocessed shape: (3, 25, 384, 384)
+no resampling necessary
+    Predicted positive: False  (cancer voxels=0  max_prob=0.123)
+no resampling necessary
+    Depth crop: d=3:22  h0=117  w0=127
+
+  [160/252] 10948_1000967
+before crop: (3, 27, 701, 701) after crop: (3, 27, 484, 701) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 27, 484, 701)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 27, 484, 701)} 
+
+    Preprocessed shape: (3, 27, 484, 701)
+no resampling necessary
+    Predicted positive: True  (cancer voxels=317  max_prob=0.563)
+no resampling necessary
+    Depth crop: d=4:23  h0=199  w0=284
+    Running 3D AblationCAM…
+    Target layer: Conv3d(out_channels=320)
+    Running Input Ablation…
+      ch 0: orig=22.7162 abl=19.8403 w=0.1266
+      ch 1: orig=22.7162 abl=0.0424 w=0.9981
+      ch 2: orig=22.7162 abl=0.2703 w=0.9881
+    Saved: /cluster/home/bragehk/master/results/xai/nnunet/fold_4/10948_1000967.npz
+
+  [161/252] 10950_1000969
+before crop: (3, 23, 384, 384) after crop: (3, 23, 384, 384) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 23, 384, 384)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 23, 384, 384)} 
+
+    Preprocessed shape: (3, 23, 384, 384)
+no resampling necessary
+    Predicted positive: False  (cancer voxels=0  max_prob=0.094)
+no resampling necessary
+    Depth crop: d=2:21  h0=122  w0=115
+
+  [162/252] 10957_1000976
+before crop: (3, 19, 384, 384) after crop: (3, 19, 383, 383) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 19, 383, 383)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 19, 383, 383)} 
+
+    Preprocessed shape: (3, 19, 383, 383)
+no resampling necessary
+    Predicted positive: True  (cancer voxels=495  max_prob=0.654)
+no resampling necessary
+    Depth crop: d=3:18  h0=109  w0=122
+    Running 3D AblationCAM…
+    Target layer: Conv3d(out_channels=320)
+    Running Input Ablation…
+      ch 0: orig=26.1908 abl=9.2712 w=0.6460
+      ch 1: orig=26.1908 abl=0.0358 w=0.9986
+      ch 2: orig=26.1908 abl=0.1181 w=0.9955
+    Saved: /cluster/home/bragehk/master/results/xai/nnunet/fold_4/10957_1000976.npz
+
+  [163/252] 10959_1000978
+before crop: (3, 21, 384, 384) after crop: (3, 21, 384, 384) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 21, 384, 384)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 21, 384, 384)} 
+
+    Preprocessed shape: (3, 21, 384, 384)
+no resampling necessary
+    Predicted positive: False  (cancer voxels=0  max_prob=0.062)
+no resampling necessary
+    Depth crop: d=2:21  h0=117  w0=127
+
+  [164/252] 10966_1000985
+before crop: (3, 27, 701, 701) after crop: (3, 27, 466, 701) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 27, 466, 701)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 27, 466, 701)} 
+
+    Preprocessed shape: (3, 27, 466, 701)
+no resampling necessary
+    Predicted positive: True  (cancer voxels=25  max_prob=0.526)
+no resampling necessary
+    Depth crop: d=4:21  h0=177  w0=281
+    Running 3D AblationCAM…
+    Target layer: Conv3d(out_channels=320)
+    Running Input Ablation…
+      ch 0: orig=0.0015 abl=0.0047 w=-2.0956
+      ch 1: orig=0.0015 abl=0.0026 w=-0.6954
+      ch 2: orig=0.0015 abl=0.0043 w=-1.7962
+    Saved: /cluster/home/bragehk/master/results/xai/nnunet/fold_4/10966_1000985.npz
+
+  [165/252] 10971_1000990
+before crop: (3, 23, 360, 360) after crop: (3, 23, 360, 360) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 23, 360, 360)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 23, 360, 360)} 
+
+    Preprocessed shape: (3, 23, 360, 360)
+no resampling necessary
+    Predicted positive: False  (cancer voxels=0  max_prob=0.284)
+no resampling necessary
+    Depth crop: d=2:20  h0=92  w0=111
+
+  [166/252] 10972_1000991
+before crop: (3, 21, 384, 384) after crop: (3, 21, 384, 384) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 21, 384, 384)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 21, 384, 384)} 
+
+    Preprocessed shape: (3, 21, 384, 384)
+no resampling necessary
+    Predicted positive: False  (cancer voxels=0  max_prob=0.103)
+no resampling necessary
+    Depth crop: d=2:21  h0=137  w0=131
+
+  [167/252] 10975_1000994
+before crop: (3, 22, 384, 384) after crop: (3, 22, 384, 383) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 22, 384, 383)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 22, 384, 383)} 
+
+    Preprocessed shape: (3, 22, 384, 383)
+no resampling necessary
+    Predicted positive: False  (cancer voxels=0  max_prob=0.282)
+no resampling necessary
+    Depth crop: d=0:22  h0=134  w0=127
+
+  [168/252] 10977_1000996
+before crop: (3, 19, 384, 384) after crop: (3, 19, 384, 384) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 19, 384, 384)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 19, 384, 384)} 
+
+    Preprocessed shape: (3, 19, 384, 384)
+no resampling necessary
+    Predicted positive: True  (cancer voxels=163  max_prob=0.617)
+no resampling necessary
+    Depth crop: d=3:18  h0=143  w0=132
+    Running 3D AblationCAM…
+    Target layer: Conv3d(out_channels=320)
+    Running Input Ablation…
+      ch 0: orig=4.3353 abl=5.0879 w=-0.1736
+      ch 1: orig=4.3353 abl=0.4512 w=0.8959
+      ch 2: orig=4.3353 abl=0.0261 w=0.9940
+    Saved: /cluster/home/bragehk/master/results/xai/nnunet/fold_4/10977_1000996.npz
+
+  [169/252] 10996_1001015
+before crop: (3, 19, 384, 384) after crop: (3, 19, 384, 383) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 19, 384, 383)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 19, 384, 383)} 
+
+    Preprocessed shape: (3, 19, 384, 383)
+no resampling necessary
+    Predicted positive: False  (cancer voxels=0  max_prob=0.145)
+no resampling necessary
+    Depth crop: d=3:18  h0=123  w0=126
+
+  [170/252] 11001_1001020
+before crop: (3, 21, 384, 384) after crop: (3, 21, 384, 384) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 21, 384, 384)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 21, 384, 384)} 
+
+    Preprocessed shape: (3, 21, 384, 384)
+no resampling necessary
+    Predicted positive: False  (cancer voxels=0  max_prob=0.037)
+no resampling necessary
+    Depth crop: d=2:20  h0=120  w0=129
+
+  [171/252] 11010_1001030
+before crop: (3, 21, 384, 384) after crop: (3, 21, 384, 384) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 21, 384, 384)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 21, 384, 384)} 
+
+    Preprocessed shape: (3, 21, 384, 384)
+no resampling necessary
+    Predicted positive: True  (cancer voxels=442  max_prob=0.568)
+no resampling necessary
+    Depth crop: d=3:19  h0=128  w0=135
+    Running 3D AblationCAM…
+    Target layer: Conv3d(out_channels=320)
+    Running Input Ablation…
+      ch 0: orig=0.1391 abl=0.1605 w=-0.1538
+      ch 1: orig=0.1391 abl=0.1233 w=0.1138
+      ch 2: orig=0.1391 abl=0.0353 w=0.7459
+    Saved: /cluster/home/bragehk/master/results/xai/nnunet/fold_4/11010_1001030.npz
+
+  [172/252] 11011_1001031
+before crop: (3, 23, 384, 384) after crop: (3, 23, 384, 384) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 23, 384, 384)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 23, 384, 384)} 
+
+    Preprocessed shape: (3, 23, 384, 384)
+no resampling necessary
+    Predicted positive: False  (cancer voxels=0  max_prob=0.424)
+no resampling necessary
+    Depth crop: d=3:19  h0=127  w0=130
+
+  [173/252] 11014_1001034
+before crop: (3, 25, 384, 384) after crop: (3, 25, 384, 384) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 25, 384, 384)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 25, 384, 384)} 
+
+    Preprocessed shape: (3, 25, 384, 384)
+no resampling necessary
+    Predicted positive: False  (cancer voxels=0  max_prob=0.265)
+no resampling necessary
+    Depth crop: d=2:24  h0=131  w0=145
+
+  [174/252] 11015_1001035
+before crop: (3, 19, 384, 384) after crop: (3, 19, 383, 384) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 19, 383, 384)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 19, 383, 384)} 
+
+    Preprocessed shape: (3, 19, 383, 384)
+no resampling necessary
+    Predicted positive: True  (cancer voxels=3969  max_prob=0.599)
+no resampling necessary
+    Depth crop: d=1:17  h0=131  w0=125
+    Running 3D AblationCAM…
+    Target layer: Conv3d(out_channels=320)
+    Running Input Ablation…
+      ch 0: orig=35.8134 abl=36.2432 w=-0.0120
+      ch 1: orig=35.8134 abl=12.3311 w=0.6557
+      ch 2: orig=35.8134 abl=1.2688 w=0.9646
+    Saved: /cluster/home/bragehk/master/results/xai/nnunet/fold_4/11015_1001035.npz
+
+  [175/252] 11024_1001044
+before crop: (3, 28, 384, 384) after crop: (3, 27, 384, 384) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 27, 384, 384)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 27, 384, 384)} 
+
+    Preprocessed shape: (3, 27, 384, 384)
+no resampling necessary
+    Predicted positive: False  (cancer voxels=0  max_prob=0.011)
+no resampling necessary
+    Depth crop: d=1:26  h0=142  w0=130
+
+  [176/252] 11028_1001048
+before crop: (3, 23, 384, 384) after crop: (3, 23, 384, 384) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 23, 384, 384)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 23, 384, 384)} 
+
+    Preprocessed shape: (3, 23, 384, 384)
+no resampling necessary
+    Predicted positive: False  (cancer voxels=0  max_prob=0.052)
+no resampling necessary
+    Depth crop: d=1:20  h0=133  w0=135
+
+  [177/252] 11029_1001049
+before crop: (3, 28, 384, 384) after crop: (3, 28, 384, 384) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 28, 384, 384)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 28, 384, 384)} 
+
+    Preprocessed shape: (3, 28, 384, 384)
+no resampling necessary
+    Predicted positive: False  (cancer voxels=0  max_prob=0.065)
+no resampling necessary
+    Depth crop: d=0:26  h0=129  w0=119
+
+  [178/252] 11030_1001050
+before crop: (3, 34, 360, 360) after crop: (3, 34, 360, 360) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 34, 360, 360)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 34, 360, 360)} 
+
+    Preprocessed shape: (3, 34, 360, 360)
+no resampling necessary
+    Predicted positive: True  (cancer voxels=1796  max_prob=0.600)
+no resampling necessary
+    Depth crop: d=4:22  h0=90  w0=120
+    Running 3D AblationCAM…
+    Target layer: Conv3d(out_channels=320)
+    Running Input Ablation…
+      ch 0: orig=0.7027 abl=0.4437 w=0.3686
+      ch 1: orig=0.7027 abl=0.3804 w=0.4586
+      ch 2: orig=0.7027 abl=0.1047 w=0.8510
+    Saved: /cluster/home/bragehk/master/results/xai/nnunet/fold_4/11030_1001050.npz
+
+  [179/252] 11046_1001066
+before crop: (3, 27, 701, 701) after crop: (3, 27, 479, 701) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 27, 479, 701)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 27, 479, 701)} 
+
+    Preprocessed shape: (3, 27, 479, 701)
+no resampling necessary
+    Predicted positive: False  (cancer voxels=0  max_prob=0.281)
+no resampling necessary
+    Depth crop: d=4:23  h0=186  w0=281
+
+  [180/252] 11049_1001069
+before crop: (3, 29, 440, 440) after crop: (3, 29, 439, 439) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 29, 439, 439)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 29, 439, 439)} 
+
+    Preprocessed shape: (3, 29, 439, 439)
+no resampling necessary
+    Predicted positive: True  (cancer voxels=389  max_prob=0.620)
+no resampling necessary
+    Depth crop: d=1:22  h0=147  w0=147
+    Running 3D AblationCAM…
+    Target layer: Conv3d(out_channels=320)
+    Running Input Ablation…
+      ch 0: orig=49.7476 abl=9.8275 w=0.8025
+      ch 1: orig=49.7476 abl=8.6449 w=0.8262
+      ch 2: orig=49.7476 abl=0.0427 w=0.9991
+    Saved: /cluster/home/bragehk/master/results/xai/nnunet/fold_4/11049_1001069.npz
+
+  [181/252] 11058_1001079
+before crop: (3, 27, 701, 701) after crop: (3, 27, 472, 701) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 27, 472, 701)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 27, 472, 701)} 
+
+    Preprocessed shape: (3, 27, 472, 701)
+no resampling necessary
+    Predicted positive: True  (cancer voxels=27  max_prob=0.563)
+no resampling necessary
+    Depth crop: d=5:22  h0=156  w0=282
+    Running 3D AblationCAM…
+    Target layer: Conv3d(out_channels=320)
+    Running Input Ablation…
+      ch 0: orig=0.0386 abl=0.0249 w=0.3560
+      ch 1: orig=0.0386 abl=0.0021 w=0.9464
+      ch 2: orig=0.0386 abl=0.0015 w=0.9607
+    Saved: /cluster/home/bragehk/master/results/xai/nnunet/fold_4/11058_1001079.npz
+
+  [182/252] 11063_1001085
+before crop: (3, 19, 384, 384) after crop: (3, 19, 384, 383) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 19, 384, 383)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 19, 384, 383)} 
+
+    Preprocessed shape: (3, 19, 384, 383)
+no resampling necessary
+    Predicted positive: True  (cancer voxels=1751  max_prob=0.671)
+no resampling necessary
+    Depth crop: d=4:18  h0=129  w0=122
+    Running 3D AblationCAM…
+    Target layer: Conv3d(out_channels=320)
+    Running Input Ablation…
+      ch 0: orig=16.9160 abl=1.7381 w=0.8972
+      ch 1: orig=16.9160 abl=0.2553 w=0.9849
+      ch 2: orig=16.9160 abl=0.2000 w=0.9882
+    Saved: /cluster/home/bragehk/master/results/xai/nnunet/fold_4/11063_1001085.npz
+
+  [183/252] 11073_1001095
+before crop: (3, 23, 384, 384) after crop: (3, 23, 384, 384) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 23, 384, 384)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 23, 384, 384)} 
+
+    Preprocessed shape: (3, 23, 384, 384)
+no resampling necessary
+    Predicted positive: True  (cancer voxels=1630  max_prob=0.590)
+no resampling necessary
+    Depth crop: d=3:21  h0=90  w0=129
+    Running 3D AblationCAM…
+    Target layer: Conv3d(out_channels=320)
+    Running Input Ablation…
+      ch 0: orig=0.6773 abl=0.4279 w=0.3682
+      ch 1: orig=0.6773 abl=0.1771 w=0.7385
+      ch 2: orig=0.6773 abl=0.1521 w=0.7754
+    Saved: /cluster/home/bragehk/master/results/xai/nnunet/fold_4/11073_1001095.npz
+
+  [184/252] 11082_1001104
+before crop: (3, 27, 360, 360) after crop: (3, 27, 360, 360) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 27, 360, 360)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 27, 360, 360)} 
+
+    Preprocessed shape: (3, 27, 360, 360)
+no resampling necessary
+    Predicted positive: False  (cancer voxels=0  max_prob=0.420)
+no resampling necessary
+    Depth crop: d=3:21  h0=124  w0=111
+
+  [185/252] 11091_1001114
+before crop: (3, 23, 384, 384) after crop: (3, 23, 384, 384) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 23, 384, 384)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 23, 384, 384)} 
+
+    Preprocessed shape: (3, 23, 384, 384)
+no resampling necessary
+    Predicted positive: False  (cancer voxels=0  max_prob=0.068)
+no resampling necessary
+    Depth crop: d=1:22  h0=126  w0=124
+
+  [186/252] 11096_1001119
+before crop: (3, 21, 384, 384) after crop: (3, 21, 384, 383) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 21, 384, 383)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 21, 384, 383)} 
+
+    Preprocessed shape: (3, 21, 384, 383)
+no resampling necessary
+    Predicted positive: True  (cancer voxels=3  max_prob=0.505)
+no resampling necessary
+    Depth crop: d=0:20  h0=128  w0=121
+    Running 3D AblationCAM…
+    Target layer: Conv3d(out_channels=320)
+    Running Input Ablation…
+      ch 0: orig=0.0005 abl=0.3629 w=-670.0287
+      ch 1: orig=0.0005 abl=0.0002 w=0.6575
+      ch 2: orig=0.0005 abl=0.0002 w=0.5866
+    Saved: /cluster/home/bragehk/master/results/xai/nnunet/fold_4/11096_1001119.npz
+
+  [187/252] 11103_1001126
+before crop: (3, 23, 384, 384) after crop: (3, 23, 384, 384) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 23, 384, 384)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 23, 384, 384)} 
+
+    Preprocessed shape: (3, 23, 384, 384)
+no resampling necessary
+    Predicted positive: False  (cancer voxels=0  max_prob=0.093)
+no resampling necessary
+    Depth crop: d=1:16  h0=145  w0=135
+
+  [188/252] 11104_1001127
+before crop: (3, 23, 384, 384) after crop: (3, 23, 384, 384) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 23, 384, 384)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 23, 384, 384)} 
+
+    Preprocessed shape: (3, 23, 384, 384)
+no resampling necessary
+    Predicted positive: True  (cancer voxels=57  max_prob=0.577)
+no resampling necessary
+    Depth crop: d=1:22  h0=127  w0=125
+    Running 3D AblationCAM…
+    Target layer: Conv3d(out_channels=320)
+    Running Input Ablation…
+      ch 0: orig=0.2307 abl=1.0438 w=-3.5239
+      ch 1: orig=0.2307 abl=0.6074 w=-1.6328
+      ch 2: orig=0.2307 abl=0.0042 w=0.9818
+    Saved: /cluster/home/bragehk/master/results/xai/nnunet/fold_4/11104_1001127.npz
+
+  [189/252] 11118_1001141
+before crop: (3, 27, 384, 384) after crop: (3, 27, 384, 384) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 27, 384, 384)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 27, 384, 384)} 
+
+    Preprocessed shape: (3, 27, 384, 384)
+no resampling necessary
+    Predicted positive: False  (cancer voxels=0  max_prob=0.102)
+no resampling necessary
+    Depth crop: d=2:26  h0=140  w0=135
+
+  [190/252] 11139_1001162
+before crop: (3, 19, 384, 384) after crop: (3, 19, 384, 384) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 19, 384, 384)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 19, 384, 384)} 
+
+    Preprocessed shape: (3, 19, 384, 384)
+no resampling necessary
+    Predicted positive: False  (cancer voxels=0  max_prob=0.403)
+no resampling necessary
+    Depth crop: d=0:19  h0=140  w0=130
+
+  [191/252] 11140_1001163
+before crop: (3, 21, 384, 384) after crop: (3, 21, 384, 384) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 21, 384, 384)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 21, 384, 384)} 
+
+    Preprocessed shape: (3, 21, 384, 384)
+no resampling necessary
+    Predicted positive: False  (cancer voxels=0  max_prob=0.134)
+no resampling necessary
+    Depth crop: d=4:21  h0=111  w0=127
+
+  [192/252] 11145_1001168
+before crop: (3, 19, 384, 384) after crop: (3, 19, 384, 384) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 19, 384, 384)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 19, 384, 384)} 
+
+    Preprocessed shape: (3, 19, 384, 384)
+no resampling necessary
+    Predicted positive: True  (cancer voxels=819  max_prob=0.576)
+no resampling necessary
+    Depth crop: d=1:19  h0=200  w0=88
+    Running 3D AblationCAM…
+    Target layer: Conv3d(out_channels=320)
+    Running Input Ablation…
+      ch 0: orig=0.1749 abl=0.1784 w=-0.0197
+      ch 1: orig=0.1749 abl=0.0819 w=0.5318
+      ch 2: orig=0.1749 abl=0.0955 w=0.4539
+    Saved: /cluster/home/bragehk/master/results/xai/nnunet/fold_4/11145_1001168.npz
+
+  [193/252] 11155_1001178
+before crop: (3, 19, 384, 384) after crop: (3, 19, 384, 383) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 19, 384, 383)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 19, 384, 383)} 
+
+    Preprocessed shape: (3, 19, 384, 383)
+no resampling necessary
+    Predicted positive: True  (cancer voxels=898  max_prob=0.631)
+no resampling necessary
+    Depth crop: d=3:19  h0=134  w0=131
+    Running 3D AblationCAM…
+    Target layer: Conv3d(out_channels=320)
+    Running Input Ablation…
+      ch 0: orig=19.3310 abl=24.4334 w=-0.2640
+      ch 1: orig=19.3310 abl=2.1370 w=0.8895
+      ch 2: orig=19.3310 abl=0.3150 w=0.9837
+    Saved: /cluster/home/bragehk/master/results/xai/nnunet/fold_4/11155_1001178.npz
+
+  [194/252] 11160_1001183
+before crop: (3, 27, 701, 701) after crop: (3, 27, 483, 701) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 27, 483, 701)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 27, 483, 701)} 
+
+    Preprocessed shape: (3, 27, 483, 701)
+no resampling necessary
+    Predicted positive: True  (cancer voxels=900  max_prob=0.544)
+no resampling necessary
+    Depth crop: d=6:24  h0=174  w0=284
+    Running 3D AblationCAM…
+    Target layer: Conv3d(out_channels=320)
+    Running Input Ablation…
+      ch 0: orig=0.0753 abl=0.0719 w=0.0453
+      ch 1: orig=0.0753 abl=0.0705 w=0.0634
+      ch 2: orig=0.0753 abl=0.0618 w=0.1790
+    Saved: /cluster/home/bragehk/master/results/xai/nnunet/fold_4/11160_1001183.npz
+
+  [195/252] 11172_1001195
+before crop: (3, 25, 384, 384) after crop: (3, 25, 384, 384) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 25, 384, 384)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 25, 384, 384)} 
+
+    Preprocessed shape: (3, 25, 384, 384)
+no resampling necessary
+    Predicted positive: False  (cancer voxels=0  max_prob=0.497)
+no resampling necessary
+    Depth crop: d=4:25  h0=103  w0=136
+
+  [196/252] 11174_1001197
+before crop: (3, 27, 701, 701) after crop: (3, 27, 486, 701) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 27, 486, 701)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 27, 486, 701)} 
+
+    Preprocessed shape: (3, 27, 486, 701)
+no resampling necessary
+    Predicted positive: True  (cancer voxels=13183  max_prob=0.661)
+no resampling necessary
+    Depth crop: d=5:25  h0=177  w0=282
+    Running 3D AblationCAM…
+    Target layer: Conv3d(out_channels=320)
+    Running Input Ablation…
+      ch 0: orig=283.7506 abl=125.0455 w=0.5593
+      ch 1: orig=283.7506 abl=43.0462 w=0.8483
+      ch 2: orig=283.7506 abl=1.0443 w=0.9963
+    Saved: /cluster/home/bragehk/master/results/xai/nnunet/fold_4/11174_1001197.npz
+
+  [197/252] 11185_1001208
+before crop: (3, 34, 360, 360) after crop: (3, 34, 360, 360) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 34, 360, 360)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 34, 360, 360)} 
+
+    Preprocessed shape: (3, 34, 360, 360)
+no resampling necessary
+    Predicted positive: True  (cancer voxels=731  max_prob=0.648)
+no resampling necessary
+    Depth crop: d=4:23  h0=127  w0=105
+    Running 3D AblationCAM…
+    Target layer: Conv3d(out_channels=320)
+    Running Input Ablation…
+      ch 0: orig=245.6131 abl=331.8886 w=-0.3513
+      ch 1: orig=245.6131 abl=7.6194 w=0.9690
+      ch 2: orig=245.6131 abl=0.3958 w=0.9984
+    Saved: /cluster/home/bragehk/master/results/xai/nnunet/fold_4/11185_1001208.npz
+
+  [198/252] 11187_1001210
+before crop: (3, 25, 384, 384) after crop: (3, 25, 384, 384) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 25, 384, 384)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 25, 384, 384)} 
+
+    Preprocessed shape: (3, 25, 384, 384)
+no resampling necessary
+    Predicted positive: False  (cancer voxels=0  max_prob=0.180)
+no resampling necessary
+    Depth crop: d=4:25  h0=142  w0=116
+
+  [199/252] 11192_1001215
+before crop: (3, 27, 701, 701) after crop: (3, 27, 484, 701) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 27, 484, 701)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 27, 484, 701)} 
+
+    Preprocessed shape: (3, 27, 484, 701)
+no resampling necessary
+    Predicted positive: True  (cancer voxels=1434  max_prob=0.547)
+no resampling necessary
+    Depth crop: d=1:17  h0=177  w0=284
+    Running 3D AblationCAM…
+    Target layer: Conv3d(out_channels=320)
+    Running Input Ablation…
+      ch 0: orig=0.1276 abl=0.1368 w=-0.0716
+      ch 1: orig=0.1276 abl=0.1015 w=0.2052
+      ch 2: orig=0.1276 abl=0.1112 w=0.1284
+    Saved: /cluster/home/bragehk/master/results/xai/nnunet/fold_4/11192_1001215.npz
+
+  [200/252] 11195_1001218
+before crop: (3, 23, 384, 384) after crop: (3, 23, 384, 384) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 23, 384, 384)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 23, 384, 384)} 
+
+    Preprocessed shape: (3, 23, 384, 384)
+no resampling necessary
+    Predicted positive: True  (cancer voxels=21  max_prob=0.550)
+no resampling necessary
+    Depth crop: d=1:23  h0=143  w0=158
+    Running 3D AblationCAM…
+    Target layer: Conv3d(out_channels=320)
+    Running Input Ablation…
+      ch 0: orig=0.0012 abl=0.0013 w=-0.1151
+      ch 1: orig=0.0012 abl=0.0006 w=0.4759
+      ch 2: orig=0.0012 abl=0.0014 w=-0.1579
+    Saved: /cluster/home/bragehk/master/results/xai/nnunet/fold_4/11195_1001218.npz
+
+  [201/252] 11203_1001226
+before crop: (3, 25, 384, 384) after crop: (3, 25, 384, 384) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 25, 384, 384)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 25, 384, 384)} 
+
+    Preprocessed shape: (3, 25, 384, 384)
+no resampling necessary
+    Predicted positive: False  (cancer voxels=0  max_prob=0.092)
+no resampling necessary
+    Depth crop: d=1:22  h0=105  w0=134
+
+  [202/252] 11209_1001232
+before crop: (3, 25, 384, 384) after crop: (3, 25, 384, 384) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 25, 384, 384)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 25, 384, 384)} 
+
+    Preprocessed shape: (3, 25, 384, 384)
+no resampling necessary
+    Predicted positive: False  (cancer voxels=0  max_prob=0.066)
+no resampling necessary
+    Depth crop: d=1:25  h0=125  w0=126
+
+  [203/252] 11213_1001236
+before crop: (3, 19, 384, 384) after crop: (3, 19, 384, 383) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 19, 384, 383)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 19, 384, 383)} 
+
+    Preprocessed shape: (3, 19, 384, 383)
+no resampling necessary
+    Predicted positive: False  (cancer voxels=0  max_prob=0.433)
+no resampling necessary
+    Depth crop: d=0:18  h0=100  w0=130
+
+  [204/252] 11215_1001238
+before crop: (3, 27, 701, 701) after crop: (3, 27, 486, 701) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 27, 486, 701)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 27, 486, 701)} 
+
+    Preprocessed shape: (3, 27, 486, 701)
+no resampling necessary
+    Predicted positive: False  (cancer voxels=0  max_prob=0.456)
+no resampling necessary
+    Depth crop: d=5:22  h0=158  w0=284
+
+  [205/252] 11224_1001247
+before crop: (3, 25, 384, 384) after crop: (3, 25, 384, 384) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 25, 384, 384)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 25, 384, 384)} 
+
+    Preprocessed shape: (3, 25, 384, 384)
+no resampling necessary
+    Predicted positive: False  (cancer voxels=0  max_prob=0.039)
+no resampling necessary
+    Depth crop: d=1:18  h0=126  w0=124
+
+  [206/252] 11225_1001248
+before crop: (3, 19, 384, 384) after crop: (3, 19, 384, 383) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 19, 384, 383)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 19, 384, 383)} 
+
+    Preprocessed shape: (3, 19, 384, 383)
+no resampling necessary
+    Predicted positive: True  (cancer voxels=5615  max_prob=0.588)
+no resampling necessary
+    Depth crop: d=1:19  h0=120  w0=127
+    Running 3D AblationCAM…
+    Target layer: Conv3d(out_channels=320)
+    Running Input Ablation…
+      ch 0: orig=1.0076 abl=2.8726 w=-1.8509
+      ch 1: orig=1.0076 abl=0.4028 w=0.6002
+      ch 2: orig=1.0076 abl=0.6671 w=0.3379
+    Saved: /cluster/home/bragehk/master/results/xai/nnunet/fold_4/11225_1001248.npz
+
+  [207/252] 11233_1001256
+before crop: (3, 21, 384, 384) after crop: (3, 21, 384, 383) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 21, 384, 383)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 21, 384, 383)} 
+
+    Preprocessed shape: (3, 21, 384, 383)
+no resampling necessary
+    Predicted positive: False  (cancer voxels=0  max_prob=0.221)
+no resampling necessary
+    Depth crop: d=1:21  h0=124  w0=132
+
+  [208/252] 11237_1001260
+before crop: (3, 21, 384, 384) after crop: (3, 21, 383, 383) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 21, 383, 383)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 21, 383, 383)} 
+
+    Preprocessed shape: (3, 21, 383, 383)
+no resampling necessary
+    Predicted positive: True  (cancer voxels=797  max_prob=0.633)
+no resampling necessary
+    Depth crop: d=1:21  h0=133  w0=126
+    Running 3D AblationCAM…
+    Target layer: Conv3d(out_channels=320)
+    Running Input Ablation…
+      ch 0: orig=122.5633 abl=61.5253 w=0.4980
+      ch 1: orig=122.5633 abl=5.8739 w=0.9521
+      ch 2: orig=122.5633 abl=1.2078 w=0.9901
+    Saved: /cluster/home/bragehk/master/results/xai/nnunet/fold_4/11237_1001260.npz
+
+  [209/252] 11241_1001264
+before crop: (3, 25, 384, 384) after crop: (3, 25, 384, 384) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 25, 384, 384)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 25, 384, 384)} 
+
+    Preprocessed shape: (3, 25, 384, 384)
+no resampling necessary
+    Predicted positive: False  (cancer voxels=0  max_prob=0.146)
+no resampling necessary
+    Depth crop: d=2:21  h0=115  w0=138
+
+  [210/252] 11244_1001267
+before crop: (3, 31, 701, 701) after crop: (3, 31, 473, 701) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 31, 473, 701)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 31, 473, 701)} 
+
+    Preprocessed shape: (3, 31, 473, 701)
+no resampling necessary
+    Predicted positive: False  (cancer voxels=0  max_prob=0.484)
+no resampling necessary
+    Depth crop: d=2:29  h0=179  w0=282
+
+  [211/252] 11255_1001278
+before crop: (3, 34, 360, 360) after crop: (3, 34, 360, 360) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 34, 360, 360)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 34, 360, 360)} 
+
+    Preprocessed shape: (3, 34, 360, 360)
+no resampling necessary
+    Predicted positive: True  (cancer voxels=3414  max_prob=0.637)
+no resampling necessary
+    Depth crop: d=4:27  h0=127  w0=107
+    Running 3D AblationCAM…
+    Target layer: Conv3d(out_channels=320)
+    Running Input Ablation…
+      ch 0: orig=3.1142 abl=5.9009 w=-0.8948
+      ch 1: orig=3.1142 abl=0.3479 w=0.8883
+      ch 2: orig=3.1142 abl=0.4157 w=0.8665
+    Saved: /cluster/home/bragehk/master/results/xai/nnunet/fold_4/11255_1001278.npz
+
+  [212/252] 11267_1001290
+before crop: (3, 23, 384, 384) after crop: (3, 23, 384, 384) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 23, 384, 384)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 23, 384, 384)} 
+
+    Preprocessed shape: (3, 23, 384, 384)
+no resampling necessary
+    Predicted positive: True  (cancer voxels=5831  max_prob=0.581)
+no resampling necessary
+    Depth crop: d=3:20  h0=146  w0=115
+    Running 3D AblationCAM…
+    Target layer: Conv3d(out_channels=320)
+    Running Input Ablation…
+      ch 0: orig=3.7092 abl=14.5309 w=-2.9175
+      ch 1: orig=3.7092 abl=3.6861 w=0.0062
+      ch 2: orig=3.7092 abl=1.1378 w=0.6933
+    Saved: /cluster/home/bragehk/master/results/xai/nnunet/fold_4/11267_1001290.npz
+
+  [213/252] 11271_1001294
+before crop: (3, 27, 701, 701) after crop: (3, 27, 472, 701) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 27, 472, 701)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 27, 472, 701)} 
+
+    Preprocessed shape: (3, 27, 472, 701)
+no resampling necessary
+    Predicted positive: False  (cancer voxels=0  max_prob=0.087)
+no resampling necessary
+    Depth crop: d=5:24  h0=172  w0=286
+
+  [214/252] 11278_1001301
+before crop: (3, 29, 400, 400) after crop: (3, 29, 400, 400) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 29, 400, 400)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 29, 400, 400)} 
+
+    Preprocessed shape: (3, 29, 400, 400)
+no resampling necessary
+    Predicted positive: True  (cancer voxels=2551  max_prob=0.657)
+no resampling necessary
+    Depth crop: d=4:18  h0=134  w0=139
+    Running 3D AblationCAM…
+    Target layer: Conv3d(out_channels=320)
+    Running Input Ablation…
+      ch 0: orig=751.8216 abl=307.4431 w=0.5911
+      ch 1: orig=751.8216 abl=0.6367 w=0.9992
+      ch 2: orig=751.8216 abl=0.8899 w=0.9988
+    Saved: /cluster/home/bragehk/master/results/xai/nnunet/fold_4/11278_1001301.npz
+
+  [215/252] 11279_1001302
+before crop: (3, 25, 384, 384) after crop: (3, 25, 384, 384) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 25, 384, 384)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 25, 384, 384)} 
+
+    Preprocessed shape: (3, 25, 384, 384)
+no resampling necessary
+    Predicted positive: False  (cancer voxels=0  max_prob=0.411)
+no resampling necessary
+    Depth crop: d=2:22  h0=127  w0=133
+
+  [216/252] 11280_1001303
+before crop: (3, 32, 360, 360) after crop: (3, 32, 360, 360) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 32, 360, 360)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 32, 360, 360)} 
+
+    Preprocessed shape: (3, 32, 360, 360)
+no resampling necessary
+    Predicted positive: False  (cancer voxels=0  max_prob=0.443)
+no resampling necessary
+    Depth crop: d=4:23  h0=96  w0=110
+
+  [217/252] 11292_1001315
+before crop: (3, 27, 384, 384) after crop: (3, 27, 384, 384) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 27, 384, 384)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 27, 384, 384)} 
+
+    Preprocessed shape: (3, 27, 384, 384)
+no resampling necessary
+    Predicted positive: False  (cancer voxels=0  max_prob=0.269)
+no resampling necessary
+    Depth crop: d=2:26  h0=118  w0=120
+
+  [218/252] 11293_1001316
+before crop: (3, 25, 384, 384) after crop: (3, 25, 384, 384) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 25, 384, 384)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 25, 384, 384)} 
+
+    Preprocessed shape: (3, 25, 384, 384)
+no resampling necessary
+    Predicted positive: False  (cancer voxels=0  max_prob=0.049)
+no resampling necessary
+    Depth crop: d=0:25  h0=107  w0=144
+
+  [219/252] 11298_1001321
+before crop: (3, 23, 384, 384) after crop: (3, 23, 384, 384) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 23, 384, 384)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 23, 384, 384)} 
+
+    Preprocessed shape: (3, 23, 384, 384)
+no resampling necessary
+    Predicted positive: False  (cancer voxels=0  max_prob=0.055)
+no resampling necessary
+    Depth crop: d=2:19  h0=130  w0=124
+
+  [220/252] 11300_1001323
+before crop: (3, 21, 384, 384) after crop: (3, 21, 384, 384) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 21, 384, 384)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 21, 384, 384)} 
+
+    Preprocessed shape: (3, 21, 384, 384)
+no resampling necessary
+    Predicted positive: True  (cancer voxels=3692  max_prob=0.662)
+no resampling necessary
+    Depth crop: d=3:17  h0=125  w0=126
+    Running 3D AblationCAM…
+    Target layer: Conv3d(out_channels=320)
+    Running Input Ablation…
+      ch 0: orig=79.7872 abl=45.9841 w=0.4237
+      ch 1: orig=79.7872 abl=8.1570 w=0.8978
+      ch 2: orig=79.7872 abl=12.7686 w=0.8400
+    Saved: /cluster/home/bragehk/master/results/xai/nnunet/fold_4/11300_1001323.npz
+
+  [221/252] 11301_1001324
+before crop: (3, 27, 360, 360) after crop: (3, 27, 360, 360) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 27, 360, 360)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 27, 360, 360)} 
+
+    Preprocessed shape: (3, 27, 360, 360)
+no resampling necessary
+    Predicted positive: True  (cancer voxels=806  max_prob=0.601)
+no resampling necessary
+    Depth crop: d=5:21  h0=122  w0=115
+    Running 3D AblationCAM…
+    Target layer: Conv3d(out_channels=320)
+    Running Input Ablation…
+      ch 0: orig=7.6764 abl=7.8417 w=-0.0215
+      ch 1: orig=7.6764 abl=0.2599 w=0.9661
+      ch 2: orig=7.6764 abl=0.0976 w=0.9873
+    Saved: /cluster/home/bragehk/master/results/xai/nnunet/fold_4/11301_1001324.npz
+
+  [222/252] 11311_1001334
+before crop: (3, 24, 384, 384) after crop: (3, 24, 384, 384) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 24, 384, 384)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 24, 384, 384)} 
+
+    Preprocessed shape: (3, 24, 384, 384)
+no resampling necessary
+    Predicted positive: False  (cancer voxels=0  max_prob=0.135)
+no resampling necessary
+    Depth crop: d=2:21  h0=127  w0=121
+
+  [223/252] 11316_1001339
+before crop: (3, 27, 701, 701) after crop: (3, 27, 475, 701) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 27, 475, 701)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 27, 475, 701)} 
+
+    Preprocessed shape: (3, 27, 475, 701)
+no resampling necessary
+    Predicted positive: True  (cancer voxels=2962  max_prob=0.542)
+no resampling necessary
+    Depth crop: d=9:22  h0=146  w0=285
+    Running 3D AblationCAM…
+    Target layer: Conv3d(out_channels=320)
+    Running Input Ablation…
+      ch 0: orig=0.4175 abl=0.1751 w=0.5806
+      ch 1: orig=0.4175 abl=0.2424 w=0.4195
+      ch 2: orig=0.4175 abl=1.1372 w=-1.7240
+    Saved: /cluster/home/bragehk/master/results/xai/nnunet/fold_4/11316_1001339.npz
+
+  [224/252] 11317_1001340
+before crop: (3, 23, 384, 384) after crop: (3, 23, 384, 384) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 23, 384, 384)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 23, 384, 384)} 
+
+    Preprocessed shape: (3, 23, 384, 384)
+no resampling necessary
+    Predicted positive: False  (cancer voxels=0  max_prob=0.014)
+no resampling necessary
+    Depth crop: d=2:19  h0=135  w0=127
+
+  [225/252] 11321_1001344
+before crop: (3, 23, 384, 384) after crop: (3, 23, 384, 384) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 23, 384, 384)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 23, 384, 384)} 
+
+    Preprocessed shape: (3, 23, 384, 384)
+no resampling necessary
+    Predicted positive: False  (cancer voxels=0  max_prob=0.329)
+no resampling necessary
+    Depth crop: d=1:20  h0=124  w0=125
+
+  [226/252] 11324_1001347
+before crop: (3, 19, 360, 360) after crop: (3, 19, 360, 360) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 19, 360, 360)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 19, 360, 360)} 
+
+    Preprocessed shape: (3, 19, 360, 360)
+no resampling necessary
+    Predicted positive: False  (cancer voxels=0  max_prob=0.161)
+no resampling necessary
+    Depth crop: d=2:19  h0=114  w0=119
+
+  [227/252] 11345_1001368
+before crop: (3, 27, 360, 360) after crop: (3, 27, 360, 360) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 27, 360, 360)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 27, 360, 360)} 
+
+    Preprocessed shape: (3, 27, 360, 360)
+no resampling necessary
+    Predicted positive: True  (cancer voxels=1246  max_prob=0.588)
+no resampling necessary
+    Depth crop: d=3:22  h0=120  w0=117
+    Running 3D AblationCAM…
+    Target layer: Conv3d(out_channels=320)
+    Running Input Ablation…
+      ch 0: orig=1.1292 abl=8.6749 w=-6.6821
+      ch 1: orig=1.1292 abl=0.1770 w=0.8432
+      ch 2: orig=1.1292 abl=0.0565 w=0.9500
+    Saved: /cluster/home/bragehk/master/results/xai/nnunet/fold_4/11345_1001368.npz
+
+  [228/252] 11348_1001371
+before crop: (3, 23, 384, 384) after crop: (3, 23, 384, 384) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 23, 384, 384)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 23, 384, 384)} 
+
+    Preprocessed shape: (3, 23, 384, 384)
+no resampling necessary
+    Predicted positive: False  (cancer voxels=0  max_prob=0.163)
+no resampling necessary
+    Depth crop: d=5:22  h0=137  w0=123
+
+  [229/252] 11354_1001377
+before crop: (3, 27, 701, 701) after crop: (3, 27, 479, 701) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 27, 479, 701)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 27, 479, 701)} 
+
+    Preprocessed shape: (3, 27, 479, 701)
+no resampling necessary
+    Predicted positive: False  (cancer voxels=0  max_prob=0.459)
+no resampling necessary
+    Depth crop: d=1:20  h0=175  w0=287
+
+  [230/252] 11364_1001387
+before crop: (3, 28, 384, 384) after crop: (3, 28, 384, 384) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 28, 384, 384)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 28, 384, 384)} 
+
+    Preprocessed shape: (3, 28, 384, 384)
+no resampling necessary
+    Predicted positive: False  (cancer voxels=0  max_prob=0.204)
+no resampling necessary
+    Depth crop: d=3:27  h0=126  w0=129
+
+  [231/252] 11368_1001391
+before crop: (3, 22, 384, 384) after crop: (3, 22, 384, 383) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 22, 384, 383)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 22, 384, 383)} 
+
+    Preprocessed shape: (3, 22, 384, 383)
+no resampling necessary
+    Predicted positive: True  (cancer voxels=48  max_prob=0.542)
+no resampling necessary
+    Depth crop: d=1:18  h0=125  w0=133
+    Running 3D AblationCAM…
+    Target layer: Conv3d(out_channels=320)
+    Running Input Ablation…
+      ch 0: orig=0.0052 abl=0.0023 w=0.5600
+      ch 1: orig=0.0052 abl=0.0037 w=0.2870
+      ch 2: orig=0.0052 abl=0.0021 w=0.5957
+    Saved: /cluster/home/bragehk/master/results/xai/nnunet/fold_4/11368_1001391.npz
+
+  [232/252] 11375_1001398
+before crop: (3, 21, 360, 360) after crop: (3, 21, 360, 360) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 21, 360, 360)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 21, 360, 360)} 
+
+    Preprocessed shape: (3, 21, 360, 360)
+no resampling necessary
+    Predicted positive: True  (cancer voxels=752  max_prob=0.606)
+no resampling necessary
+    Depth crop: d=6:21  h0=167  w0=189
+    Running 3D AblationCAM…
+    Target layer: Conv3d(out_channels=320)
+    Running Input Ablation…
+      ch 0: orig=7.4419 abl=1.2801 w=0.8280
+      ch 1: orig=7.4419 abl=0.3233 w=0.9566
+      ch 2: orig=7.4419 abl=0.0643 w=0.9914
+    Saved: /cluster/home/bragehk/master/results/xai/nnunet/fold_4/11375_1001398.npz
+
+  [233/252] 11380_1001403
+before crop: (3, 27, 701, 701) after crop: (3, 27, 483, 701) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 27, 483, 701)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 27, 483, 701)} 
+
+    Preprocessed shape: (3, 27, 483, 701)
+no resampling necessary
+    Predicted positive: True  (cancer voxels=397  max_prob=0.579)
+no resampling necessary
+    Depth crop: d=6:23  h0=176  w0=281
+    Running 3D AblationCAM…
+    Target layer: Conv3d(out_channels=320)
+    Running Input Ablation…
+      ch 0: orig=8.0115 abl=6.8923 w=0.1397
+      ch 1: orig=8.0115 abl=0.2489 w=0.9689
+      ch 2: orig=8.0115 abl=0.0184 w=0.9977
+    Saved: /cluster/home/bragehk/master/results/xai/nnunet/fold_4/11380_1001403.npz
+
+  [234/252] 11393_1001417
+before crop: (3, 23, 384, 384) after crop: (3, 23, 384, 384) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 23, 384, 384)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 23, 384, 384)} 
+
+    Preprocessed shape: (3, 23, 384, 384)
+no resampling necessary
+    Predicted positive: False  (cancer voxels=0  max_prob=0.008)
+no resampling necessary
+    Depth crop: d=2:22  h0=92  w0=128
+
+  [235/252] 11395_1001419
+before crop: (3, 25, 384, 384) after crop: (3, 25, 384, 384) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 25, 384, 384)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 25, 384, 384)} 
+
+    Preprocessed shape: (3, 25, 384, 384)
+no resampling necessary
+    Predicted positive: True  (cancer voxels=1420  max_prob=0.597)
+no resampling necessary
+    Depth crop: d=2:23  h0=195  w0=97
+    Running 3D AblationCAM…
+    Target layer: Conv3d(out_channels=320)
+    Running Input Ablation…
+      ch 0: orig=23.9484 abl=5.1282 w=0.7859
+      ch 1: orig=23.9484 abl=18.4643 w=0.2290
+      ch 2: orig=23.9484 abl=0.9639 w=0.9597
+    Saved: /cluster/home/bragehk/master/results/xai/nnunet/fold_4/11395_1001419.npz
+
+  [236/252] 11398_1001422
+before crop: (3, 27, 701, 701) after crop: (3, 27, 484, 701) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 27, 484, 701)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 27, 484, 701)} 
+
+    Preprocessed shape: (3, 27, 484, 701)
+no resampling necessary
+    Predicted positive: True  (cancer voxels=4699  max_prob=0.640)
+no resampling necessary
+    Depth crop: d=5:25  h0=183  w0=284
+    Running 3D AblationCAM…
+    Target layer: Conv3d(out_channels=320)
+    Running Input Ablation…
+      ch 0: orig=637.0800 abl=130.4986 w=0.7952
+      ch 1: orig=637.0800 abl=1.8340 w=0.9971
+      ch 2: orig=637.0800 abl=1.3267 w=0.9979
+    Saved: /cluster/home/bragehk/master/results/xai/nnunet/fold_4/11398_1001422.npz
+
+  [237/252] 11399_1001423
+before crop: (3, 19, 384, 384) after crop: (3, 19, 384, 384) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 19, 384, 384)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 19, 384, 384)} 
+
+    Preprocessed shape: (3, 19, 384, 384)
+no resampling necessary
+    Predicted positive: False  (cancer voxels=0  max_prob=0.028)
+no resampling necessary
+    Depth crop: d=2:19  h0=130  w0=131
+
+  [238/252] 11401_1001425
+before crop: (3, 23, 384, 384) after crop: (3, 23, 384, 384) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 23, 384, 384)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 23, 384, 384)} 
+
+    Preprocessed shape: (3, 23, 384, 384)
+no resampling necessary
+    Predicted positive: True  (cancer voxels=12141  max_prob=0.572)
+no resampling necessary
+    Depth crop: d=1:19  h0=132  w0=113
+    Running 3D AblationCAM…
+    Target layer: Conv3d(out_channels=320)
+    Running Input Ablation…
+      ch 0: orig=48.5528 abl=129.4209 w=-1.6656
+      ch 1: orig=48.5528 abl=35.0706 w=0.2777
+      ch 2: orig=48.5528 abl=1.1453 w=0.9764
+    Saved: /cluster/home/bragehk/master/results/xai/nnunet/fold_4/11401_1001425.npz
+
+  [239/252] 11417_1001441
+before crop: (3, 23, 384, 384) after crop: (3, 23, 384, 384) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 23, 384, 384)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 23, 384, 384)} 
+
+    Preprocessed shape: (3, 23, 384, 384)
+no resampling necessary
+    Predicted positive: False  (cancer voxels=0  max_prob=0.357)
+no resampling necessary
+    Depth crop: d=1:19  h0=133  w0=129
+
+  [240/252] 11422_1001446
+before crop: (3, 23, 384, 384) after crop: (3, 23, 384, 384) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 23, 384, 384)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 23, 384, 384)} 
+
+    Preprocessed shape: (3, 23, 384, 384)
+no resampling necessary
+    Predicted positive: False  (cancer voxels=0  max_prob=0.268)
+no resampling necessary
+    Depth crop: d=2:18  h0=123  w0=122
+
+  [241/252] 11431_1001455
+before crop: (3, 21, 384, 384) after crop: (3, 21, 384, 384) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 21, 384, 384)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 21, 384, 384)} 
+
+    Preprocessed shape: (3, 21, 384, 384)
+no resampling necessary
+    Predicted positive: False  (cancer voxels=0  max_prob=0.136)
+no resampling necessary
+    Depth crop: d=4:20  h0=141  w0=128
+
+  [242/252] 11433_1001457
+before crop: (3, 26, 384, 384) after crop: (3, 26, 384, 384) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 26, 384, 384)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 26, 384, 384)} 
+
+    Preprocessed shape: (3, 26, 384, 384)
+no resampling necessary
+    Predicted positive: False  (cancer voxels=0  max_prob=0.403)
+no resampling necessary
+    Depth crop: d=4:23  h0=103  w0=120
+
+  [243/252] 11436_1001460
+before crop: (3, 21, 360, 360) after crop: (3, 21, 360, 360) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 21, 360, 360)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 21, 360, 360)} 
+
+    Preprocessed shape: (3, 21, 360, 360)
+no resampling necessary
+    Predicted positive: True  (cancer voxels=807  max_prob=0.640)
+no resampling necessary
+    Depth crop: d=1:21  h0=123  w0=108
+    Running 3D AblationCAM…
+    Target layer: Conv3d(out_channels=320)
+    Running Input Ablation…
+      ch 0: orig=5.1493 abl=2.8215 w=0.4521
+      ch 1: orig=5.1493 abl=8.6816 w=-0.6860
+      ch 2: orig=5.1493 abl=0.1625 w=0.9684
+    Saved: /cluster/home/bragehk/master/results/xai/nnunet/fold_4/11436_1001460.npz
+
+  [244/252] 11438_1001462
+before crop: (3, 28, 384, 384) after crop: (3, 27, 384, 384) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 27, 384, 384)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 27, 384, 384)} 
+
+    Preprocessed shape: (3, 27, 384, 384)
+no resampling necessary
+    Predicted positive: True  (cancer voxels=213  max_prob=0.584)
+no resampling necessary
+    Depth crop: d=1:21  h0=136  w0=127
+    Running 3D AblationCAM…
+    Target layer: Conv3d(out_channels=320)
+    Running Input Ablation…
+      ch 0: orig=0.0000 abl=0.0000 w=0.0000
+      ch 1: orig=0.0000 abl=0.0000 w=0.0000
+      ch 2: orig=0.0000 abl=0.0000 w=0.0000
+    Saved: /cluster/home/bragehk/master/results/xai/nnunet/fold_4/11438_1001462.npz
+
+  [245/252] 11453_1001477
+before crop: (3, 23, 384, 384) after crop: (3, 23, 384, 384) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 23, 384, 384)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 23, 384, 384)} 
+
+    Preprocessed shape: (3, 23, 384, 384)
+no resampling necessary
+    Predicted positive: False  (cancer voxels=0  max_prob=0.231)
+no resampling necessary
+    Depth crop: d=2:20  h0=138  w0=126
+
+  [246/252] 11458_1001482
+before crop: (3, 28, 384, 384) after crop: (3, 28, 384, 384) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 28, 384, 384)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 28, 384, 384)} 
+
+    Preprocessed shape: (3, 28, 384, 384)
+no resampling necessary
+    Predicted positive: False  (cancer voxels=0  max_prob=0.055)
+no resampling necessary
+    Depth crop: d=4:28  h0=129  w0=125
+
+  [247/252] 11462_1001486
+before crop: (3, 21, 384, 384) after crop: (3, 21, 383, 383) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 21, 383, 383)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 21, 383, 383)} 
+
+    Preprocessed shape: (3, 21, 383, 383)
+no resampling necessary
+    Predicted positive: True  (cancer voxels=487  max_prob=0.642)
+no resampling necessary
+    Depth crop: d=2:21  h0=154  w0=126
+    Running 3D AblationCAM…
+    Target layer: Conv3d(out_channels=320)
+    Running Input Ablation…
+      ch 0: orig=31.3184 abl=9.6007 w=0.6934
+      ch 1: orig=31.3184 abl=5.6195 w=0.8206
+      ch 2: orig=31.3184 abl=0.0684 w=0.9978
+    Saved: /cluster/home/bragehk/master/results/xai/nnunet/fold_4/11462_1001486.npz
+
+  [248/252] 11463_1001487
+before crop: (3, 29, 701, 701) after crop: (3, 29, 484, 701) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 29, 484, 701)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 29, 484, 701)} 
+
+    Preprocessed shape: (3, 29, 484, 701)
+no resampling necessary
+    Predicted positive: True  (cancer voxels=453  max_prob=0.640)
+no resampling necessary
+    Depth crop: d=3:18  h0=192  w0=284
+    Running 3D AblationCAM…
+    Target layer: Conv3d(out_channels=320)
+    Running Input Ablation…
+      ch 0: orig=0.0740 abl=0.0824 w=-0.1137
+      ch 1: orig=0.0740 abl=0.1967 w=-1.6583
+      ch 2: orig=0.0740 abl=0.0279 w=0.6229
+    Saved: /cluster/home/bragehk/master/results/xai/nnunet/fold_4/11463_1001487.npz
+
+  [249/252] 11464_1001488
+before crop: (3, 23, 384, 384) after crop: (3, 23, 384, 384) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 23, 384, 384)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 23, 384, 384)} 
+
+    Preprocessed shape: (3, 23, 384, 384)
+no resampling necessary
+    Predicted positive: False  (cancer voxels=0  max_prob=0.111)
+no resampling necessary
+    Depth crop: d=0:14  h0=124  w0=134
+
+  [250/252] 11465_1001489
+before crop: (3, 27, 701, 701) after crop: (3, 27, 484, 701) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 27, 484, 701)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 27, 484, 701)} 
+
+    Preprocessed shape: (3, 27, 484, 701)
+no resampling necessary
+    Predicted positive: True  (cancer voxels=1296  max_prob=0.650)
+no resampling necessary
+    Depth crop: d=5:21  h0=183  w0=281
+    Running 3D AblationCAM…
+    Target layer: Conv3d(out_channels=320)
+    Running Input Ablation…
+      ch 0: orig=3.5478 abl=16.9021 w=-3.7640
+      ch 1: orig=3.5478 abl=1.5593 w=0.5605
+      ch 2: orig=3.5478 abl=0.1080 w=0.9696
+    Saved: /cluster/home/bragehk/master/results/xai/nnunet/fold_4/11465_1001489.npz
+
+  [251/252] 11470_1001494
+before crop: (3, 27, 360, 360) after crop: (3, 27, 360, 360) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 27, 360, 360)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 27, 360, 360)} 
+
+    Preprocessed shape: (3, 27, 360, 360)
+no resampling necessary
+    Predicted positive: False  (cancer voxels=0  max_prob=0.200)
+no resampling necessary
+    Depth crop: d=3:20  h0=124  w0=114
+
+  [252/252] 11475_1001499
+before crop: (3, 19, 360, 360) after crop: (3, 19, 360, 360) spacing: [3.  0.5 0.5] 
+
+no resampling necessary
+no resampling necessary
+before: {'spacing': array([3. , 0.5, 0.5]), 'spacing_transposed': array([3. , 0.5, 0.5]), 'data.shape (data is transposed)': (3, 19, 360, 360)} 
+after:  {'spacing': array([3. , 0.5, 0.5]), 'data.shape (data is resampled)': (3, 19, 360, 360)} 
+
+    Preprocessed shape: (3, 19, 360, 360)
+no resampling necessary
+    Predicted positive: False  (cancer voxels=0  max_prob=0.474)
+no resampling necessary
+    Depth crop: d=4:18  h0=232  w0=111
+
+Fold 4 done — processed=115 skipped=0 errors=0
+
+Computing metrics for nnunet: 422 npz files
+  Loaded 422 samples.
+  Saved: /cluster/home/bragehk/master/results/metrics/nnunet/sample_data.json
+
+  Generating summary charts for nnunet…
+  TP=115 FP=292 FN=2 TN=13
+  Precision=0.283 Sensitivity=0.983 Specificity=0.043 F1=0.439
+  Generated 72 combination charts → /cluster/home/bragehk/master/results/metrics/nnunet
+
+All done.

@@ -50,9 +50,8 @@
       </table>
 
       {# Summary chart #}
-      <img src="/api/chart/{{ model }}/summary/confusion_matrix.png"
-           class="img-fluid rounded" alt="Confusion matrix"
-           onerror="this.style.display='none'">
+      <img src="/api/confusion_matrix/{{ model }}"
+           class="img-fluid rounded mx-auto d-block" alt="Confusion matrix">
 
       {% else %}
       <p class="text-muted text-center py-5">No data available yet.<br>

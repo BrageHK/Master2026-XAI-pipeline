@@ -5,7 +5,8 @@
 <link rel="stylesheet" href="https://cdn.datatables.net/1.13.8/css/dataTables.bootstrap5.min.css">
 <style>
   .chart-img { border-radius: .5rem; box-shadow: 0 1px 4px rgba(0,0,0,.1); }
-  .chart-label { font-size: .7rem; color: #64748b; text-align: center; margin-top: .25rem; }
+  #tab-summary .chart-img { height: 480px; width: 100%; object-fit: contain; background: #f8fafc; }
+  .chart-label { font-size: .95rem; font-weight: 600; color: #334155; text-align: center; margin-bottom: .4rem; }
   tr.clickable-row { cursor: pointer; }
   tr.clickable-row:hover { background: #f0f9ff; }
 </style>
@@ -37,18 +38,18 @@
 
   {# Summary tab #}
   <div class="tab-pane fade show active" id="tab-summary">
-    {% if charts.summary %}
     <div class="row g-3">
+      <div class="col-lg-4 col-md-6">
+        <div class="chart-label">Confusion Matrix</div>
+        <img src="/api/confusion_matrix/{{ model }}" class="img-fluid chart-img" alt="Confusion matrix">
+      </div>
       {% for fname in charts.summary %}
       <div class="col-lg-4 col-md-6">
-        <img src="/api/chart/{{ model }}/summary/{{ fname }}" class="img-fluid chart-img w-100" alt="{{ fname }}">
         <div class="chart-label">{{ fname | replace('.png','') | replace('_',' ') | title }}</div>
+        <img src="/api/chart/{{ model }}/summary/{{ fname }}" class="img-fluid chart-img w-100" alt="{{ fname }}">
       </div>
       {% endfor %}
     </div>
-    {% else %}
-    <p class="text-muted">No summary charts available yet.</p>
-    {% endif %}
   </div>
 
   {# Saliency tab #}
@@ -152,10 +153,14 @@
             <th>Case ID</th>
             <th>Fold</th>
             <th>Class</th>
-            <th>Zone</th>
+            <th>GT Zone</th>
+            <th>Pred Zone</th>
             <th>Confidence</th>
-            <th>PZ&nbsp;vox</th>
-            <th>TZ&nbsp;vox</th>
+            <th>GT PZ&nbsp;vox</th>
+            <th>GT TZ&nbsp;vox</th>
+            <th>Pred PZ&nbsp;vox</th>
+            <th>Pred TZ&nbsp;vox</th>
+            <th title="Total predicted cancer voxels (including background zone)">Pred vox&nbsp;total</th>
             <th>Sal dom.&nbsp;ch</th>
             <th>Occ dom.&nbsp;ch</th>
           </tr>
@@ -163,10 +168,20 @@
         <tbody>
           {% for r in records %}
           {% set cls = r.classification %}
-          <tr class="clickable-row"
-              data-href="/model/{{ model }}/case/{{ r.case_id }}"
+          {% set has_npz = r.has_npz | default(true) %}
+          <tr {% if has_npz %}class="clickable-row" data-href="/model/{{ model }}/case/{{ r.case_id }}"{% else %}class="text-muted" style="opacity:.55" title="No XAI data (not predicted positive)"{% endif %}
               data-cls="{{ cls }}"
-              data-fold="{{ r.fold }}">
+              data-fold="{{ r.fold }}"
+              data-case="{{ r.case_id }}"
+              data-confidence="{{ r.confidence if r.confidence is not none else '' }}"
+              data-gt-zone="{{ r.primary_zone or '' }}"
+              data-pred-pz="{{ r.pred_pz_voxels if r.pred_pz_voxels is not none else '' }}"
+              data-pred-tz="{{ r.pred_tz_voxels if r.pred_tz_voxels is not none else '' }}"
+              data-gt-pz="{{ r.pz_voxels if r.pz_voxels is not none else '' }}"
+              data-gt-tz="{{ r.tz_voxels if r.tz_voxels is not none else '' }}"
+              data-sal="{{ ['T2W','ADC','HBV'][r.saliency.dominant_ch] if r.saliency else '' }}"
+              data-occ="{{ ['T2W','ADC','HBV'][r.occlusion.dominant_ch] if r.occlusion else '' }}"
+              data-has-npz="{{ 'true' if has_npz else 'false' }}">
             <td class="font-monospace small">{{ r.case_id }}</td>
             <td>{{ r.fold }}</td>
             <td>
@@ -177,6 +192,15 @@
             <td>
               {% if r.primary_zone == 'pz' %}<span class="badge badge-pz text-white rounded-pill px-2">PZ</span>
               {% elif r.primary_zone == 'tz' %}<span class="badge badge-tz text-white rounded-pill px-2">TZ</span>
+              {% else %}<span class="text-muted">—</span>{% endif %}
+            </td>
+            <td>
+              {% if r.pred_pz_voxels is not none and r.pred_tz_voxels is not none %}
+                {% if r.pred_pz_voxels > r.pred_tz_voxels %}<span class="badge badge-pz text-white rounded-pill px-2">PZ</span>
+                {% elif r.pred_tz_voxels > r.pred_pz_voxels %}<span class="badge badge-tz text-white rounded-pill px-2">TZ</span>
+                {% else %}<span class="text-muted">—</span>{% endif %}
+              {% elif r.pred_pz_voxels is not none and r.pred_pz_voxels > 0 %}<span class="badge badge-pz text-white rounded-pill px-2">PZ</span>
+              {% elif r.pred_tz_voxels is not none and r.pred_tz_voxels > 0 %}<span class="badge badge-tz text-white rounded-pill px-2">TZ</span>
               {% else %}<span class="text-muted">—</span>{% endif %}
             </td>
             <td>
@@ -191,6 +215,9 @@
             </td>
             <td>{{ r.pz_voxels if r.pz_voxels is not none else '—' }}</td>
             <td>{{ r.tz_voxels if r.tz_voxels is not none else '—' }}</td>
+            <td>{{ r.pred_pz_voxels if r.pred_pz_voxels is not none else '—' }}</td>
+            <td>{{ r.pred_tz_voxels if r.pred_tz_voxels is not none else '—' }}</td>
+            <td>{{ r.pred_cancer_voxels if r.pred_cancer_voxels is not none else '—' }}</td>
             <td>
               {% if r.saliency %}
                 {{ ['T2W','ADC','HBV'][r.saliency.dominant_ch] }}

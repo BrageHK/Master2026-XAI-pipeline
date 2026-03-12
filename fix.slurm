@@ -1,17 +1,16 @@
 #!/bin/bash
 #SBATCH --partition=GPUQ
 #SBATCH --account=share-ie-idi
-#SBATCH --time=24:00:00
+#SBATCH --time=3:00:00
 #SBATCH --gres=gpu:1
 #SBATCH --constraint="gpu80g"
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
 #SBATCH --cpus-per-task=4
-#SBATCH --mem=68G
+#SBATCH --mem=100G
 #SBATCH --job-name="nnunet-XAI-metrics"
 #SBATCH --output=logs/xai/nnunet_%A_%a.txt
 #SBATCH --error=logs/xai/nnunet_%A_%a.err
-#SBATCH --array=0-4
 
 WORKDIR=${SLURM_SUBMIT_DIR}
 cd ${WORKDIR}
@@ -26,4 +25,4 @@ echo "Total of $SLURM_NTASKS cores"
 
 module purge
 
-uv run generate_xai_data.py --fold "$SLURM_ARRAY_TASK_ID" --models "nnunet" --methods "all"
+uv run fix_nnunet_confidence.py

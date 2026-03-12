@@ -3,22 +3,32 @@
 
 {% block head %}
 <style>
-  /* Viewer layout */
+  /* Viewer grid: row label + 7 panel columns */
   #viewer-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-    gap: .5rem;
+    grid-template-columns: 80px repeat(7, minmax(0, 1fr));
+    gap: 3px;
+    align-items: start;
   }
-  .panel-box { position: relative; background: #000; border-radius: .5rem; overflow: hidden; }
+  .col-header {
+    text-align: center; font-size: 0.9rem; font-weight: 600;
+    color: #64748b; padding: 3px 2px; line-height: 1.2;
+  }
+  .row-label {
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.9rem; font-weight: 700; color: #475569;
+    padding: 2px 4px;
+  }
+  .panel-box { position: relative; background: #000; border-radius: .4rem; overflow: hidden; }
   .panel-box img, .panel-box canvas {
     width: 100%; display: block; image-rendering: pixelated;
-    transition: opacity .05s;
   }
-  .panel-label {
-    position: absolute; bottom: 0; left: 0; right: 0;
-    background: rgba(0,0,0,.6); color: #fff;
-    font-size: .7rem; text-align: center; padding: 2px 0;
+  .panel-empty {
+    background: #111; border-radius: .4rem;
+    display: flex; align-items: center; justify-content: center;
+    aspect-ratio: 1; font-size: .6rem; color: #555;
   }
+  .col-hidden { display: none !important; }
 
   /* Slider */
   #slice-slider { accent-color: var(--accent-{{ model }}); }
@@ -70,48 +80,27 @@
   {# ── Left: slice viewer ────────────────────────────────────────────────── #}
   <div class="col-xl-9">
 
-    {# Slice control bar #}
-    <div class="d-flex align-items-center gap-3 mb-3 p-3 bg-white rounded shadow-sm">
+    {# Slice + overlay controls #}
+    <div class="d-flex align-items-center gap-3 mb-2 p-3 bg-white rounded shadow-sm flex-wrap">
       <label class="fw-semibold text-nowrap" for="slice-slider">Depth slice</label>
       <input type="range" id="slice-slider" class="form-range flex-grow-1"
              min="0" value="0" step="1">
-      <span id="slice-label" class="text-muted text-nowrap small fw-semibold" style="min-width:80px">
-        — / —
-      </span>
-
-      {# Panel toggles #}
-      <div class="d-flex gap-2 flex-wrap ms-2">
-        {% for panel, label in [('t2w','T2W'),('adc','ADC'),('hbv','HBV'),
-                                  ('prediction','Pred'),('label','Label'),
-                                  ('saliency','Sal'),('occlusion','Occ'),
-                                  ('ablation','AblCAM'),('zones','Zones')] %}
-        <div class="form-check form-switch mb-0" title="Toggle {{ label }}">
-          <input class="form-check-input panel-toggle" type="checkbox"
-                 id="tog-{{ panel }}" data-panel="{{ panel }}" checked>
-          <label class="form-check-label small" for="tog-{{ panel }}">{{ label }}</label>
-        </div>
-        {% endfor %}
-      </div>
-    </div>
-
-    {# Overlay compositing controls #}
-    <div class="d-flex align-items-center gap-3 mb-3 p-2 px-3 bg-white rounded shadow-sm flex-wrap">
-      <span class="fw-semibold small text-nowrap">Background:</span>
-      <div class="btn-group btn-group-sm" role="group" aria-label="Background channel">
-        <input type="radio" class="btn-check" name="bg-radio" id="bg-t2w" value="t2w" checked>
-        <label class="btn btn-outline-secondary" for="bg-t2w">T2W</label>
-        <input type="radio" class="btn-check" name="bg-radio" id="bg-adc" value="adc">
-        <label class="btn btn-outline-secondary" for="bg-adc">ADC</label>
-        <input type="radio" class="btn-check" name="bg-radio" id="bg-hbv" value="hbv">
-        <label class="btn btn-outline-secondary" for="bg-hbv">HBV</label>
-        <input type="radio" class="btn-check" name="bg-radio" id="bg-none" value="">
-        <label class="btn btn-outline-secondary" for="bg-none">None</label>
-      </div>
-      <span class="fw-semibold small text-nowrap ms-2">Overlay α:</span>
-      <input type="range" id="overlay-alpha" class="form-range" style="width:120px"
+      <span id="slice-label" class="text-muted text-nowrap small fw-semibold" style="min-width:80px">— / —</span>
+      <span class="vr mx-1"></span>
+      <span class="fw-semibold small text-nowrap">Overlay α:</span>
+      <input type="range" id="overlay-alpha" class="form-range" style="width:110px"
              min="0" max="1" step="0.05" value="0.6">
-      <span id="alpha-label" class="small text-muted" style="min-width:35px">0.60</span>
+      <span id="alpha-label" class="small text-muted" style="min-width:32px">0.60</span>
+      <span class="vr mx-1"></span>
+      <span class="fw-semibold small text-nowrap">GIF:</span>
+      <select id="gif-fps" class="form-select form-select-sm" style="width:auto">
+        <option value="200">5 fps</option>
+        <option value="120" selected>8 fps</option>
+        <option value="83">12 fps</option>
+      </select>
+      <button id="gif-btn" class="btn btn-sm btn-outline-primary" disabled>Export Table GIF</button>
     </div>
+
 
     {# Image grid — populated by JS #}
     <div id="viewer-grid"></div>
@@ -124,6 +113,29 @@
   {# ── Right: stats sidebar ─────────────────────────────────────────────── #}
   <div class="col-xl-3">
 
+    {# Legend — populated dynamically #}
+    <div class="stat-card mb-2" id="legend-card" style="display:none">
+      <div class="stat-label mb-2">Legend</div>
+      <div id="legend-zones" style="display:none">
+        <div class="small fw-semibold mb-1 text-muted">Zones</div>
+        <div class="d-flex flex-column gap-1 mb-2">
+          <div class="d-flex align-items-center gap-2">
+            <span style="width:14px;height:14px;background:#1a1a1a;border:1px solid #ccc;border-radius:2px;flex-shrink:0"></span>
+            <span class="small">Background</span>
+          </div>
+          <div class="d-flex align-items-center gap-2">
+            <span style="width:14px;height:14px;background:#3a7bd5;border-radius:2px;flex-shrink:0"></span>
+            <span class="small">PZ (Peripheral Zone)</span>
+          </div>
+          <div class="d-flex align-items-center gap-2">
+            <span style="width:14px;height:14px;background:#d93025;border-radius:2px;flex-shrink:0"></span>
+            <span class="small">TZ (Transition Zone)</span>
+          </div>
+        </div>
+      </div>
+      <div id="legend-colormaps"></div>
+    </div>
+
     {% if record %}
     {# Classification detail #}
     <div class="stat-card mb-2">
@@ -133,11 +145,35 @@
             <td>{{ 'Yes' if record.has_pca else 'No' }}</td></tr>
         <tr><th class="ps-0 text-muted fw-normal">Predicted +</th>
             <td>{{ 'Yes' if record.predicted_positive else 'No' }}</td></tr>
+        {% if record.confidence is not none %}
+        <tr><th class="ps-0 text-muted fw-normal">Confidence</th>
+            <td><strong>{{ "%.3f"|format(record.confidence) }}</strong></td></tr>
+        {% endif %}
+        <tr><th class="ps-0 text-muted fw-normal">GT Zone</th>
+            <td>
+              {% if record.primary_zone == 'pz' %}<span class="badge badge-pz text-white rounded-pill px-2">PZ</span>
+              {% elif record.primary_zone == 'tz' %}<span class="badge badge-tz text-white rounded-pill px-2">TZ</span>
+              {% else %}—{% endif %}
+            </td></tr>
         {% if record.pz_voxels is not none %}
-        <tr><th class="ps-0 text-muted fw-normal">PZ voxels</th>
+        <tr><th class="ps-0 text-muted fw-normal">GT PZ voxels</th>
             <td>{{ record.pz_voxels }}</td></tr>
-        <tr><th class="ps-0 text-muted fw-normal">TZ voxels</th>
+        <tr><th class="ps-0 text-muted fw-normal">GT TZ voxels</th>
             <td>{{ record.tz_voxels }}</td></tr>
+        {% endif %}
+        {% if record.pred_pz_voxels is not none or record.pred_tz_voxels is not none %}
+        <tr><th class="ps-0 text-muted fw-normal">Pred Zone</th>
+            <td>
+              {% set ppz = record.pred_pz_voxels or 0 %}
+              {% set ptz = record.pred_tz_voxels or 0 %}
+              {% if ppz > ptz %}<span class="badge badge-pz text-white rounded-pill px-2">PZ</span>
+              {% elif ptz > ppz %}<span class="badge badge-tz text-white rounded-pill px-2">TZ</span>
+              {% else %}—{% endif %}
+            </td></tr>
+        <tr><th class="ps-0 text-muted fw-normal">Pred PZ voxels</th>
+            <td>{{ record.pred_pz_voxels if record.pred_pz_voxels is not none else '—' }}</td></tr>
+        <tr><th class="ps-0 text-muted fw-normal">Pred TZ voxels</th>
+            <td>{{ record.pred_tz_voxels if record.pred_tz_voxels is not none else '—' }}</td></tr>
         {% endif %}
       </table>
     </div>
@@ -181,79 +217,128 @@
 
   </div>
 </div>
+{# GIF generation modal #}
+<div class="modal fade" id="gifModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Generated GIF</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body text-center">
+        <div id="gif-progress" class="py-4">
+          <div class="spinner-border text-primary mb-2" role="status"></div>
+          <p class="text-muted small mb-0">Rendering frames…</p>
+        </div>
+        <img id="gif-result" src="" alt="" style="display:none;max-width:100%;border-radius:.5rem">
+      </div>
+      <div class="modal-footer">
+        <a id="gif-download" href="#" download class="btn btn-sm btn-success" style="display:none">Download GIF</a>
+        <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
 {% endblock %}
 
 {% block scripts %}
 <script>
-// ── Config ─────────────────────────────────────────────────────────────────
+// ── Config ───────────────────────────────────────────────────────────────────
 const MODEL   = "{{ model }}";
 const CASE_ID = "{{ case_id }}";
-const CH_NAMES = ["T2W", "ADC", "HBV"];
+const CH_NAMES  = ["T2W", "ADC", "HBV"];
 const CH_COLORS = ["#e74c3c", "#2ecc71", "#3498db"];
 
-// Panel metadata: key → display label
-const PANEL_META = {
-  t2w:        { label: "T2W (MRI)",         order: 0 },
-  adc:        { label: "ADC (MRI)",         order: 1 },
-  hbv:        { label: "HBV (MRI)",         order: 2 },
-  prediction: { label: "Cancer Prob",       order: 3 },
-  label:      { label: "Label (GT)",        order: 4 },
-  saliency:   { label: "Saliency",          order: 5 },
-  occlusion:  { label: "Occlusion",         order: 6 },
-  ablation:   { label: "AblationCAM",       order: 7 },
-  zones:      { label: "Zones (PZ/TZ)",     order: 8 },
-};
+// 3 rows (one per MRI channel)
+const ROWS = [
+  { key: "t2w", label: "T2W", idx: 0 },
+  { key: "adc", label: "ADC", idx: 1 },
+  { key: "hbv", label: "HBV", idx: 2 },
+];
 
-// These panels are rendered as canvas with compositable background
-const OVERLAY_PANELS = new Set(["prediction", "label", "saliency", "occlusion", "ablation", "zones"]);
+// 7 columns: original + 6 overlay columns
+// panelKey(row): returns the panels dict key for this row's cell
+// All overlay PNGs carry an alpha channel — compositing always uses it.
+const COLS = [
+  { key: "original",   label: "Original",     panelKey: null                        },
+  { key: "zones",      label: "Zones",         panelKey: () => "zones"               },
+  { key: "prediction", label: "Pred Mask",     panelKey: () => "prediction"          },
+  { key: "label",      label: "Label GT",      panelKey: () => "label"               },
+  { key: "saliency",   label: "Saliency",      panelKey: (r) => `saliency_${r.idx}`  },
+  { key: "occlusion",  label: "Occlusion",     panelKey: (r) => `occlusion_${r.idx}` },
+  { key: "ablation",   label: "AblationCAM",   panelKey: () => "ablation"            },
+];
 
-let panels = {};           // { panelKey: [base64DataURL, ...] }
-let cachedImages = {};     // { panelKey: [HTMLImageElement, ...] }
+let panels = {};        // { panelKey: [base64DataURL, ...] }
+let cachedImages = {};  // { panelKey: [HTMLImageElement, ...] }
 let nSlices = 0;
-let currentBg    = "t2w"; // background channel key, or "" for none
 let currentAlpha = 0.6;
 
-// ── Composite a single overlay panel onto its canvas ───────────────────────
-function compositePanel(key, sl) {
-  const canvas = document.getElementById(`canvas-${key}`);
+// Offscreen canvas for confined-alpha processing
+const _tmpCanvas = document.createElement("canvas");
+_tmpCanvas.width = 200; _tmpCanvas.height = 200;
+const _tmpCtx = _tmpCanvas.getContext("2d");
+
+// ── Composite one overlay cell ───────────────────────────────────────────────
+// All overlay PNGs have a meaningful alpha channel (alpha ∝ signal strength,
+// 0 for background/zero-value pixels).  We scale that alpha by currentAlpha so
+// the slider only affects signal pixels — the MRI always shows through background.
+function compositeCell(row, col, sl) {
+  if (!col.panelKey) return;  // original column — handled by <img>
+  const overlayKey = col.panelKey(row);
+  const canvas = document.getElementById(`canvas-${row.key}-${col.key}`);
   if (!canvas) return;
   const ctx = canvas.getContext("2d");
   ctx.clearRect(0, 0, 200, 200);
   ctx.fillStyle = "#000";
   ctx.fillRect(0, 0, 200, 200);
 
-  if (currentBg && cachedImages[currentBg]?.[sl]) {
+  // Background: the row's MRI channel
+  if (cachedImages[row.key]?.[sl]) {
     ctx.globalAlpha = 1.0;
-    ctx.drawImage(cachedImages[currentBg][sl], 0, 0, 200, 200);
+    ctx.drawImage(cachedImages[row.key][sl], 0, 0, 200, 200);
   }
-  if (cachedImages[key]?.[sl]) {
-    ctx.globalAlpha = currentAlpha;
-    ctx.drawImage(cachedImages[key][sl], 0, 0, 200, 200);
+
+  // Overlay: use PNG alpha channel scaled by currentAlpha
+  if (panels[overlayKey] && cachedImages[overlayKey]?.[sl]) {
+    _tmpCtx.clearRect(0, 0, 200, 200);
+    _tmpCtx.drawImage(cachedImages[overlayKey][sl], 0, 0, 200, 200);
+    const imgData = _tmpCtx.getImageData(0, 0, 200, 200);
+    const d = imgData.data;
+    for (let i = 0; i < d.length; i += 4) {
+      // Scale existing alpha by slider value; background pixels (alpha≈0) stay transparent
+      d[i + 3] = Math.round(d[i + 3] * currentAlpha);
+    }
+    _tmpCtx.putImageData(imgData, 0, 0);
     ctx.globalAlpha = 1.0;
+    ctx.drawImage(_tmpCanvas, 0, 0, 200, 200);
   }
 }
 
 function recompositeAll() {
   const sl = parseInt(document.getElementById("slice-slider").value) || 0;
-  for (const key of Object.keys(panels)) {
-    if (OVERLAY_PANELS.has(key)) compositePanel(key, sl);
+  for (const row of ROWS) {
+    for (const col of COLS) {
+      compositeCell(row, col, sl);
+    }
   }
 }
 
-// ── Slice display ───────────────────────────────────────────────────────────
+// ── Slice display ────────────────────────────────────────────────────────────
 function showSlice(sl) {
-  for (const key of Object.keys(panels)) {
-    if (OVERLAY_PANELS.has(key)) {
-      compositePanel(key, sl);
-    } else {
-      const img = document.getElementById(`img-${key}`);
-      if (img && panels[key][sl]) img.src = panels[key][sl];
+  for (const row of ROWS) {
+    // Original column image
+    const img = document.getElementById(`img-${row.key}`);
+    if (img && panels[row.key]?.[sl]) img.src = panels[row.key][sl];
+    // Overlay columns
+    for (const col of COLS) {
+      compositeCell(row, col, sl);
     }
   }
   document.getElementById("slice-label").textContent = `${sl + 1} / ${nSlices}`;
 }
 
-// ── Pre-load all base64 PNGs into Image objects ─────────────────────────────
+// ── Pre-load all base64 PNGs into Image objects ──────────────────────────────
 async function preloadImages(panelsData) {
   await Promise.all(Object.entries(panelsData).map(([key, slices]) => {
     cachedImages[key] = [];
@@ -266,60 +351,67 @@ async function preloadImages(panelsData) {
   }));
 }
 
-// ── Build viewer grid ───────────────────────────────────────────────────────
+// ── Build 3-row × 7-col viewer grid ─────────────────────────────────────────
 function buildGrid(availablePanels) {
   const grid = document.getElementById("viewer-grid");
   grid.innerHTML = "";
 
-  const sorted = Object.keys(availablePanels)
-    .filter(k => k in PANEL_META)
-    .sort((a, b) => PANEL_META[a].order - PANEL_META[b].order);
+  // Header row: empty corner + column labels
+  const corner = document.createElement("div");
+  grid.appendChild(corner);
+  for (const col of COLS) {
+    const hdr = document.createElement("div");
+    hdr.className = `col-header col-group-${col.key}`;
+    hdr.textContent = col.label;
+    grid.appendChild(hdr);
+  }
 
-  for (const key of sorted) {
-    const box = document.createElement("div");
-    box.className = "panel-box";
-    box.id = `box-${key}`;
+  // Data rows
+  for (const row of ROWS) {
+    // Row label
+    const rowLbl = document.createElement("div");
+    rowLbl.className = "row-label";
+    rowLbl.textContent = row.label;
+    grid.appendChild(rowLbl);
 
-    if (OVERLAY_PANELS.has(key)) {
-      const canvas = document.createElement("canvas");
-      canvas.id = `canvas-${key}`;
-      canvas.width  = 200;
-      canvas.height = 200;
-      canvas.alt = key;
-      box.appendChild(canvas);
-    } else {
-      const img = document.createElement("img");
-      img.id = `img-${key}`;
-      img.alt = key;
-      box.appendChild(img);
+    for (const col of COLS) {
+      if (col.key === "original") {
+        // Original: plain <img>
+        const box = document.createElement("div");
+        box.className = "panel-box";
+        const img = document.createElement("img");
+        img.id  = `img-${row.key}`;
+        img.alt = row.key;
+        box.appendChild(img);
+        grid.appendChild(box);
+      } else {
+        const overlayKey = col.panelKey(row);
+        const hasData = overlayKey in availablePanels;
+        const wrapper = document.createElement("div");
+        wrapper.className = `col-group-${col.key}`;
+        if (hasData) {
+          const box = document.createElement("div");
+          box.className = "panel-box";
+          const canvas = document.createElement("canvas");
+          canvas.id     = `canvas-${row.key}-${col.key}`;
+          canvas.width  = 200;
+          canvas.height = 200;
+          box.appendChild(canvas);
+          wrapper.appendChild(box);
+        } else {
+          const empty = document.createElement("div");
+          empty.className = "panel-empty";
+          empty.textContent = "—";
+          wrapper.appendChild(empty);
+        }
+        grid.appendChild(wrapper);
+      }
     }
-
-    const lbl = document.createElement("div");
-    lbl.className = "panel-label";
-    lbl.textContent = PANEL_META[key]?.label ?? key;
-    box.appendChild(lbl);
-
-    grid.appendChild(box);
   }
 }
 
-// ── Panel toggles ───────────────────────────────────────────────────────────
-document.querySelectorAll(".panel-toggle").forEach(chk => {
-  chk.addEventListener("change", () => {
-    const key = chk.dataset.panel;
-    const box = document.getElementById(`box-${key}`);
-    if (box) box.style.display = chk.checked ? "" : "none";
-  });
-});
 
-// ── Background + alpha controls ─────────────────────────────────────────────
-document.querySelectorAll("input[name='bg-radio']").forEach(radio => {
-  radio.addEventListener("change", () => {
-    currentBg = radio.value;
-    recompositeAll();
-  });
-});
-
+// ── Alpha control ────────────────────────────────────────────────────────────
 const alphaSlider = document.getElementById("overlay-alpha");
 const alphaLabel  = document.getElementById("alpha-label");
 alphaSlider.addEventListener("input", () => {
@@ -328,27 +420,11 @@ alphaSlider.addEventListener("input", () => {
   recompositeAll();
 });
 
-// ── Sync toggle visibility with what actually loaded ────────────────────────
-function syncToggles(availablePanels) {
-  document.querySelectorAll(".panel-toggle").forEach(chk => {
-    const key = chk.dataset.panel;
-    const exists = key in availablePanels;
-    const container = chk.closest(".form-check");
-    if (!exists) {
-      container.style.opacity = "0.35";
-      chk.checked = false;
-      chk.disabled = true;
-    }
-  });
-}
-
-// ── Plotly helpers ──────────────────────────────────────────────────────────
+// ── Plotly helpers ───────────────────────────────────────────────────────────
 const PLOTLY_LAYOUT_MINI = {
   margin: { t: 4, b: 30, l: 30, r: 10 },
-  paper_bgcolor: "white",
-  plot_bgcolor:  "white",
-  font: { size: 11 },
-  showlegend: false,
+  paper_bgcolor: "white", plot_bgcolor: "white",
+  font: { size: 11 }, showlegend: false,
 };
 
 function plotConfidence(confidence) {
@@ -358,7 +434,6 @@ function plotConfidence(confidence) {
     div.innerHTML = '<p class="text-muted small text-center pt-3">Not available</p>';
     return;
   }
-  const pct = Math.round(confidence * 100);
   const color = confidence >= 0.8 ? "#dc3545" : confidence >= 0.5 ? "#fd7e14" : "#6c757d";
   Plotly.newPlot("plot-confidence", [{
     type: "indicator", mode: "gauge+number",
@@ -374,11 +449,8 @@ function plotConfidence(confidence) {
       ],
       threshold: { line: { color: "#333", width: 2 }, thickness: 0.75, value: 0.5 },
     },
-  }], {
-    margin: { t: 10, b: 10, l: 20, r: 20 },
-    paper_bgcolor: "white",
-    height: 110,
-  }, { displayModeBar: false });
+  }], { margin: { t: 10, b: 10, l: 20, r: 20 }, paper_bgcolor: "white", height: 110 },
+  { displayModeBar: false });
 }
 
 function plotInputAblation(weights) {
@@ -435,26 +507,22 @@ function plotBar(divId, means) {
     panels  = data.panels;
     nSlices = data.n_slices;
 
-    // Build grid with available panels
     buildGrid(panels);
-    syncToggles(panels);
+    populateLegend(panels);
 
-    // Pre-load all images for client-side compositing
     loadMsg.textContent = "Pre-loading images…";
     await preloadImages(panels);
 
-    // Slider
     const slider = document.getElementById("slice-slider");
     slider.max = nSlices - 1;
     slider.value = Math.floor(nSlices / 2);
     slider.addEventListener("input", e => showSlice(parseInt(e.target.value)));
     showSlice(parseInt(slider.value));
+    document.getElementById("gif-btn").disabled = false;
 
-    // Warn if no XAI maps
-    const hasXAI = "saliency" in panels || "occlusion" in panels || "ablation" in panels;
+    const hasXAI = "saliency_0" in panels || "occlusion_0" in panels || "ablation" in panels;
     if (!hasXAI) document.getElementById("no-xai-msg").style.display = "";
 
-    // Stats panel
     const stats = data.stats;
     plotConfidence(stats.confidence ?? null);
     plotInputAblation(stats.input_ablation);
@@ -467,9 +535,72 @@ function plotBar(divId, means) {
     loadMsg.textContent = `Error: ${err.message}`;
     return;
   }
-
-  // Hide overlay
   document.getElementById("loading-overlay").style.display = "none";
 })();
+
+// ── Legend ───────────────────────────────────────────────────────────────────
+const COLORMAP_GRADIENTS = {
+  prediction:  { label: "Cancer Probability", grad: "linear-gradient(to right,#30123b,#4776ef,#1dbd9d,#b1f23c,#fb8a26,#7a0502)" },
+  label:       null,
+  saliency_0:  { label: "Saliency",           grad: "linear-gradient(to right,#30123b,#4776ef,#1dbd9d,#b1f23c,#fb8a26,#7a0502)" },
+  occlusion_0: { label: "Occlusion",          grad: "linear-gradient(to right,#30123b,#4776ef,#1dbd9d,#b1f23c,#fb8a26,#7a0502)" },
+  ablation:    { label: "AblationCAM",        grad: "linear-gradient(to right,#30123b,#4776ef,#1dbd9d,#b1f23c,#fb8a26,#7a0502)" },
+};
+
+function populateLegend(availablePanels) {
+  const card = document.getElementById("legend-card");
+  if ("zones" in availablePanels) {
+    document.getElementById("legend-zones").style.display = "";
+  }
+  const cmDiv = document.getElementById("legend-colormaps");
+  const seen = new Set();
+  for (const [key, cfg] of Object.entries(COLORMAP_GRADIENTS)) {
+    if (cfg === null || !(key in availablePanels)) continue;
+    if (seen.has(cfg.label)) continue;
+    seen.add(cfg.label);
+    cmDiv.insertAdjacentHTML("beforeend", `
+      <div class="small fw-semibold text-muted mt-1 mb-1">${cfg.label}</div>
+      <div style="height:10px;border-radius:3px;background:${cfg.grad};margin-bottom:2px"></div>
+      <div class="d-flex justify-content-between" style="font-size:.65rem;color:#888">
+        <span>Low</span><span>High</span>
+      </div>
+    `);
+  }
+  const hasSomething = "zones" in availablePanels || cmDiv.innerHTML.trim() !== "";
+  if (hasSomething) card.style.display = "";
+}
+
+// ── GIF generation ───────────────────────────────────────────────────────────
+document.getElementById("gif-btn").addEventListener("click", async () => {
+  const dur   = document.getElementById("gif-fps").value;
+  const alpha = document.getElementById("overlay-alpha").value;
+
+  const gifModal = new bootstrap.Modal(document.getElementById("gifModal"));
+  const progress = document.getElementById("gif-progress");
+  const result   = document.getElementById("gif-result");
+  const dl       = document.getElementById("gif-download");
+
+  result.style.display = "none";
+  dl.style.display = "none";
+  progress.style.display = "";
+  progress.innerHTML = `
+    <div class="spinner-border text-primary mb-2" role="status"></div>
+    <p class="text-muted small mb-0">Rendering full table GIF (all slices)…</p>`;
+  gifModal.show();
+
+  try {
+    const params = new URLSearchParams({ alpha, duration_ms: dur });
+    const resp = await fetch(`/api/gif_table/${MODEL}/${CASE_ID}?${params}`);
+    if (!resp.ok) throw new Error(`Server error ${resp.status}`);
+    const url = URL.createObjectURL(await resp.blob());
+    result.src = url;
+    result.style.display = "";
+    dl.href = url; dl.download = `${CASE_ID}_table.gif`;
+    dl.style.display = "";
+    progress.style.display = "none";
+  } catch (err) {
+    progress.innerHTML = `<p class="text-danger">Error: ${err.message}</p>`;
+  }
+});
 </script>
 {% endblock %}

@@ -1,12 +1,12 @@
 #!/bin/bash
 #SBATCH --partition=GPUQ
 #SBATCH --account=share-ie-idi
-#SBATCH --time=35:00:00
+#SBATCH --time=25:00:00
 #SBATCH --gres=gpu:1
-#SBATCH --constraint="a100|h100"
+#SBATCH --constraint="gpu80g"
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
-#SBATCH --cpus-per-task=10
+#SBATCH --cpus-per-task=4
 #SBATCH --mem=68G
 #SBATCH --job-name="U-Mamba-XAI-metrics"
 #SBATCH --output=logs/xai/UMamba_%A_%a.txt
@@ -26,4 +26,4 @@ echo "Total of $SLURM_NTASKS cores"
 
 module purge
 
-uv run captum_xai.py --fold "$SLURM_ARRAY_TASK_ID" --model "umamba_mtl" --methods "all"
+uv run generate_xai_data.py --fold "$SLURM_ARRAY_TASK_ID" --models "umamba_mtl" --methods "all"

@@ -568,6 +568,7 @@ def process_fold_monai(
     occ_window: Tuple[int, int, int, int],
     occ_stride: Tuple[int, int, int, int],
     ppe: int,
+    device: Optional[torch.device] = None,
 ) -> None:
     from shared_modules.data_module import DataModule   # noqa: E402
     from shared_modules.utils import load_config        # noqa: E402
@@ -584,7 +585,8 @@ def process_fold_monai(
     print(f"\n{'=' * 60}")
     print(f"Model: {model_name}  |  Fold {fold}")
 
-    device  = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    if device is None:
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     network = load_model(model_name, fold, device)
     print(f"Model ready on {device}.")
 
@@ -714,17 +716,18 @@ def process_fold_monai(
                         target_layer = target_layers[0]
                         print(f"    Target layer: {target_layer.__class__.__name__}"
                               f"(out_channels={target_layer.out_channels})")
-                        cam = AblationCAM3D(network, [target_layer], batch_size=16)
                         _mask = fixed_mask[0].float()  # (H, W, D)
 
                         def _abl_target(output):
                             cancer = torch.sigmoid(output.unsqueeze(0)[:, 1])  # (1, H, W, D)
                             return (cancer * _mask).sum()
 
-                        abl_maps = cam(x.detach().clone(), targets=[_abl_target])
+                        with AblationCAM3D(network, [target_layer], batch_size=16) as cam:
+                            abl_maps = cam(x.detach().clone(), targets=[_abl_target])
                         # abl_maps: (1, H, W, D) — permute to (1, D, H, W) then crop
                         abl_maps_np = abl_maps.transpose(0, 3, 1, 2)  # (1, D, H, W)
                         abl_np = abl_maps_np[:, d0:d1]                 # (1, D_crop, H, W)
+                        del cam
                     except Exception as exc:
                         print(f"    AblationCAM failed: {exc}")
                         traceback.print_exc()
@@ -747,6 +750,7 @@ def process_fold_monai(
                         weights.append(w)
                         print(f"      ch {ch}: orig={orig_score:.4f} abl={abl_score:.4f} w={w:.4f}")
                     inp_abl = np.array(weights, dtype=np.float32)
+                    del forward_func_abl, x_abl
 
             # ---- Save .npz only when model predicts positive ---------------
             if predicted_pos:
@@ -795,8 +799,12 @@ def process_fold_monai(
 
         log_large_vars(locals(), threshold_mb=50)
         gc.collect()
+        gc.collect()  # second pass frees objects queued by first pass finalizers
+        gc.collect()  # third pass to drain finalizer queue
+        print(f"    Uncollectable objects after gc: {len(gc.garbage)}")
         if torch.cuda.is_available():
             torch.cuda.empty_cache()
+            print(f"    GPU allocated: {torch.cuda.memory_allocated()/1e9:.2f} GB  reserved: {torch.cuda.memory_reserved()/1e9:.2f} GB")
         print(f"    [objgraph after gc case {i}]"); objgraph.show_growth(limit=5)
 
     summary = {
@@ -822,6 +830,7 @@ def process_fold_nnunet(
     occ_stride: Tuple[int, int, int, int],
     ppe: int,
     occ_crop_hw: Optional[int] = 128,
+    device: Optional[torch.device] = None,
 ) -> None:
     fold_dir = output_dir / f"fold_{fold}"
     fold_dir.mkdir(parents=True, exist_ok=True)
@@ -835,7 +844,8 @@ def process_fold_nnunet(
     print(f"\n{'=' * 60}")
     print(f"Model: nnunet  |  Fold {fold}")
 
-    device  = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    if device is None:
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     network = load_nnunet(fold, device)
     print(f"Model ready on {device}.")
 
@@ -1079,17 +1089,18 @@ def process_fold(
     occ_stride: Tuple[int, int, int, int],
     ppe: int,
     occ_crop_hw: Optional[int] = 128,
+    device: Optional[torch.device] = None,
 ) -> None:
     model_output_dir = output_dir / model_name
     model_output_dir.mkdir(parents=True, exist_ok=True)
 
     if model_name == "nnunet":
         process_fold_nnunet(
-            fold, model_output_dir, methods, skip_existing, occ_window, occ_stride, ppe, occ_crop_hw
+            fold, model_output_dir, methods, skip_existing, occ_window, occ_stride, ppe, occ_crop_hw, device
         )
     else:
         process_fold_monai(
-            fold, model_name, model_output_dir, methods, skip_existing, occ_window, occ_stride, ppe
+            fold, model_name, model_output_dir, methods, skip_existing, occ_window, occ_stride, ppe, device
         )
 
 
@@ -1529,7 +1540,7 @@ def main() -> None:
     parser.add_argument(
         "--perturbations-per-eval",
         type=int,
-        default=1,
+        default=32,
         help="Number of occlusion perturbations per forward pass.",
     )
     parser.add_argument(
@@ -1541,6 +1552,13 @@ def main() -> None:
             "nnUNet only: crop H/W to N pixels centered on tumor before occlusion. "
             "Set to 0 to disable."
         ),
+    )
+    parser.add_argument(
+        "--device",
+        type=int,
+        default=None,
+        metavar="N",
+        help="CUDA device index to use (e.g. 0, 1, 2). Defaults to cuda:0 if CUDA is available.",
     )
 
     args = parser.parse_args()
@@ -1569,6 +1587,11 @@ def main() -> None:
     )
     occ_crop_hw: Optional[int] = args.occ_crop_hw if args.occ_crop_hw > 0 else None
 
+    if args.device is not None:
+        device: Optional[torch.device] = torch.device(f"cuda:{args.device}")
+    else:
+        device = None  # each process_fold will pick cuda:0 or cpu
+
     output_dir  = Path(args.output_dir)
     metrics_dir = Path(args.metrics_dir)
 
@@ -1578,6 +1601,7 @@ def main() -> None:
     print(f"Output XAI dir:   {output_dir}")
     print(f"Output metrics:   {metrics_dir}")
     print(f"Occlusion window: {occ_window}  stride: {occ_stride}")
+    print(f"Device:           {device if device is not None else 'auto'}")
 
     for model_name in models:
         if not args.compute_metrics_only:
@@ -1592,6 +1616,7 @@ def main() -> None:
                     occ_stride=occ_stride,
                     ppe=args.perturbations_per_eval,
                     occ_crop_hw=occ_crop_hw,
+                    device=device,
                 )
 
         # Compute metrics and charts from saved .npz files

@@ -20,6 +20,7 @@ Usage:
 """
 
 import argparse
+import gc
 import importlib.util
 import json
 import os
@@ -37,10 +38,12 @@ import matplotlib.pyplot as plt
 import numpy as np
 import torch
 import torch.nn.functional as F
+from memory_profiler import profile
+import objgraph
 from captum.attr import Occlusion, Saliency
 from src.ablation_cam_3d import AblationCAM3D, find_decoder_feature_layers
 
-from src.utils import load_plans as _load_plans_from_file
+from src.utils import load_plans as _load_plans_from_file, log_large_vars
 
 # ---------------------------------------------------------------------------
 # Paths
@@ -423,14 +426,33 @@ def _zones_from_nnunet(
 # ===========================================================================
 
 def _make_forward_func_sigmoid(network: torch.nn.Module, fixed_mask: torch.Tensor):
-    """For MONAI models — sigmoid on logit channel 1, sum over masked voxels → (B,)."""
+    """For MONAI models — sigmoid on logit channel 1, sum over masked voxels → (B,).
+
+    Strips MetaTensor from both fixed_mask (once, at construction) and model output
+    (on each call) to prevent MetaTensor metadata accumulation across occlusion steps.
+    """
+    # Convert once so the closure holds a plain tensor, not a MetaTensor
+    #if hasattr(fixed_mask, "as_tensor"):
+        #fixed_mask = fixed_mask.as_tensor()
+
     def _forward(inp: torch.Tensor) -> torch.Tensor:
         out = network(inp)
-        if isinstance(out, (list, tuple)):
-            out = out[0]
+        #if isinstance(out, (list, tuple)):
+            #out = out[0]
+        #if hasattr(out, "as_tensor"):
+            #out = out.as_tensor()
         cancer_prob = torch.sigmoid(out[:, 1])
         return (cancer_prob * fixed_mask).flatten(1).sum(dim=1)
-    return _forward
+
+    def agg_segmentation_wrapper(inp):
+        out = network(inp)[:, 0:2, ...]  # (B, 2, H, W, D)
+        if isinstance(out, (list, tuple)):
+            out = out[0]
+        if hasattr(out, "as_tensor"):
+            out = out.as_tensor()
+        aggregated_logits = (out[:, 1, ...] * fixed_mask).sum(dim=(1, 2, 3))  # (B,)
+        return aggregated_logits
+    return  agg_segmentation_wrapper # _forward
 
 
 def _make_forward_func_softmax(network: torch.nn.Module, fixed_mask: torch.Tensor):
@@ -536,6 +558,7 @@ def _save_progress(progress: dict, progress_file: Path) -> None:
 # MONAI per-fold processing
 # ===========================================================================
 
+@profile
 def process_fold_monai(
     fold: int,
     model_name: str,
@@ -569,7 +592,7 @@ def process_fold_monai(
     config.data.json_list          = str(UMAMBA_ROOT / f"json_datalists/picai/fold_{fold}.json")
     config.gpus                    = [device.index if device.type == "cuda" else 0]
     config.cache_rate              = 0.0
-    config.transforms.label_keys  = ["pca", "prostate_pred", "zones"]
+    config.transforms.label_keys   = ["pca", "prostate_pred", "zones"]
 
     dm = DataModule(config=config)
     dm.setup("validation")
@@ -582,6 +605,7 @@ def process_fold_monai(
     run_input_ablation = "input_ablation"  in methods
 
     processed, skipped, errors = 0, 0, 0
+    objgraph.show_growth()  # reset baseline
 
     for i, batch in enumerate(dl):
         fname   = Path(batch["image"].meta["filename_or_obj"][0]).name
@@ -650,13 +674,14 @@ def process_fold_monai(
             sal_np = occ_np = abl_np = inp_abl = None
 
             if predicted_pos:
-                forward_func = _make_forward_func_sigmoid(network, fixed_mask)
+                forward_func = _make_forward_func_sigmoid(network, fixed_mask.as_tensor())
 
                 if run_saliency:
                     x_sal = x.detach().clone().requires_grad_(True)
                     with torch.enable_grad():
                         sal_attr = Saliency(forward_func).attribute(x_sal, abs=True)
                     sal_np = sal_attr.detach().cpu().numpy()[0]   # (3, H, W, D)
+                    del x_sal, sal_attr
                     sal_np = sal_np.transpose(0, 3, 1, 2)          # (3, D, H, W)
                     sal_np = sal_np[:, d0:d1]                       # (3, D_crop, H, W)
 
@@ -665,16 +690,18 @@ def process_fold_monai(
                     # → reorder to (C, H, W, D) to match monai tensor layout
                     occ_window_monai = (occ_window[0], occ_window[2], occ_window[3], occ_window[1])
                     occ_stride_monai = (occ_stride[0], occ_stride[2], occ_stride[3], occ_stride[1])
-                    with torch.enable_grad():
+                    with torch.no_grad():
                         occ_attr = Occlusion(forward_func).attribute(
-                            x.detach().clone(),
+                            x.as_tensor(),
                             sliding_window_shapes=occ_window_monai,
                             strides=occ_stride_monai,
                             baselines=0.0,
                             perturbations_per_eval=ppe,
-                            show_progress=True,
+                            show_progress=False,
                         )
                     occ_np = occ_attr.detach().cpu().numpy()[0]   # (3, H, W, D)
+                    del occ_attr
+                    print("    [objgraph after occlusion]"); objgraph.show_growth(limit=5)
                     occ_np = occ_np.transpose(0, 3, 1, 2)          # (3, D, H, W)
                     occ_np = occ_np[:, d0:d1]                       # (3, D_crop, H, W)
 
@@ -740,6 +767,7 @@ def process_fold_monai(
                 )
                 print(f"    Saved: {out_file}")
                 processed += 1
+                del forward_func
 
             # ---- Record progress ------------------------------------------
             progress[case_id] = _build_progress_record(
@@ -750,6 +778,14 @@ def process_fold_monai(
             )
             _save_progress(progress, progress_file)
 
+            # Free large tensors/arrays to prevent RAM accumulation across cases
+            # forward_func must be deleted first — its closure holds fixed_mask
+            del x, out, cancer_prob, fixed_mask, batch, occ_np
+            # Also drop numpy intermediates — .numpy() shares storage with MetaTensor,
+            # so these prevent the MetaTensor from being freed until GC runs
+            image_np = image_crop = pred_np = pred_crop = None
+            lbl_np = lbl_crop = zones_crop = z = None
+
         except Exception as exc:
             print(f"    ERROR: {exc}")
             traceback.print_exc()
@@ -757,8 +793,11 @@ def process_fold_monai(
             progress[case_id] = {"done": False, "error": str(exc), "predicted_pos": None}
             _save_progress(progress, progress_file)
 
-        if torch.cuda.is_available() and (i + 1) % 10 == 0:
+        log_large_vars(locals(), threshold_mb=50)
+        gc.collect()
+        if torch.cuda.is_available():
             torch.cuda.empty_cache()
+        print(f"    [objgraph after gc case {i}]"); objgraph.show_growth(limit=5)
 
     summary = {
         "model": model_name, "fold": fold,
@@ -914,12 +953,13 @@ def process_fold_nnunet(
                     with torch.enable_grad():
                         sal_attr = Saliency(fwd_sal).attribute(x_sal, abs=True)
                     sal_np = _unpad(sal_attr.detach().cpu().numpy()[0], original_dhw)
+                    del x_sal, sal_attr
                     if occ_crop_hw is not None:
                         sal_np = sal_np[:, :, h0:h0 + occ_crop_hw, w0:w0 + occ_crop_hw]
                     sal_np = sal_np[:, d0:d1]  # (3, D_crop, H_crop, W_crop)
 
                 if run_occlusion:
-                    with torch.enable_grad():
+                    with torch.no_grad():
                         occ_attr = Occlusion(fwd_occ).attribute(
                             x_crop,
                             sliding_window_shapes=occ_window,
@@ -929,6 +969,7 @@ def process_fold_nnunet(
                             show_progress=True,
                         )
                     occ_np = _unpad(occ_attr.detach().cpu().numpy()[0], (original_dhw[0], x_crop.shape[3], x_crop.shape[4]))
+                    del occ_attr
                     occ_np = occ_np[:, d0:d1]  # (3, D_crop, H_crop, W_crop)
 
                 if run_ablation_cam:
@@ -1000,6 +1041,9 @@ def process_fold_nnunet(
             )
             _save_progress(progress, progress_file)
 
+            # Free large tensors to prevent RAM accumulation across cases
+            del x, out, cancer_prob, fixed_mask
+
         except Exception as exc:
             print(f"    ERROR: {exc}")
             traceback.print_exc()
@@ -1007,7 +1051,8 @@ def process_fold_nnunet(
             progress[case_id] = {"done": False, "error": str(exc), "predicted_pos": None}
             _save_progress(progress, progress_file)
 
-        if torch.cuda.is_available() and (i + 1) % 10 == 0:
+        gc.collect()
+        if torch.cuda.is_available():
             torch.cuda.empty_cache()
 
     summary = {

@@ -23,6 +23,10 @@
   .panel-box img, .panel-box canvas {
     width: 100%; display: block; image-rendering: pixelated;
   }
+  .rotate-left .panel-box img,
+  .rotate-left .panel-box canvas {
+    transform: rotate(-90deg);
+  }
   .panel-empty {
     background: #111; border-radius: .4rem;
     display: flex; align-items: center; justify-content: center;
@@ -94,16 +98,29 @@
       <span class="vr mx-1"></span>
       <span class="fw-semibold small text-nowrap">GIF:</span>
       <select id="gif-fps" class="form-select form-select-sm" style="width:auto">
+        <option value="2000">0.5 fps</option>
+        <option value="1000">1 fps</option>
+        <option value="500" selected>2 fps</option>
+        <option value="333">3 fps</option>
+        <option value="250">4 fps</option>
         <option value="200">5 fps</option>
-        <option value="120" selected>8 fps</option>
-        <option value="83">12 fps</option>
       </select>
       <button id="gif-btn" class="btn btn-sm btn-outline-primary" disabled>Export Table GIF</button>
+      <span class="vr mx-1"></span>
+      <div class="form-check form-switch mb-0 d-flex align-items-center gap-2">
+        <input class="form-check-input" type="checkbox" id="contour-toggle" role="switch">
+        <label class="form-check-label small fw-semibold text-nowrap" for="contour-toggle">Zone contours</label>
+      </div>
+      <span class="vr mx-1"></span>
+      <div class="form-check form-switch mb-0 d-flex align-items-center gap-2">
+        <input class="form-check-input" type="checkbox" id="ablation-toggle" role="switch">
+        <label class="form-check-label small fw-semibold text-nowrap" for="ablation-toggle">AblationCAM</label>
+      </div>
     </div>
 
 
     {# Image grid — populated by JS #}
-    <div id="viewer-grid"></div>
+    <div id="viewer-grid"{% if model in ['umamba_mtl', 'swin_unetr'] %} class="rotate-left"{% endif %}></div>
     <p id="no-xai-msg" class="text-muted small mt-2" style="display:none">
       ⚠ Saliency / Occlusion maps were not computed for this case (model predicted negative).
     </p>
@@ -273,11 +290,63 @@ let panels = {};        // { panelKey: [base64DataURL, ...] }
 let cachedImages = {};  // { panelKey: [HTMLImageElement, ...] }
 let nSlices = 0;
 let currentAlpha = 0.6;
+let showZoneContours = false;
+let cachedContours = {};  // { sliceIdx: ImageData }
 
 // Offscreen canvas for confined-alpha processing
 const _tmpCanvas = document.createElement("canvas");
 _tmpCanvas.width = 200; _tmpCanvas.height = 200;
 const _tmpCtx = _tmpCanvas.getContext("2d");
+
+// ── Zone contour helpers ─────────────────────────────────────────────────────
+function computeContourData(sl) {
+  if (!cachedImages["zones"]?.[sl]) return null;
+  _tmpCtx.clearRect(0, 0, 200, 200);
+  _tmpCtx.drawImage(cachedImages["zones"][sl], 0, 0, 200, 200);
+  const zd = _tmpCtx.getImageData(0, 0, 200, 200).data;
+  const contourData = new ImageData(200, 200);
+  const cd = contourData.data;
+  const W = 200, H = 200;
+
+  // Snap every pixel to a discrete zone label to eliminate LANCZOS upsampling
+  // artifacts that would otherwise create thick blurry edges.
+  // 0=background, 1=PZ (#3a7bd5), 2=TZ (#d93025)
+  const PZ_COLOR = [0x3a, 0x7b, 0xd5];
+  const TZ_COLOR = [0xd9, 0x30, 0x25];
+  const labels = new Uint8Array(W * H);
+  for (let k = 0; k < W * H; k++) {
+    const i = k * 4;
+    if (zd[i + 3] < 128) continue; // background → label stays 0
+    const r = zd[i], g = zd[i+1], b = zd[i+2];
+    const dPZ = Math.abs(r - 0x3a) + Math.abs(g - 0x7b) + Math.abs(b - 0xd5);
+    const dTZ = Math.abs(r - 0xd9) + Math.abs(g - 0x30) + Math.abs(b - 0x25);
+    labels[k] = dPZ <= dTZ ? 1 : 2;
+  }
+
+  // 1px edge: zone pixels where any 4-neighbor has a different label (incl. background)
+  const COLORS = [null, PZ_COLOR, TZ_COLOR];
+  for (let y = 0; y < H; y++) {
+    for (let x = 0; x < W; x++) {
+      const k = y * W + x;
+      const zone = labels[k];
+      if (zone === 0) continue;
+      if (x === 0     || labels[k - 1] !== zone ||
+          x === W - 1 || labels[k + 1] !== zone ||
+          y === 0     || labels[k - W] !== zone ||
+          y === H - 1 || labels[k + W] !== zone) {
+        const i = k * 4;
+        const c = COLORS[zone];
+        cd[i] = c[0]; cd[i+1] = c[1]; cd[i+2] = c[2]; cd[i+3] = 255;
+      }
+    }
+  }
+  return contourData;
+}
+
+function getContourData(sl) {
+  if (!cachedContours[sl]) cachedContours[sl] = computeContourData(sl);
+  return cachedContours[sl];
+}
 
 // ── Composite one overlay cell ───────────────────────────────────────────────
 // All overlay PNGs have a meaningful alpha channel (alpha ∝ signal strength,
@@ -312,6 +381,17 @@ function compositeCell(row, col, sl) {
     _tmpCtx.putImageData(imgData, 0, 0);
     ctx.globalAlpha = 1.0;
     ctx.drawImage(_tmpCanvas, 0, 0, 200, 200);
+  }
+
+  // Zone contour overlay (if enabled, skip for original/zones columns)
+  if (showZoneContours && col.key !== "original" && col.key !== "zones") {
+    const contourData = getContourData(sl);
+    if (contourData) {
+      _tmpCtx.clearRect(0, 0, 200, 200);
+      _tmpCtx.putImageData(contourData, 0, 0);
+      ctx.globalAlpha = 1.0;
+      ctx.drawImage(_tmpCanvas, 0, 0, 200, 200);
+    }
   }
 }
 
@@ -420,6 +500,25 @@ alphaSlider.addEventListener("input", () => {
   recompositeAll();
 });
 
+document.getElementById("contour-toggle").addEventListener("change", e => {
+  showZoneContours = e.target.checked;
+  recompositeAll();
+});
+
+// AblationCAM column toggle (hidden by default)
+function setAblationVisible(visible) {
+  const grid = document.getElementById("viewer-grid");
+  grid.style.gridTemplateColumns = visible
+    ? "80px repeat(7, minmax(0, 1fr))"
+    : "80px repeat(6, minmax(0, 1fr))";
+  document.querySelectorAll(".col-group-ablation").forEach(el => {
+    el.classList.toggle("col-hidden", !visible);
+  });
+}
+document.getElementById("ablation-toggle").addEventListener("change", e => {
+  setAblationVisible(e.target.checked);
+});
+
 // ── Plotly helpers ───────────────────────────────────────────────────────────
 const PLOTLY_LAYOUT_MINI = {
   margin: { t: 4, b: 30, l: 30, r: 10 },
@@ -508,10 +607,12 @@ function plotBar(divId, means) {
     nSlices = data.n_slices;
 
     buildGrid(panels);
+    setAblationVisible(false);
     populateLegend(panels);
 
     loadMsg.textContent = "Pre-loading images…";
     await preloadImages(panels);
+    cachedContours = {};
 
     const slider = document.getElementById("slice-slider");
     slider.max = nSlices - 1;
@@ -539,13 +640,8 @@ function plotBar(divId, means) {
 })();
 
 // ── Legend ───────────────────────────────────────────────────────────────────
-const COLORMAP_GRADIENTS = {
-  prediction:  { label: "Cancer Probability", grad: "linear-gradient(to right,#30123b,#4776ef,#1dbd9d,#b1f23c,#fb8a26,#7a0502)" },
-  label:       null,
-  saliency_0:  { label: "Saliency",           grad: "linear-gradient(to right,#30123b,#4776ef,#1dbd9d,#b1f23c,#fb8a26,#7a0502)" },
-  occlusion_0: { label: "Occlusion",          grad: "linear-gradient(to right,#30123b,#4776ef,#1dbd9d,#b1f23c,#fb8a26,#7a0502)" },
-  ablation:    { label: "AblationCAM",        grad: "linear-gradient(to right,#30123b,#4776ef,#1dbd9d,#b1f23c,#fb8a26,#7a0502)" },
-};
+const COLORMAP_KEYS = ["prediction", "saliency_0", "occlusion_0", "ablation"];
+const COLORMAP_GRAD = "linear-gradient(to right,#30123b,#4776ef,#1dbd9d,#b1f23c,#fb8a26,#7a0502)";
 
 function populateLegend(availablePanels) {
   const card = document.getElementById("legend-card");
@@ -553,20 +649,16 @@ function populateLegend(availablePanels) {
     document.getElementById("legend-zones").style.display = "";
   }
   const cmDiv = document.getElementById("legend-colormaps");
-  const seen = new Set();
-  for (const [key, cfg] of Object.entries(COLORMAP_GRADIENTS)) {
-    if (cfg === null || !(key in availablePanels)) continue;
-    if (seen.has(cfg.label)) continue;
-    seen.add(cfg.label);
+  const hasColormap = COLORMAP_KEYS.some(k => k in availablePanels);
+  if (hasColormap) {
     cmDiv.insertAdjacentHTML("beforeend", `
-      <div class="small fw-semibold text-muted mt-1 mb-1">${cfg.label}</div>
-      <div style="height:10px;border-radius:3px;background:${cfg.grad};margin-bottom:2px"></div>
+      <div style="height:10px;border-radius:3px;background:${COLORMAP_GRAD};margin-bottom:2px"></div>
       <div class="d-flex justify-content-between" style="font-size:.65rem;color:#888">
         <span>Low</span><span>High</span>
       </div>
     `);
   }
-  const hasSomething = "zones" in availablePanels || cmDiv.innerHTML.trim() !== "";
+  const hasSomething = "zones" in availablePanels || hasColormap;
   if (hasSomething) card.style.display = "";
 }
 

@@ -224,6 +224,17 @@ def _is_sentinel(arr) -> bool:
     return arr is None or (isinstance(arr, np.ndarray) and arr.ndim == 1 and arr.size == 0)
 
 
+def _fix_zones(zones: np.ndarray, model: str) -> np.ndarray:
+    """Swap zone labels 1↔2 for nnunet NPZ files that were saved with raw NIfTI
+    encoding (1=TZ, 2=PZ) before the remapping fix in generate_xai_data.py."""
+    if model != "nnunet" or _is_sentinel(zones):
+        return zones
+    fixed = zones.copy()
+    fixed[zones == 1] = 2
+    fixed[zones == 2] = 1
+    return fixed
+
+
 # Zone discrete colormap: 0=bg (dark), 1=PZ (blue), 2=TZ (red)
 _ZONE_CMAP = mcolors.ListedColormap(["#000000", "#3a7bd5", "#d93025"])
 _ZONE_NORM = mcolors.BoundaryNorm([0, 0.5, 1.5, 2.5], _ZONE_CMAP.N)
@@ -328,7 +339,7 @@ def _build_case_payload(model: str, case_id: str) -> dict:
     saliency   = npz.get("saliency",       np.zeros((0,), dtype=np.float32))
     occlusion  = npz.get("occlusion",      np.zeros((0,), dtype=np.float32))
     ablation   = npz.get("ablation",       np.zeros((0,), dtype=np.float32))
-    zones      = npz.get("zones",          np.zeros((0,), dtype=np.int8))
+    zones      = _fix_zones(npz.get("zones", np.zeros((0,), dtype=np.int8)), model)
     label      = npz.get("label",          np.zeros((0,), dtype=np.float32))
     inp_abl    = npz.get("input_ablation", np.zeros((0,), dtype=np.float32))
 
@@ -510,7 +521,7 @@ def api_gif(model: str, case_id: str):
             arr = ab[0]
             return arr, "turbo", 0.0, float(np.percentile(arr, 99)) or 1e-6, False, True
         if panel == "zones":
-            z = npz.get("zones", np.zeros((0,), dtype=np.int8))
+            z = _fix_zones(npz.get("zones", np.zeros((0,), dtype=np.int8)), model)
             return (None,) * 6 if _is_empty(z) else (z.astype(np.float32), "", 0, 2, True, True)
         return (None,) * 6
 
@@ -571,7 +582,7 @@ def api_gif_table(model: str, case_id: str):
     saliency  = npz.get("saliency",   np.zeros((0,), dtype=np.float32))
     occlusion = npz.get("occlusion",  np.zeros((0,), dtype=np.float32))
     ablation  = npz.get("ablation",   np.zeros((0,), dtype=np.float32))
-    zones     = npz.get("zones",      np.zeros((0,), dtype=np.int8))
+    zones     = _fix_zones(npz.get("zones", np.zeros((0,), dtype=np.int8)), model)
     label     = npz.get("label",      np.zeros((0,), dtype=np.float32))
 
     # Cross-channel normalization (same logic as _build_case_payload)

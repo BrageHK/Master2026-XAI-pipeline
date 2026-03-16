@@ -8,6 +8,8 @@ dependencies = [
     "picai-nnunet-xai",
     "umamba",
     "flask>=3.0",
+    "memory-profiler>=0.61.0",
+    "objgraph>=3.6.2",
 ]
 
 [tool.uv.sources]

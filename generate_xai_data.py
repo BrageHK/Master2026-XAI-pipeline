@@ -53,6 +53,7 @@ PROJECT_ROOT = Path(__file__).parent.resolve()
 # Outputs
 DEFAULT_OUTPUT_XAI     = PROJECT_ROOT / "results" / "xai"
 DEFAULT_OUTPUT_METRICS = PROJECT_ROOT / "results" / "metrics"
+DEFAULT_OUTPUT_ZONES   = PROJECT_ROOT / "results" / "xai" / "zones"
 
 CHANNEL_NAMES = ["t2w", "adc", "hbv"]
 
@@ -241,6 +242,32 @@ def load_splits() -> Dict:
     return valid_splits
 
 
+def load_splits_nnunet() -> Dict[int, Dict]:
+    """Build per-fold val lists for nnunet:
+    nnunet's own val cases + cases missing from nnunet splits entirely,
+    distributed by picai_baseline fold assignment.
+    """
+    from picai_baseline.splits.picai import valid_splits
+
+    nnunet_splits = json.load(open(NNUNET_ROOT / "splits.json"))
+
+    all_in_nnunet: set = set()
+    for s in nnunet_splits:
+        all_in_nnunet.update(s["train"])
+        all_in_nnunet.update(s["val"])
+
+    baseline_all: set = set()
+    for v in valid_splits.values():
+        baseline_all.update(v["subject_list"])
+    missing = baseline_all - all_in_nnunet
+
+    result: Dict[int, Dict] = {}
+    for fold_idx, (fold_key, fold_data) in enumerate(valid_splits.items()):
+        extra = sorted(set(fold_data["subject_list"]) & missing)
+        result[fold_idx] = {"subject_list": list(nnunet_splits[fold_idx]["val"]) + extra}
+    return result
+
+
 def _preprocess_nnunet(case_id: str, plans: dict):
     """
     Load co-registered NIfTI files and preprocess with nnUNet's GenericPreprocessor.
@@ -266,7 +293,7 @@ def _preprocess_nnunet(case_id: str, plans: dict):
     return data.astype(np.float32), properties
 
 
-def _load_label_nnunet(case_id: str, plans: dict) -> Optional[np.ndarray]:
+def _load_label_nnunet(case_id: str, plans: dict, prep_props: dict) -> Optional[np.ndarray]:
     """Load and resample the binary PCA label to match nnUNet preprocessed space."""
     import SimpleITK as sitk  # noqa: E402
     from nnUNet.nnunet.preprocessing.preprocessing import resample_data_or_seg  # noqa: E402
@@ -291,6 +318,21 @@ def _load_label_nnunet(case_id: str, plans: dict) -> Optional[np.ndarray]:
     label_resampled = resample_data_or_seg(
         label_np[np.newaxis], new_shape, is_seg=True, axis=None, order=1, do_separate_z=False
     )[0]
+
+    # Apply the same crop_to_nonzero bbox that nnUNet's preprocessor applies to the image.
+    # Without this, label_resampled is in full (uncropped) space while data/zones are in
+    # cropped space, causing all crop-coordinate slices to land in the wrong region.
+    crop_bbox = prep_props.get("crop_bbox")
+    if crop_bbox is not None:
+        orig_size = prep_props["original_size_of_raw_data"]
+        slices = []
+        for j in range(label_resampled.ndim):
+            pre_tp_axis = tp[j]
+            start, end  = crop_bbox[pre_tp_axis]
+            scale       = label_resampled.shape[j] / orig_size[pre_tp_axis]
+            slices.append(slice(int(round(start * scale)), int(round(end * scale))))
+        label_resampled = label_resampled[tuple(slices)]
+
     return (label_resampled > 0).astype(np.float32)
 
 
@@ -474,6 +516,213 @@ def _sentinel(arr: Optional[np.ndarray]) -> np.ndarray:
     return arr if arr is not None else np.zeros((0,), dtype=np.float32)
 
 
+def _compute_zone_baseline_patches(
+    image: np.ndarray,
+    zones: np.ndarray,
+    cancer_mask: np.ndarray,
+    occ_window_dhw: Tuple[int, int, int],
+    n_patches: int,
+    rng: Optional[np.random.Generator] = None,
+) -> Tuple[np.ndarray, np.ndarray]:
+    """Sample n non-cancerous patches per zone; return the patch with the median sum.
+
+    From the n sampled patches, each patch's total intensity (sum across all
+    channels and voxels) is computed.  The patch whose sum is closest to the
+    median of those sums is selected as the representative baseline patch.
+
+    Args:
+        image: (3, D, H, W) float32 in DHW layout.
+        zones: (D, H, W) int8, 0=bg 1=PZ 2=TZ.
+        cancer_mask: (D, H, W) bool — predicted positive voxels (excluded).
+        occ_window_dhw: (dW, hW, wW) — occlusion window size in DHW dims.
+        n_patches: number of candidate patches to sample per zone.
+        rng: optional numpy random generator (reproducibility).
+
+    Returns:
+        (tz_patch, pz_patch) each shape (3, dW, hW, wW) float32.
+    """
+    if rng is None:
+        rng = np.random.default_rng()
+
+    dW, hW, wW = occ_window_dhw
+    D, H, W = zones.shape
+
+    results = []
+    for z_val in (2, 1):  # TZ then PZ
+        if n_patches == 0 or dW > D or hW > H or wW > W:
+            results.append(np.zeros((3, dW, hW, wW), dtype=np.float32))
+            continue
+
+        zone_only = (zones == z_val) & (~cancer_mask)
+
+        # Find valid anchor positions: center voxel must be in zone_only
+        d_anc = np.arange(D - dW + 1)
+        h_anc = np.arange(H - hW + 1)
+        w_anc = np.arange(W - wW + 1)
+        dd, hh, ww = np.meshgrid(d_anc, h_anc, w_anc, indexing="ij")
+        dc = dd + dW // 2
+        hc = hh + hW // 2
+        wc = ww + wW // 2
+        valid = zone_only[dc, hc, wc]
+        anchors_d = dd[valid].ravel()
+        anchors_h = hh[valid].ravel()
+        anchors_w = ww[valid].ravel()
+
+        if len(anchors_d) == 0:
+            # Retry: use all zone voxels (ignore cancer exclusion)
+            zone_all = (zones == z_val)
+            valid2 = zone_all[dc, hc, wc]
+            anchors_d = dd[valid2].ravel()
+            anchors_h = hh[valid2].ravel()
+            anchors_w = ww[valid2].ravel()
+
+        if len(anchors_d) == 0:
+            results.append(np.zeros((3, dW, hW, wW), dtype=np.float32))
+            continue
+
+        n_sample = min(n_patches, len(anchors_d))
+        if n_sample < n_patches:
+            print(f"    [zone_median] zone={z_val}: only {len(anchors_d)} valid anchors "
+                  f"(requested {n_patches}), using all.")
+
+        # Shuffle the full anchor pool once; each patch slot consumes from it in
+        # order so the same anchor is never used twice.
+        pool = rng.permutation(len(anchors_d))  # shuffled indices into anchors_d/h/w
+        used = np.zeros(len(anchors_d), dtype=bool)
+        patch_vol = dW * hW * wW
+
+        patches = []
+        for _slot in range(n_sample):
+            best_anchor = -1
+            best_frac   = 1.0
+            tries       = 0
+
+            for pool_i in pool:
+                if used[pool_i]:
+                    continue
+
+                d0_ = int(anchors_d[pool_i])
+                h0_ = int(anchors_h[pool_i])
+                w0_ = int(anchors_w[pool_i])
+                frac_outside = float(
+                    (zones[d0_:d0_ + dW, h0_:h0_ + hW, w0_:w0_ + wW] != z_val).sum()
+                ) / patch_vol
+                tries += 1
+
+                if frac_outside <= 0.03:
+                    best_anchor = pool_i
+                    best_frac   = frac_outside
+                    break                    # good enough — stop searching
+
+                if frac_outside < best_frac:
+                    best_frac   = frac_outside
+                    best_anchor = pool_i
+
+                if tries >= 100:
+                    break                    # safety cap — use best found so far
+
+            if best_anchor == -1:
+                break                        # pool exhausted, no more patches
+
+            used[best_anchor] = True
+            if best_frac > 0.03:
+                print(f"    [zone_median] zone={z_val} slot {_slot}: "
+                      f"no patch ≤3% outside found after {tries} tries; "
+                      f"best fit={100*(1-best_frac):.1f}% in zone")
+
+            d0_ = int(anchors_d[best_anchor])
+            h0_ = int(anchors_h[best_anchor])
+            w0_ = int(anchors_w[best_anchor])
+            patches.append(image[:, d0_:d0_ + dW, h0_:h0_ + hW, w0_:w0_ + wW].copy())
+
+        if not patches:
+            results.append(np.zeros((3, dW, hW, wW), dtype=np.float32))
+            continue
+
+        patch_sums = np.array([p.sum() for p in patches])          # (n_collected,)
+        median_sum = np.median(patch_sums)
+        rep_idx    = int(np.argmin(np.abs(patch_sums - median_sum)))  # closest to median
+        results.append(patches[rep_idx].astype(np.float32))
+
+    tz_patch, pz_patch = results
+    return tz_patch, pz_patch
+
+
+def _build_baseline_tensor(
+    zones_spatial: np.ndarray,
+    tz_patch: np.ndarray,
+    pz_patch: np.ndarray,
+    x_shape: Tuple,
+    layout: str,
+    device: torch.device,
+) -> torch.Tensor:
+    """Build a baseline tensor by tiling representative zone patches.
+
+    The TZ representative patch is tiled across all TZ voxels; likewise for PZ.
+    Background voxels remain 0.  When a sliding occlusion window lands entirely
+    within one zone it is replaced by a spatially consistent sample of that
+    zone's representative tissue.
+
+    Args:
+        zones_spatial: (D, H, W) int8 in DHW coordinate order.
+        tz_patch: (3, dW, hW, wW) float32 — representative TZ patch.
+        pz_patch: (3, dW, hW, wW) float32 — representative PZ patch.
+        x_shape: full tensor shape, (1, 3, H, W, D) or (1, 3, D, H, W).
+        layout: "hwd" for MONAI tensors (H, W, D last), "dhw" for nnUNet.
+        device: target torch device.
+
+    Returns:
+        Baseline tensor of shape x_shape on device.
+    """
+    _, dW, hW, wW = tz_patch.shape
+    D_z, H_z, W_z = zones_spatial.shape
+
+    # Tile each patch to cover the full spatial extent in DHW
+    def _tile(patch: np.ndarray, D: int, H: int, W: int) -> np.ndarray:
+        # patch: (3, dW, hW, wW) → tiled (3, D, H, W)
+        rD = D // dW + 1
+        rH = H // hW + 1
+        rW = W // wW + 1
+        return np.tile(patch, (1, rD, rH, rW))[:, :D, :H, :W]
+
+    tiled_tz_dhw = _tile(tz_patch, D_z, H_z, W_z)  # (3, D, H, W)
+    tiled_pz_dhw = _tile(pz_patch, D_z, H_z, W_z)
+
+    if layout == "hwd":
+        # Transpose tiled patches and zones from DHW → HWD to match tensor spatial dims
+        tiled_tz = tiled_tz_dhw.transpose(0, 2, 3, 1)           # (3, H, W, D)
+        tiled_pz = tiled_pz_dhw.transpose(0, 2, 3, 1)
+        zones_vol = zones_spatial.transpose(1, 2, 0)             # (H, W, D)
+    else:
+        tiled_tz  = tiled_tz_dhw                                 # (3, D, H, W)
+        tiled_pz  = tiled_pz_dhw
+        zones_vol = zones_spatial                                 # (D, H, W)
+
+    spatial = x_shape[2:]
+    baseline_np = np.zeros((3,) + spatial, dtype=np.float32)
+    for c in range(3):
+        baseline_np[c][zones_vol == 2] = tiled_tz[c][zones_vol == 2]
+        baseline_np[c][zones_vol == 1] = tiled_pz[c][zones_vol == 1]
+
+    return torch.from_numpy(baseline_np[np.newaxis]).to(device)  # (1, 3, ...)
+
+
+PICAI_OVERLAP_THRESHOLD = 0.10  # PI-CAI: predicted lesion counts as TP only if
+                                # intersection / GT_volume >= 10 %
+
+
+def _detection_overlap(pred_mask: np.ndarray, gt_mask: np.ndarray) -> float:
+    """Fraction of GT voxels covered by the prediction mask.
+
+    Returns intersection / GT_volume, or 0.0 when GT is empty.
+    Masks must be broadcastable (same shape or both (D,H,W)).
+    """
+    gt_volume = float(gt_mask.sum())
+    if gt_volume == 0:
+        return 0.0
+    return float((pred_mask & gt_mask).sum()) / gt_volume
+
+
 def _build_progress_record(
     predicted_pos: bool,
     lbl_crop: Optional[np.ndarray],
@@ -489,10 +738,19 @@ def _build_progress_record(
     """Build a per-case record for progress.json from already-computed arrays."""
     has_pca = (lbl_crop is not None) and bool(lbl_crop.sum() > 1)
 
-    if predicted_pos and has_pca:
+    # PI-CAI TP criterion: prediction must overlap ≥10 % of the GT lesion volume.
+    overlap = 0.0
+    if predicted_pos and has_pca and pred_crop is not None:
+        pred_mask_3d = pred_crop[0] > 0.5   # (D, H, W) bool
+        gt_mask_3d   = lbl_crop[0] > 0      # (D, H, W) bool
+        overlap      = _detection_overlap(pred_mask_3d, gt_mask_3d)
+
+    if predicted_pos and has_pca and overlap >= PICAI_OVERLAP_THRESHOLD:
         classification = "tp"
     elif predicted_pos and not has_pca:
         classification = "fp"
+    elif predicted_pos and has_pca and overlap < PICAI_OVERLAP_THRESHOLD:
+        classification = "fp"  # predicted but missed the lesion
     elif not predicted_pos and not has_pca:
         classification = "tn"
     else:
@@ -569,6 +827,8 @@ def process_fold_monai(
     occ_stride: Tuple[int, int, int, int],
     ppe: int,
     device: Optional[torch.device] = None,
+    occ_strategy: str = "zero",
+    n_zone_patches: int = 10,
 ) -> None:
     from shared_modules.data_module import DataModule   # noqa: E402
     from shared_modules.utils import load_config        # noqa: E402
@@ -636,6 +896,17 @@ def process_fold_monai(
 
             print(f"    Predicted positive: {predicted_pos}  (cancer voxels={cancer_voxels}  max_prob={pred_max_prob:.3f})")
 
+            # ---- umamba_mtl: save predicted zones (all cases) ---------------
+            if model_name == "umamba_mtl":
+                with torch.no_grad():
+                    zone_logits = out[:, 2:5]                                           # (1, 3, H, W, D)
+                    zone_pred_hwD = zone_logits.softmax(dim=1).argmax(dim=1)[0]         # (H, W, D)
+                zones_pred_Dhw = zone_pred_hwD.cpu().numpy().transpose(2, 0, 1).astype(np.int8)  # (D, H, W)
+                zones_pred_dir = DEFAULT_OUTPUT_ZONES / f"fold_{fold}"
+                zones_pred_dir.mkdir(parents=True, exist_ok=True)
+                np.savez_compressed(zones_pred_dir / f"{case_id}.npz", zones=zones_pred_Dhw)
+                del zone_logits, zone_pred_hwD, zones_pred_Dhw
+
             # ---- Depth crop coordinates based on prostate zones -----------
             D = x.shape[4]
             if "zones" in batch:
@@ -673,7 +944,7 @@ def process_fold_monai(
             zones_crop = _zones_from_monai_batch(batch, d0, d1)  # (D_crop, H, W) or None
 
             # ---- XAI: only when predicted positive -------------------------
-            sal_np = occ_np = abl_np = inp_abl = None
+            sal_np = occ_np = occ_tz_np = occ_pz_np = occ_ch_np = abl_np = inp_abl = None
 
             if predicted_pos:
                 forward_func = _make_forward_func_sigmoid(network, fixed_mask.as_tensor())
@@ -692,20 +963,94 @@ def process_fold_monai(
                     # → reorder to (C, H, W, D) to match monai tensor layout
                     occ_window_monai = (occ_window[0], occ_window[2], occ_window[3], occ_window[1])
                     occ_stride_monai = (occ_stride[0], occ_stride[2], occ_stride[3], occ_stride[1])
-                    with torch.no_grad():
-                        occ_attr = Occlusion(forward_func).attribute(
-                            x.as_tensor(),
-                            sliding_window_shapes=occ_window_monai,
-                            strides=occ_stride_monai,
-                            baselines=0.0,
-                            perturbations_per_eval=ppe,
-                            show_progress=False,
+
+                    # --- zone_median baseline (TZ + PZ) ---
+                    if occ_strategy in ("zone_median", "all") and zones_crop is not None:
+                        cancer_mask_dhw = (pred_crop[0] > 0.5)          # (D_crop, H, W)
+                        occ_win_dhw = (occ_window[1], occ_window[2], occ_window[3])
+                        tz_patch, pz_patch = _compute_zone_baseline_patches(
+                            image_crop, zones_crop, cancer_mask_dhw, occ_win_dhw, n_zone_patches
                         )
-                    occ_np = occ_attr.detach().cpu().numpy()[0]   # (3, H, W, D)
-                    del occ_attr
-                    print("    [objgraph after occlusion]"); objgraph.show_growth(limit=5)
-                    occ_np = occ_np.transpose(0, 3, 1, 2)          # (3, D, H, W)
-                    occ_np = occ_np[:, d0:d1]                       # (3, D_crop, H, W)
+                        print(f"    [zone_median] TZ patch sum={tz_patch.sum():.3f}  PZ patch sum={pz_patch.sum():.3f}")
+                        # Reconstruct full-D zone map for baseline (prostate region at [d0:d1])
+                        H_full, W_full, D_full = x.shape[2], x.shape[3], x.shape[4]
+                        zones_full_Dhw = np.zeros((D_full, H_full, W_full), dtype=np.int8)
+                        zones_full_Dhw[d0:d1] = zones_crop
+                        zero_patch = np.zeros_like(tz_patch)
+                        occ_baseline_tz = _build_baseline_tensor(
+                            zones_full_Dhw, tz_patch, zero_patch, x.shape, "hwd", device
+                        )
+                        occ_baseline_pz = _build_baseline_tensor(
+                            zones_full_Dhw, zero_patch, pz_patch, x.shape, "hwd", device
+                        )
+                        del zones_full_Dhw, zero_patch
+
+                        with torch.no_grad():
+                            occ_attr_tz = Occlusion(forward_func).attribute(
+                                x.as_tensor(),
+                                sliding_window_shapes=occ_window_monai,
+                                strides=occ_stride_monai,
+                                baselines=occ_baseline_tz,
+                                perturbations_per_eval=ppe,
+                                show_progress=False,
+                            )
+                        occ_tz_np = occ_attr_tz.detach().cpu().numpy()[0]   # (3, H, W, D)
+                        del occ_attr_tz, occ_baseline_tz
+                        print("    [objgraph after occlusion TZ]"); objgraph.show_growth(limit=5)
+                        occ_tz_np = occ_tz_np.transpose(0, 3, 1, 2)[:, d0:d1]  # (3, D_crop, H, W)
+
+                        with torch.no_grad():
+                            occ_attr_pz = Occlusion(forward_func).attribute(
+                                x.as_tensor(),
+                                sliding_window_shapes=occ_window_monai,
+                                strides=occ_stride_monai,
+                                baselines=occ_baseline_pz,
+                                perturbations_per_eval=ppe,
+                                show_progress=False,
+                            )
+                        occ_pz_np = occ_attr_pz.detach().cpu().numpy()[0]   # (3, H, W, D)
+                        del occ_attr_pz, occ_baseline_pz
+                        print("    [objgraph after occlusion PZ]"); objgraph.show_growth(limit=5)
+                        occ_pz_np = occ_pz_np.transpose(0, 3, 1, 2)[:, d0:d1]  # (3, D_crop, H, W)
+                    elif occ_strategy == "zone_median" and zones_crop is None:
+                        print("    [zone_median] WARNING: zones_crop is None — skipping zone_median baseline.")
+
+                    # --- zero baseline ---
+                    if occ_strategy in ("zero", "all") or (occ_strategy == "zone_median" and zones_crop is None):
+                        with torch.no_grad():
+                            occ_attr = Occlusion(forward_func).attribute(
+                                x.as_tensor(),
+                                sliding_window_shapes=occ_window_monai,
+                                strides=occ_stride_monai,
+                                baselines=0.0,
+                                perturbations_per_eval=ppe,
+                                show_progress=False,
+                            )
+                        occ_np = occ_attr.detach().cpu().numpy()[0]   # (3, H, W, D)
+                        del occ_attr
+                        print("    [objgraph after occlusion zero]"); objgraph.show_growth(limit=5)
+                        occ_np = occ_np.transpose(0, 3, 1, 2)          # (3, D, H, W)
+                        occ_np = occ_np[:, d0:d1]                       # (3, D_crop, H, W)
+
+                    # --- channel_baseline (T2W/ADC=1, HBV=0) ---
+                    if occ_strategy in ("channel_baseline", "all"):
+                        # MONAI layout: (1, C, H, W, D); channels 0-1 → 1.0, channel 2 → 0.0
+                        occ_baseline_ch = torch.ones_like(x.as_tensor())
+                        occ_baseline_ch[:, 2] = 0.0
+                        with torch.no_grad():
+                            occ_attr = Occlusion(forward_func).attribute(
+                                x.as_tensor(),
+                                sliding_window_shapes=occ_window_monai,
+                                strides=occ_stride_monai,
+                                baselines=occ_baseline_ch,
+                                perturbations_per_eval=ppe,
+                                show_progress=False,
+                            )
+                        occ_ch_np = occ_attr.detach().cpu().numpy()[0]  # (3, H, W, D)
+                        del occ_attr, occ_baseline_ch
+                        print("    [objgraph after occlusion ch_baseline]"); objgraph.show_growth(limit=5)
+                        occ_ch_np = occ_ch_np.transpose(0, 3, 1, 2)     # (3, D, H, W)
+                        occ_ch_np = occ_ch_np[:, d0:d1]                  # (3, D_crop, H, W)
 
                 if run_ablation_cam:
                     try:
@@ -757,25 +1102,30 @@ def process_fold_monai(
                 np.savez_compressed(
                     out_file,
                     saliency       = _sentinel(sal_np).astype(np.float32) if sal_np is not None else _sentinel(None),
-                    occlusion      = _sentinel(occ_np).astype(np.float32) if occ_np is not None else _sentinel(None),
+                    occlusion              = _sentinel(occ_np).astype(np.float32) if occ_np is not None else _sentinel(None),
+                    occlusion_tz           = _sentinel(occ_tz_np).astype(np.float32) if occ_tz_np is not None else _sentinel(None),
+                    occlusion_pz           = _sentinel(occ_pz_np).astype(np.float32) if occ_pz_np is not None else _sentinel(None),
+                    occlusion_ch_baseline  = _sentinel(occ_ch_np).astype(np.float32) if occ_ch_np is not None else _sentinel(None),
                     ablation       = _sentinel(abl_np).astype(np.float32) if abl_np is not None else _sentinel(None),
                     input_ablation = _sentinel(inp_abl),
                     image          = image_crop.astype(np.float32),
                     prediction     = pred_crop.astype(np.float32),
                     label          = _sentinel(lbl_crop).astype(np.float32) if lbl_crop is not None else _sentinel(None),
                     zones          = zones_crop.astype(np.int8) if zones_crop is not None else _sentinel(None),
-                    channels       = np.array(CHANNEL_NAMES),
-                    case_id        = case_id,
-                    fold           = fold,
-                    model          = model_name,
+                    channels           = np.array(CHANNEL_NAMES),
+                    case_id            = case_id,
+                    fold               = fold,
+                    model              = model_name,
+                    occlusion_strategy = np.array(occ_strategy),
                 )
                 print(f"    Saved: {out_file}")
                 processed += 1
                 del forward_func
 
             # ---- Record progress ------------------------------------------
+            occ_for_progress = occ_np if occ_np is not None else occ_tz_np
             progress[case_id] = _build_progress_record(
-                predicted_pos, lbl_crop, zones_crop, sal_np, occ_np, abl_np,
+                predicted_pos, lbl_crop, zones_crop, sal_np, occ_for_progress, abl_np,
                 pred_crop=pred_crop,
                 pred_cancer_voxels=cancer_voxels, pred_max_prob=pred_max_prob,
                 confidence=pred_max_prob,  # MONAI uses sigmoid — identical to pred_max_prob
@@ -784,7 +1134,7 @@ def process_fold_monai(
 
             # Free large tensors/arrays to prevent RAM accumulation across cases
             # forward_func must be deleted first — its closure holds fixed_mask
-            del x, out, cancer_prob, fixed_mask, batch, occ_np
+            del x, out, cancer_prob, fixed_mask, batch, occ_np, occ_tz_np, occ_pz_np, occ_ch_np
             # Also drop numpy intermediates — .numpy() shares storage with MetaTensor,
             # so these prevent the MetaTensor from being freed until GC runs
             image_np = image_crop = pred_np = pred_crop = None
@@ -831,6 +1181,8 @@ def process_fold_nnunet(
     ppe: int,
     occ_crop_hw: Optional[int] = 128,
     device: Optional[torch.device] = None,
+    occ_strategy: str = "zero",
+    n_zone_patches: int = 10,
 ) -> None:
     fold_dir = output_dir / f"fold_{fold}"
     fold_dir.mkdir(parents=True, exist_ok=True)
@@ -850,7 +1202,7 @@ def process_fold_nnunet(
     print(f"Model ready on {device}.")
 
     plans     = load_plans()
-    splits    = load_splits()
+    splits    = load_splits_nnunet()
     if fold not in splits:
         print(f"WARNING: fold {fold} not in valid_splits. Skipping.")
         return
@@ -880,7 +1232,7 @@ def process_fold_nnunet(
             print(f"    Preprocessed shape: {data.shape}")
             original_dhw: Tuple[int, int, int] = tuple(data.shape[1:])  # type: ignore
 
-            label_np = _load_label_nnunet(case_id, plans)
+            label_np = _load_label_nnunet(case_id, plans, prep_props)
             if label_np is None:
                 print("    Label not found — prediction-only mode.")
 
@@ -945,7 +1297,7 @@ def process_fold_nnunet(
                 zones_crop = zones_full[d0:d1] if zones_full is not None else None
 
             # ---- XAI: only when predicted positive ------------------------
-            sal_np = occ_np = abl_np = inp_abl = None
+            sal_np = occ_np = occ_tz_np = occ_pz_np = occ_ch_np = abl_np = inp_abl = None
 
             if predicted_pos:
                 if occ_crop_hw is not None:
@@ -969,18 +1321,103 @@ def process_fold_nnunet(
                     sal_np = sal_np[:, d0:d1]  # (3, D_crop, H_crop, W_crop)
 
                 if run_occlusion:
-                    with torch.no_grad():
-                        occ_attr = Occlusion(fwd_occ).attribute(
-                            x_crop,
-                            sliding_window_shapes=occ_window,
-                            strides=occ_stride,
-                            baselines=0.0,
-                            perturbations_per_eval=ppe,
-                            show_progress=True,
+                    # --- zone_median baseline (TZ + PZ) ---
+                    if occ_strategy in ("zone_median", "all") and zones_full is not None:
+                        # Build zones in x_crop coordinate system: (D_pad, H_crop, W_crop)
+                        if occ_crop_hw is not None:
+                            zones_xcrop = zones_full[:, h0:h0 + occ_crop_hw, w0:w0 + occ_crop_hw]
+                        else:
+                            zones_xcrop = zones_full  # (D_orig, H, W)
+                        D_orig_z = zones_xcrop.shape[0]
+                        D_pad_val = x_crop.shape[2]
+                        if D_pad_val > D_orig_z:
+                            zones_xcrop_padded = np.pad(
+                                zones_xcrop, ((0, D_pad_val - D_orig_z), (0, 0), (0, 0)),
+                                mode="constant", constant_values=0,
+                            )
+                        else:
+                            zones_xcrop_padded = zones_xcrop[:D_pad_val]
+                        # Compute medians from unpadded region only
+                        image_xcrop_np = x_crop[0].cpu().numpy()       # (3, D_pad, H_crop, W_crop)
+                        cancer_xcrop   = fixed_mask_crop[0].cpu().numpy()  # (D_pad, H_crop, W_crop)
+                        occ_win_dhw = (occ_window[1], occ_window[2], occ_window[3])
+                        tz_patch, pz_patch = _compute_zone_baseline_patches(
+                            image_xcrop_np[:, :D_orig_z],
+                            zones_xcrop_padded[:D_orig_z],
+                            cancer_xcrop[:D_orig_z],
+                            occ_win_dhw,
+                            n_zone_patches,
                         )
-                    occ_np = _unpad(occ_attr.detach().cpu().numpy()[0], (original_dhw[0], x_crop.shape[3], x_crop.shape[4]))
-                    del occ_attr
-                    occ_np = occ_np[:, d0:d1]  # (3, D_crop, H_crop, W_crop)
+                        print(f"    [zone_median] TZ patch sum={tz_patch.sum():.3f}  PZ patch sum={pz_patch.sum():.3f}")
+                        zero_patch = np.zeros_like(tz_patch)
+                        occ_baseline_tz = _build_baseline_tensor(
+                            zones_xcrop_padded, tz_patch, zero_patch, x_crop.shape, "dhw", device
+                        )
+                        occ_baseline_pz = _build_baseline_tensor(
+                            zones_xcrop_padded, zero_patch, pz_patch, x_crop.shape, "dhw", device
+                        )
+                        del zones_xcrop, zones_xcrop_padded, image_xcrop_np, cancer_xcrop, zero_patch
+
+                        with torch.no_grad():
+                            occ_attr_tz = Occlusion(fwd_occ).attribute(
+                                x_crop,
+                                sliding_window_shapes=occ_window,
+                                strides=occ_stride,
+                                baselines=occ_baseline_tz,
+                                perturbations_per_eval=ppe,
+                                show_progress=True,
+                            )
+                        occ_tz_np = _unpad(occ_attr_tz.detach().cpu().numpy()[0], (original_dhw[0], x_crop.shape[3], x_crop.shape[4]))
+                        del occ_attr_tz, occ_baseline_tz
+                        occ_tz_np = occ_tz_np[:, d0:d1]  # (3, D_crop, H_crop, W_crop)
+
+                        with torch.no_grad():
+                            occ_attr_pz = Occlusion(fwd_occ).attribute(
+                                x_crop,
+                                sliding_window_shapes=occ_window,
+                                strides=occ_stride,
+                                baselines=occ_baseline_pz,
+                                perturbations_per_eval=ppe,
+                                show_progress=True,
+                            )
+                        occ_pz_np = _unpad(occ_attr_pz.detach().cpu().numpy()[0], (original_dhw[0], x_crop.shape[3], x_crop.shape[4]))
+                        del occ_attr_pz, occ_baseline_pz
+                        occ_pz_np = occ_pz_np[:, d0:d1]  # (3, D_crop, H_crop, W_crop)
+                    elif occ_strategy == "zone_median" and zones_full is None:
+                        print("    [zone_median] WARNING: zones_full is None — skipping zone_median baseline.")
+
+                    # --- zero baseline ---
+                    if occ_strategy in ("zero", "all") or (occ_strategy == "zone_median" and zones_full is None):
+                        with torch.no_grad():
+                            occ_attr = Occlusion(fwd_occ).attribute(
+                                x_crop,
+                                sliding_window_shapes=occ_window,
+                                strides=occ_stride,
+                                baselines=0.0,
+                                perturbations_per_eval=ppe,
+                                show_progress=True,
+                            )
+                        occ_np = _unpad(occ_attr.detach().cpu().numpy()[0], (original_dhw[0], x_crop.shape[3], x_crop.shape[4]))
+                        del occ_attr
+                        occ_np = occ_np[:, d0:d1]  # (3, D_crop, H_crop, W_crop)
+
+                    # --- channel_baseline (T2W/ADC=1, HBV=0) ---
+                    if occ_strategy in ("channel_baseline", "all"):
+                        # nnUNet layout: (1, C, D, H, W); channels 0-1 → 1.0, channel 2 → 0.0
+                        occ_baseline_ch = torch.ones_like(x_crop)
+                        occ_baseline_ch[:, 2] = 0.0
+                        with torch.no_grad():
+                            occ_attr = Occlusion(fwd_occ).attribute(
+                                x_crop,
+                                sliding_window_shapes=occ_window,
+                                strides=occ_stride,
+                                baselines=occ_baseline_ch,
+                                perturbations_per_eval=ppe,
+                                show_progress=True,
+                            )
+                        occ_ch_np = _unpad(occ_attr.detach().cpu().numpy()[0], (original_dhw[0], x_crop.shape[3], x_crop.shape[4]))
+                        del occ_attr, occ_baseline_ch
+                        occ_ch_np = occ_ch_np[:, d0:d1]  # (3, D_crop, H_crop, W_crop)
 
                 if run_ablation_cam:
                     try:
@@ -1027,24 +1464,29 @@ def process_fold_nnunet(
                 np.savez_compressed(
                     out_file,
                     saliency       = _sentinel(sal_np).astype(np.float32) if sal_np is not None else _sentinel(None),
-                    occlusion      = _sentinel(occ_np).astype(np.float32) if occ_np is not None else _sentinel(None),
+                    occlusion              = _sentinel(occ_np).astype(np.float32) if occ_np is not None else _sentinel(None),
+                    occlusion_tz           = _sentinel(occ_tz_np).astype(np.float32) if occ_tz_np is not None else _sentinel(None),
+                    occlusion_pz           = _sentinel(occ_pz_np).astype(np.float32) if occ_pz_np is not None else _sentinel(None),
+                    occlusion_ch_baseline  = _sentinel(occ_ch_np).astype(np.float32) if occ_ch_np is not None else _sentinel(None),
                     ablation       = _sentinel(abl_np).astype(np.float32) if abl_np is not None else _sentinel(None),
                     input_ablation = _sentinel(inp_abl),
                     image          = image_crop.astype(np.float32),
                     prediction     = pred_crop.astype(np.float32),
                     label          = lbl_crop.astype(np.float32) if lbl_crop is not None else _sentinel(None),
                     zones          = zones_crop.astype(np.int8) if zones_crop is not None else _sentinel(None),
-                    channels       = np.array(CHANNEL_NAMES),
-                    case_id        = case_id,
-                    fold           = fold,
-                    model          = "nnunet",
+                    channels           = np.array(CHANNEL_NAMES),
+                    case_id            = case_id,
+                    fold               = fold,
+                    model              = "nnunet",
+                    occlusion_strategy = np.array(occ_strategy),
                 )
                 print(f"    Saved: {out_file}")
                 processed += 1
 
             # ---- Record progress ------------------------------------------
+            occ_for_progress = occ_np if occ_np is not None else occ_tz_np
             progress[case_id] = _build_progress_record(
-                predicted_pos, lbl_crop, zones_crop, sal_np, occ_np, abl_np,
+                predicted_pos, lbl_crop, zones_crop, sal_np, occ_for_progress, abl_np,
                 pred_crop=pred_crop,
                 pred_cancer_voxels=cancer_voxels, pred_max_prob=pred_max_prob,
                 confidence=confidence,
@@ -1090,17 +1532,21 @@ def process_fold(
     ppe: int,
     occ_crop_hw: Optional[int] = 128,
     device: Optional[torch.device] = None,
+    occ_strategy: str = "zero",
+    n_zone_patches: int = 10,
 ) -> None:
     model_output_dir = output_dir / model_name
     model_output_dir.mkdir(parents=True, exist_ok=True)
 
     if model_name == "nnunet":
         process_fold_nnunet(
-            fold, model_output_dir, methods, skip_existing, occ_window, occ_stride, ppe, occ_crop_hw, device
+            fold, model_output_dir, methods, skip_existing, occ_window, occ_stride, ppe,
+            occ_crop_hw, device, occ_strategy, n_zone_patches,
         )
     else:
         process_fold_monai(
-            fold, model_name, model_output_dir, methods, skip_existing, occ_window, occ_stride, ppe, device
+            fold, model_name, model_output_dir, methods, skip_existing, occ_window, occ_stride, ppe,
+            device, occ_strategy, n_zone_patches,
         )
 
 
@@ -1169,10 +1615,19 @@ def compute_metrics(xai_dir: Path, model_name: str, metrics_dir: Path) -> List[d
             has_pca          = (not _is_empty(label)) and bool(label.sum() > 1)
             predicted_pos    = (not _is_empty(pred)) and bool(pred.max() > 0.5)
 
+            # PI-CAI TP criterion: prediction must overlap ≥10 % of the GT lesion volume.
+            overlap = 0.0
             if predicted_pos and has_pca:
+                pred_mask_3d = pred[0] > 0.5   # (D, H, W) bool
+                gt_mask_3d   = label[0] > 0    # (D, H, W) bool
+                overlap      = _detection_overlap(pred_mask_3d, gt_mask_3d)
+
+            if predicted_pos and has_pca and overlap >= PICAI_OVERLAP_THRESHOLD:
                 classification = "tp"
             elif predicted_pos and not has_pca:
                 classification = "fp"
+            elif predicted_pos and has_pca and overlap < PICAI_OVERLAP_THRESHOLD:
+                classification = "fp"  # predicted but missed the lesion
             elif not predicted_pos and not has_pca:
                 classification = "tn"
             else:
@@ -1554,6 +2009,30 @@ def main() -> None:
         ),
     )
     parser.add_argument(
+        "--occlusion-strategy",
+        type=str,
+        default="all",
+        choices=["zero", "zone_median", "channel_baseline", "all"],
+        help=(
+            "Baseline strategy for occlusion: 'zero' replaces occluded windows with 0 "
+            "(current default); 'zone_median' uses per-channel median values sampled from "
+            "non-cancerous patches within each prostate zone (TZ/PZ); "
+            "'channel_baseline' uses baseline=1 for T2W and ADC (channels 0-1) and "
+            "baseline=0 for HBV (channel 2); 'all' runs every strategy and saves each "
+            "result under its own npz key."
+        ),
+    )
+    parser.add_argument(
+        "--occlusion-zone-patches",
+        type=int,
+        default=10,
+        metavar="N",
+        help=(
+            "Number of random patches to sample per zone when --occlusion-strategy=zone_median. "
+            "Each patch has the same size as the occlusion window."
+        ),
+    )
+    parser.add_argument(
         "--device",
         type=int,
         default=None,
@@ -1595,13 +2074,14 @@ def main() -> None:
     output_dir  = Path(args.output_dir)
     metrics_dir = Path(args.metrics_dir)
 
-    print(f"Models:           {models}")
-    print(f"Folds:            {folds}")
-    print(f"Methods:          {', '.join(sorted(methods))}")
-    print(f"Output XAI dir:   {output_dir}")
-    print(f"Output metrics:   {metrics_dir}")
-    print(f"Occlusion window: {occ_window}  stride: {occ_stride}")
-    print(f"Device:           {device if device is not None else 'auto'}")
+    print(f"Models:            {models}")
+    print(f"Folds:             {folds}")
+    print(f"Methods:           {', '.join(sorted(methods))}")
+    print(f"Output XAI dir:    {output_dir}")
+    print(f"Output metrics:    {metrics_dir}")
+    print(f"Occlusion window:  {occ_window}  stride: {occ_stride}")
+    print(f"Occlusion strategy:{args.occlusion_strategy}  zone patches: {args.occlusion_zone_patches}")
+    print(f"Device:            {device if device is not None else 'auto'}")
 
     for model_name in models:
         if not args.compute_metrics_only:
@@ -1617,6 +2097,8 @@ def main() -> None:
                     ppe=args.perturbations_per_eval,
                     occ_crop_hw=occ_crop_hw,
                     device=device,
+                    occ_strategy=args.occlusion_strategy,
+                    n_zone_patches=args.occlusion_zone_patches,
                 )
 
         # Compute metrics and charts from saved .npz files

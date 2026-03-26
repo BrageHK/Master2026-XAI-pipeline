@@ -8,10 +8,10 @@
 #SBATCH --ntasks-per-node=1
 #SBATCH --cpus-per-task=4
 #SBATCH --mem=28G
-#SBATCH --job-name="U-Mamba-XAI-metrics"
-#SBATCH --output=logs/xai/UMamba_%A_%a.txt
-#SBATCH --error=logs/xai/UMamba_%A_%a.err
-#SBATCH --array=0-4
+#SBATCH --job-name="XAI-all-models"
+#SBATCH --output=logs/xai/all_%A_%a.txt
+#SBATCH --error=logs/xai/all_%A_%a.err
+#SBATCH --array=0-14
 
 WORKDIR=${SLURM_SUBMIT_DIR}
 cd ${WORKDIR}
@@ -26,4 +26,19 @@ echo "Total of $SLURM_NTASKS cores"
 
 module purge
 
-uv run generate_xai_data.py --fold "$SLURM_ARRAY_TASK_ID" --models "umamba_mtl" --methods "all" --no-skip
+# Array layout: 0-4 = nnunet folds 0-4, 5-9 = swin_unetr folds 0-4, 10-14 = umamba_mtl folds 0-4
+TASK_ID=$SLURM_ARRAY_TASK_ID
+
+if [ "$TASK_ID" -lt 5 ]; then
+    MODEL="nnunet"
+    FOLD=$TASK_ID
+elif [ "$TASK_ID" -lt 10 ]; then
+    MODEL="swin_unetr"
+    FOLD=$((TASK_ID - 5))
+else
+    MODEL="umamba_mtl"
+    FOLD=$((TASK_ID - 10))
+fi
+
+echo "Running model=$MODEL fold=$FOLD"
+uv run generate_xai_data.py --fold "$FOLD" --models "$MODEL" --methods "all" --no-skip

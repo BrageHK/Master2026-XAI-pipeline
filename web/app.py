@@ -338,6 +338,8 @@ def _build_case_payload(model: str, case_id: str) -> dict:
     pred       = npz["prediction"]  # (1, D, H, W)
     saliency   = npz.get("saliency",       np.zeros((0,), dtype=np.float32))
     occlusion  = npz.get("occlusion",      np.zeros((0,), dtype=np.float32))
+    occ_tz     = npz.get("occlusion_tz",   np.zeros((0,), dtype=np.float32))
+    occ_pz     = npz.get("occlusion_pz",   np.zeros((0,), dtype=np.float32))
     ablation   = npz.get("ablation",       np.zeros((0,), dtype=np.float32))
     zones      = _fix_zones(npz.get("zones", np.zeros((0,), dtype=np.int8)), model)
     label      = npz.get("label",          np.zeros((0,), dtype=np.float32))
@@ -374,6 +376,21 @@ def _build_case_payload(model: str, case_id: str) -> dict:
         for i in range(3):
             panels[f"occlusion_{i}"] = _render_all_slices(occ_abs[i], "turbo", 0.0, occ_vmax, transparent=True)
 
+    # Zone-median occlusion: merge TZ and PZ attribution maps by zone mask
+    occ_merged = None
+    if (not _is_sentinel(occ_tz) and occ_tz.ndim == 4
+            and not _is_sentinel(occ_pz) and occ_pz.ndim == 4
+            and not _is_sentinel(zones) and zones.ndim == 3):
+        occ_merged = np.zeros_like(occ_tz)
+        occ_merged[:, zones == 2] = occ_tz[:, zones == 2]   # TZ region → TZ attribution
+        occ_merged[:, zones == 1] = occ_pz[:, zones == 1]   # PZ region → PZ attribution
+        occ_merged_abs = np.abs(occ_merged)
+        occ_zm_vmax = float(np.percentile(occ_merged_abs, 99)) or 1e-6
+        for i in range(3):
+            panels[f"occlusion_zm_{i}"] = _render_all_slices(
+                occ_merged_abs[i], "turbo", 0.0, occ_zm_vmax, transparent=True
+            )
+
     # AblationCAM (single-channel spatial map)
     if not _is_sentinel(ablation) and ablation.ndim == 4:
         abl_map = ablation[0]  # (D, H, W)
@@ -388,8 +405,17 @@ def _build_case_payload(model: str, case_id: str) -> dict:
     # Compute per-channel means on-the-fly from NPZ (not stored in progress.json)
     sal_ch_mean = (np.abs(saliency).mean(axis=(1, 2, 3)).tolist()
                    if not _is_sentinel(saliency) and saliency.ndim == 4 else None)
-    occ_ch_mean = (np.abs(occlusion).mean(axis=(1, 2, 3)).tolist()
-                   if not _is_sentinel(occlusion) and occlusion.ndim == 4 else None)
+    occ_for_stats = (occlusion if not _is_sentinel(occlusion) and occlusion.ndim == 4
+                     else occ_merged)
+    occ_ch_mean = (np.abs(occ_for_stats).mean(axis=(1, 2, 3)).tolist()
+                   if occ_for_stats is not None else None)
+
+    # Detect which occlusion strategies are available for this case
+    occlusion_strategies = []
+    if not _is_sentinel(occlusion) and occlusion.ndim == 4:
+        occlusion_strategies.append("zero")
+    if "occlusion_zm_0" in panels:
+        occlusion_strategies.append("zone_median")
 
     # Stats: pull from in-memory sample_data (refreshed periodically)
     record = _get_case_index().get(model, {}).get(case_id, {})
@@ -414,7 +440,8 @@ def _build_case_payload(model: str, case_id: str) -> dict:
         "ablation_ch_fraction": record.get("ablation_ch_fraction"),
     }
 
-    return {"n_slices": n_slices, "panels": panels, "stats": stats, "record": record}
+    return {"n_slices": n_slices, "panels": panels, "stats": stats, "record": record,
+            "occlusion_strategies": occlusion_strategies}
 
 
 # ---------------------------------------------------------------------------
@@ -442,10 +469,13 @@ def model_view(model: str):
 def case_view(model: str, case_id: str):
     if model not in MODELS:
         abort(404)
-    record = _get_case_index().get(model, {}).get(case_id)
+    case_index = _get_case_index()
+    record = case_index.get(model, {}).get(case_id)
+    all_model_records = {m: case_index.get(m, {}).get(case_id) for m in MODELS}
     return render_template("case.html", model=model, case_id=case_id,
                            fold=record["fold"] if record else "?",
-                           record=record)
+                           record=record,
+                           all_model_records=all_model_records)
 
 
 # --- API endpoints ----------------------------------------------------------

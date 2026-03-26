@@ -3,10 +3,8 @@
 
 {% block head %}
 <style>
-  /* Viewer grid: row label + 7 panel columns */
   #viewer-grid {
     display: grid;
-    grid-template-columns: 80px repeat(7, minmax(0, 1fr));
     gap: 3px;
     align-items: start;
   }
@@ -24,25 +22,26 @@
     width: 100%; display: block; image-rendering: pixelated;
   }
   .rotate-left .panel-box img,
-  .rotate-left .panel-box canvas {
-    transform: rotate(-90deg);
-  }
+  .rotate-left .panel-box canvas { transform: rotate(-90deg); }
+  .rotate-cell img, .rotate-cell canvas { transform: rotate(-90deg); }
   .panel-empty {
     background: #111; border-radius: .4rem;
     display: flex; align-items: center; justify-content: center;
     aspect-ratio: 1; font-size: .6rem; color: #555;
   }
   .col-hidden { display: none !important; }
-
-  /* Slider */
   #slice-slider { accent-color: var(--accent-{{ model }}); }
-
-  /* Stats sidebar */
   .stat-card { background: #fff; border-radius: .5rem; padding: 1rem; margin-bottom: .75rem;
                box-shadow: 0 1px 3px rgba(0,0,0,.08); }
   .stat-label { font-size: .7rem; text-transform: uppercase; color: #64748b; letter-spacing: .05em; }
-
-  /* Loading overlay */
+  .cmp-stat-card {
+    background: #fff; border-radius: .5rem; padding: .6rem .8rem; margin-bottom: .5rem;
+    box-shadow: 0 1px 3px rgba(0,0,0,.08); border-left: 4px solid #ccc;
+  }
+  .cmp-model-header {
+    text-align: center; font-size: 0.8rem; font-weight: 700;
+    padding: 4px 2px; border-radius: .3rem; line-height: 1.2;
+  }
   #loading-overlay {
     position: fixed; inset: 0; background: rgba(15,23,42,.85);
     display: flex; flex-direction: column; align-items: center; justify-content: center;
@@ -54,17 +53,16 @@
 
 {% block content %}
 
-{# Loading overlay #}
 <div id="loading-overlay">
   <div class="spinner-border text-light mb-3" role="status"></div>
   <p id="loading-msg" class="mb-1">Loading case data…</p>
   <p class="text-muted small">Pre-rendering all slices — this takes a few seconds the first time.</p>
 </div>
 
-{# ── Header ───────────────────────────────────────────────────────────────── #}
-<div class="d-flex align-items-center gap-3 mb-4">
+{# ── Header ── #}
+<div class="d-flex align-items-center gap-3 mb-3 flex-wrap">
   <a href="/model/{{ model }}" class="btn btn-sm btn-outline-secondary">← {{ model }}</a>
-  <span class="badge bg-{{ model }} px-3 fs-6">{{ model }}</span>
+  <span id="header-model-badge" class="badge bg-{{ model }} px-3 fs-6">{{ model }}</span>
   <h4 class="fw-bold mb-0 font-monospace">{{ case_id }}</h4>
   {% if record %}
   <span class="ms-1 badge badge-{{ record.classification }} text-white rounded-pill px-2 fs-6">
@@ -77,164 +75,198 @@
   {% endif %}
   <span class="text-muted small">Fold {{ fold }}</span>
   {% endif %}
+  <div class="ms-auto btn-group" role="group">
+    <button id="btn-mode-model"   class="btn btn-sm btn-primary"           onclick="switchMode('model')">Model Mode</button>
+    <button id="btn-mode-compare" class="btn btn-sm btn-outline-secondary" onclick="switchMode('compare')">Compare Mode</button>
+  </div>
 </div>
 
 <div class="row g-4">
 
-  {# ── Left: slice viewer ────────────────────────────────────────────────── #}
+  {# ── Viewer column ── #}
   <div class="col-xl-9">
 
-    {# Slice + overlay controls #}
-    <div class="d-flex align-items-center gap-3 mb-2 p-3 bg-white rounded shadow-sm flex-wrap">
-      <label class="fw-semibold text-nowrap" for="slice-slider">Depth slice</label>
-      <input type="range" id="slice-slider" class="form-range flex-grow-1"
-             min="0" value="0" step="1">
-      <span id="slice-label" class="text-muted text-nowrap small fw-semibold" style="min-width:80px">— / —</span>
-      <span class="vr mx-1"></span>
-      <span class="fw-semibold small text-nowrap">Overlay α:</span>
-      <input type="range" id="overlay-alpha" class="form-range" style="width:110px"
-             min="0" max="1" step="0.05" value="0.6">
-      <span id="alpha-label" class="small text-muted" style="min-width:32px">0.60</span>
-      <span class="vr mx-1"></span>
-      <span class="fw-semibold small text-nowrap">GIF:</span>
-      <select id="gif-fps" class="form-select form-select-sm" style="width:auto">
-        <option value="2000">0.5 fps</option>
-        <option value="1000">1 fps</option>
-        <option value="500" selected>2 fps</option>
-        <option value="333">3 fps</option>
-        <option value="250">4 fps</option>
-        <option value="200">5 fps</option>
-      </select>
-      <button id="gif-btn" class="btn btn-sm btn-outline-primary" disabled>Export Table GIF</button>
-      <span class="vr mx-1"></span>
-      <div class="form-check form-switch mb-0 d-flex align-items-center gap-2">
-        <input class="form-check-input" type="checkbox" id="contour-toggle" role="switch">
-        <label class="form-check-label small fw-semibold text-nowrap" for="contour-toggle">Zone contours</label>
+    {# Model Mode controls #}
+    <div id="model-mode-controls">
+      <div class="d-flex align-items-center gap-2 mb-2 p-2 bg-white rounded shadow-sm flex-wrap">
+        <span class="fw-semibold small text-nowrap">Model:</span>
+        <div class="btn-group" role="group" id="model-switcher"></div>
       </div>
-      <span class="vr mx-1"></span>
-      <div class="form-check form-switch mb-0 d-flex align-items-center gap-2">
-        <input class="form-check-input" type="checkbox" id="ablation-toggle" role="switch">
-        <label class="form-check-label small fw-semibold text-nowrap" for="ablation-toggle">AblationCAM</label>
+      <div class="d-flex align-items-center gap-3 mb-2 p-3 bg-white rounded shadow-sm flex-wrap">
+        <label class="fw-semibold text-nowrap" for="slice-slider">Depth slice</label>
+        <input type="range" id="slice-slider" class="form-range flex-grow-1" min="0" value="0" step="1">
+        <span id="slice-label" class="text-muted text-nowrap small fw-semibold" style="min-width:80px">— / —</span>
+        <span class="vr mx-1"></span>
+        <span class="fw-semibold small text-nowrap">Overlay α:</span>
+        <input type="range" id="overlay-alpha" class="form-range" style="width:110px"
+               min="0" max="1" step="0.05" value="0.6">
+        <span id="alpha-label" class="small text-muted" style="min-width:32px">0.60</span>
+        <span class="vr mx-1"></span>
+        <span class="fw-semibold small text-nowrap">GIF:</span>
+        <select id="gif-fps" class="form-select form-select-sm" style="width:auto">
+          <option value="2000">0.5 fps</option>
+          <option value="1000">1 fps</option>
+          <option value="500" selected>2 fps</option>
+          <option value="333">3 fps</option>
+          <option value="250">4 fps</option>
+          <option value="200">5 fps</option>
+        </select>
+        <button id="gif-btn" class="btn btn-sm btn-outline-primary" disabled>Export Table GIF</button>
+        <span class="vr mx-1"></span>
+        <div id="occ-strategy-wrap" class="d-flex align-items-center gap-2 d-none">
+          <span class="fw-semibold small text-nowrap">Occlusion:</span>
+          <select id="occ-strategy-select" class="form-select form-select-sm" style="width:auto"></select>
+        </div>
+        <span class="vr mx-1"></span>
+        <div class="form-check form-switch mb-0 d-flex align-items-center gap-2">
+          <input class="form-check-input" type="checkbox" id="contour-toggle" role="switch">
+          <label class="form-check-label small fw-semibold text-nowrap" for="contour-toggle">Zone contours</label>
+        </div>
+        <span class="vr mx-1"></span>
+        <div class="form-check form-switch mb-0 d-flex align-items-center gap-2">
+          <input class="form-check-input" type="checkbox" id="ablation-toggle" role="switch">
+          <label class="form-check-label small fw-semibold text-nowrap" for="ablation-toggle">AblationCAM</label>
+        </div>
       </div>
     </div>
 
+    {# Compare Mode controls #}
+    <div id="compare-mode-controls" style="display:none">
+      <div class="d-flex align-items-center gap-3 mb-2 p-3 bg-white rounded shadow-sm flex-wrap">
+        <span class="fw-semibold small text-nowrap">Method:</span>
+        <div class="btn-group" role="group">
+          <button class="btn btn-sm btn-primary"           id="btn-method-saliency"  onclick="switchCompareMethod('saliency')">Saliency</button>
+          <button class="btn btn-sm btn-outline-secondary" id="btn-method-occlusion" onclick="switchCompareMethod('occlusion')">Occlusion</button>
+          <button class="btn btn-sm btn-outline-secondary" id="btn-method-ablation"  onclick="switchCompareMethod('ablation')">AblationCAM</button>
+        </div>
+        <span class="vr mx-2"></span>
+        <span class="fw-semibold small text-nowrap">Columns:</span>
+        <button class="btn btn-sm btn-outline-secondary active" id="cmp-tog-zones" onclick="toggleCmpCol('zones',this)">Zones</button>
+        <button class="btn btn-sm btn-outline-secondary active" id="cmp-tog-pred"  onclick="toggleCmpCol('pred',this)">Pred</button>
+        <button class="btn btn-sm btn-outline-secondary active" id="cmp-tog-label" onclick="toggleCmpCol('label',this)">Label</button>
+        <span class="vr mx-2"></span>
+        <label class="fw-semibold small text-nowrap">Slice</label>
+        <input type="range" id="cmp-slice-slider" class="form-range" style="width:120px" min="0" value="0" step="1">
+        <span id="cmp-slice-label" class="text-muted text-nowrap small fw-semibold" style="min-width:60px">— / —</span>
+        <span class="vr mx-1"></span>
+        <span class="fw-semibold small text-nowrap">α:</span>
+        <input type="range" id="cmp-overlay-alpha" class="form-range" style="width:90px"
+               min="0" max="1" step="0.05" value="0.6">
+        <span id="cmp-alpha-label" class="small text-muted" style="min-width:32px">0.60</span>
+        <span class="vr mx-1"></span>
+        <div class="form-check form-switch mb-0 d-flex align-items-center gap-2">
+          <input class="form-check-input" type="checkbox" id="cmp-contour-toggle" role="switch">
+          <label class="form-check-label small fw-semibold text-nowrap" for="cmp-contour-toggle">Zone contours</label>
+        </div>
+      </div>
+    </div>
 
-    {# Image grid — populated by JS #}
-    <div id="viewer-grid"{% if model in ['umamba_mtl', 'swin_unetr'] %} class="rotate-left"{% endif %}></div>
+    <div id="viewer-grid"></div>
     <p id="no-xai-msg" class="text-muted small mt-2" style="display:none">
       ⚠ Saliency / Occlusion maps were not computed for this case (model predicted negative).
     </p>
-
   </div>
 
-  {# ── Right: stats sidebar ─────────────────────────────────────────────── #}
+  {# ── Sidebar ── #}
   <div class="col-xl-3">
 
-    {# Legend — populated dynamically #}
-    <div class="stat-card mb-2" id="legend-card" style="display:none">
-      <div class="stat-label mb-2">Legend</div>
-      <div id="legend-zones" style="display:none">
-        <div class="small fw-semibold mb-1 text-muted">Zones</div>
-        <div class="d-flex flex-column gap-1 mb-2">
-          <div class="d-flex align-items-center gap-2">
-            <span style="width:14px;height:14px;background:#1a1a1a;border:1px solid #ccc;border-radius:2px;flex-shrink:0"></span>
-            <span class="small">Background</span>
-          </div>
-          <div class="d-flex align-items-center gap-2">
-            <span style="width:14px;height:14px;background:#3a7bd5;border-radius:2px;flex-shrink:0"></span>
-            <span class="small">PZ (Peripheral Zone)</span>
-          </div>
-          <div class="d-flex align-items-center gap-2">
-            <span style="width:14px;height:14px;background:#d93025;border-radius:2px;flex-shrink:0"></span>
-            <span class="small">TZ (Transition Zone)</span>
+    {# Model Mode sidebar #}
+    <div id="model-sidebar">
+      <div class="stat-card mb-2" id="legend-card" style="display:none">
+        <div class="stat-label mb-2">Legend</div>
+        <div id="legend-zones" style="display:none">
+          <div class="small fw-semibold mb-1 text-muted">Zones</div>
+          <div class="d-flex flex-column gap-1 mb-2">
+            <div class="d-flex align-items-center gap-2">
+              <span style="width:14px;height:14px;background:#1a1a1a;border:1px solid #ccc;border-radius:2px;flex-shrink:0"></span>
+              <span class="small">Background</span>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+              <span style="width:14px;height:14px;background:#3a7bd5;border-radius:2px;flex-shrink:0"></span>
+              <span class="small">PZ (Peripheral Zone)</span>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+              <span style="width:14px;height:14px;background:#d93025;border-radius:2px;flex-shrink:0"></span>
+              <span class="small">TZ (Transition Zone)</span>
+            </div>
           </div>
         </div>
+        <div id="legend-colormaps"></div>
       </div>
-      <div id="legend-colormaps"></div>
+
+      {% if record %}
+      <div class="stat-card mb-2">
+        <div class="stat-label">Classification</div>
+        <table class="table table-sm table-borderless mb-0">
+          <tr><th class="ps-0 text-muted fw-normal">Has PCA</th>
+              <td>{{ 'Yes' if record.has_pca else 'No' }}</td></tr>
+          <tr><th class="ps-0 text-muted fw-normal">Predicted +</th>
+              <td id="cls-predicted">{{ 'Yes' if record.predicted_positive else 'No' }}</td></tr>
+          <tr id="cls-confidence-row"{% if record.confidence is none %} style="display:none"{% endif %}>
+              <th class="ps-0 text-muted fw-normal">Confidence</th>
+              <td><strong id="cls-confidence">{{ "%.3f"|format(record.confidence) if record.confidence is not none else '—' }}</strong></td></tr>
+          <tr><th class="ps-0 text-muted fw-normal">GT Zone</th>
+              <td>
+                {% if record.primary_zone == 'pz' %}<span class="badge badge-pz text-white rounded-pill px-2">PZ</span>
+                {% elif record.primary_zone == 'tz' %}<span class="badge badge-tz text-white rounded-pill px-2">TZ</span>
+                {% else %}—{% endif %}
+              </td></tr>
+          {% if record.pz_voxels is not none %}
+          <tr><th class="ps-0 text-muted fw-normal">GT PZ voxels</th><td>{{ record.pz_voxels }}</td></tr>
+          <tr><th class="ps-0 text-muted fw-normal">GT TZ voxels</th><td>{{ record.tz_voxels }}</td></tr>
+          {% endif %}
+          {% if record.pred_pz_voxels is not none or record.pred_tz_voxels is not none %}
+          <tr><th class="ps-0 text-muted fw-normal">Pred Zone</th>
+              <td>{% set ppz = record.pred_pz_voxels or 0 %}{% set ptz = record.pred_tz_voxels or 0 %}
+                {% if ppz > ptz %}<span class="badge badge-pz text-white rounded-pill px-2">PZ</span>
+                {% elif ptz > ppz %}<span class="badge badge-tz text-white rounded-pill px-2">TZ</span>
+                {% else %}—{% endif %}</td></tr>
+          <tr><th class="ps-0 text-muted fw-normal">Pred PZ voxels</th>
+              <td>{{ record.pred_pz_voxels if record.pred_pz_voxels is not none else '—' }}</td></tr>
+          <tr><th class="ps-0 text-muted fw-normal">Pred TZ voxels</th>
+              <td>{{ record.pred_tz_voxels if record.pred_tz_voxels is not none else '—' }}</td></tr>
+          {% endif %}
+        </table>
+      </div>
+      <div class="stat-card mb-2">
+        <div class="stat-label mb-2">Model Confidence</div>
+        <div id="plot-confidence" style="height:110px"></div>
+      </div>
+      {% endif %}
+      <div class="stat-card">
+        <div class="stat-label mb-1">Input Ablation</div>
+        <div id="plot-inp-abl" style="height:160px"></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label mb-1">Saliency — Channel Share</div>
+        <div id="plot-sal-pie" style="height:200px"></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label mb-1">Occlusion — Channel Share</div>
+        <div id="plot-occ-pie" style="height:200px"></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label mb-1">Saliency — Mean per Channel</div>
+        <div id="plot-sal-bar" style="height:160px"></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label mb-1">Occlusion — Mean per Channel</div>
+        <div id="plot-occ-bar" style="height:160px"></div>
+      </div>
     </div>
 
-    {% if record %}
-    {# Classification detail #}
-    <div class="stat-card mb-2">
-      <div class="stat-label">Classification</div>
-      <table class="table table-sm table-borderless mb-0">
-        <tr><th class="ps-0 text-muted fw-normal">Has PCA</th>
-            <td>{{ 'Yes' if record.has_pca else 'No' }}</td></tr>
-        <tr><th class="ps-0 text-muted fw-normal">Predicted +</th>
-            <td>{{ 'Yes' if record.predicted_positive else 'No' }}</td></tr>
-        {% if record.confidence is not none %}
-        <tr><th class="ps-0 text-muted fw-normal">Confidence</th>
-            <td><strong>{{ "%.3f"|format(record.confidence) }}</strong></td></tr>
-        {% endif %}
-        <tr><th class="ps-0 text-muted fw-normal">GT Zone</th>
-            <td>
-              {% if record.primary_zone == 'pz' %}<span class="badge badge-pz text-white rounded-pill px-2">PZ</span>
-              {% elif record.primary_zone == 'tz' %}<span class="badge badge-tz text-white rounded-pill px-2">TZ</span>
-              {% else %}—{% endif %}
-            </td></tr>
-        {% if record.pz_voxels is not none %}
-        <tr><th class="ps-0 text-muted fw-normal">GT PZ voxels</th>
-            <td>{{ record.pz_voxels }}</td></tr>
-        <tr><th class="ps-0 text-muted fw-normal">GT TZ voxels</th>
-            <td>{{ record.tz_voxels }}</td></tr>
-        {% endif %}
-        {% if record.pred_pz_voxels is not none or record.pred_tz_voxels is not none %}
-        <tr><th class="ps-0 text-muted fw-normal">Pred Zone</th>
-            <td>
-              {% set ppz = record.pred_pz_voxels or 0 %}
-              {% set ptz = record.pred_tz_voxels or 0 %}
-              {% if ppz > ptz %}<span class="badge badge-pz text-white rounded-pill px-2">PZ</span>
-              {% elif ptz > ppz %}<span class="badge badge-tz text-white rounded-pill px-2">TZ</span>
-              {% else %}—{% endif %}
-            </td></tr>
-        <tr><th class="ps-0 text-muted fw-normal">Pred PZ voxels</th>
-            <td>{{ record.pred_pz_voxels if record.pred_pz_voxels is not none else '—' }}</td></tr>
-        <tr><th class="ps-0 text-muted fw-normal">Pred TZ voxels</th>
-            <td>{{ record.pred_tz_voxels if record.pred_tz_voxels is not none else '—' }}</td></tr>
-        {% endif %}
-      </table>
-    </div>
-
-    {# Confidence gauge #}
-    <div class="stat-card mb-2">
-      <div class="stat-label mb-2">Model Confidence</div>
-      <div id="plot-confidence" style="height:110px"></div>
-    </div>
-    {% endif %}
-
-    {# Input ablation #}
-    <div class="stat-card">
-      <div class="stat-label mb-1">Input Ablation</div>
-      <div id="plot-inp-abl" style="height:160px"></div>
-    </div>
-
-    {# Saliency channel fractions #}
-    <div class="stat-card">
-      <div class="stat-label mb-1">Saliency — Channel Share</div>
-      <div id="plot-sal-pie" style="height:200px"></div>
-    </div>
-
-    {# Occlusion channel fractions #}
-    <div class="stat-card">
-      <div class="stat-label mb-1">Occlusion — Channel Share</div>
-      <div id="plot-occ-pie" style="height:200px"></div>
-    </div>
-
-    {# Saliency bar #}
-    <div class="stat-card">
-      <div class="stat-label mb-1">Saliency — Mean per Channel</div>
-      <div id="plot-sal-bar" style="height:160px"></div>
-    </div>
-
-    {# Occlusion bar #}
-    <div class="stat-card">
-      <div class="stat-label mb-1">Occlusion — Mean per Channel</div>
-      <div id="plot-occ-bar" style="height:160px"></div>
+    {# Compare Mode sidebar #}
+    <div id="compare-sidebar" style="display:none">
+      <div class="stat-card mb-2">
+        <div class="stat-label mb-2">Model Comparison</div>
+        <div id="cmp-model-stats"></div>
+      </div>
     </div>
 
   </div>
 </div>
-{# GIF generation modal #}
+
+{# GIF modal #}
 <div class="modal fade" id="gifModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
@@ -260,228 +292,194 @@
 
 {% block scripts %}
 <script>
-// ── Config ───────────────────────────────────────────────────────────────────
+// ── Constants ─────────────────────────────────────────────────────────────────
 const MODEL   = "{{ model }}";
 const CASE_ID = "{{ case_id }}";
 const CH_NAMES  = ["T2W", "ADC", "HBV"];
 const CH_COLORS = ["#e74c3c", "#2ecc71", "#3498db"];
+const ALL_MODEL_RECORDS = {{ all_model_records | tojson }};
+const MODEL_LABELS    = { nnunet: "nnUNet", swin_unetr: "Swin-UNETR", umamba_mtl: "U-Mamba" };
+const MODEL_COLORS_HEX = { nnunet: "#ef4444", swin_unetr: "#10b981", umamba_mtl: "#3b82f6" };
+const ALL_MODELS      = ["nnunet", "swin_unetr", "umamba_mtl"];
+const ROTATE_MODELS   = new Set(["umamba_mtl", "swin_unetr"]);
 
-// 3 rows (one per MRI channel)
 const ROWS = [
   { key: "t2w", label: "T2W", idx: 0 },
   { key: "adc", label: "ADC", idx: 1 },
   { key: "hbv", label: "HBV", idx: 2 },
 ];
 
-// 7 columns: original + 6 overlay columns
-// panelKey(row): returns the panels dict key for this row's cell
-// All overlay PNGs carry an alpha channel — compositing always uses it.
+function getOccPanelKey(row) {
+  const strat = document.getElementById("occ-strategy-select")?.value;
+  return strat === "zone_median" ? `occlusion_zm_${row.idx}` : `occlusion_${row.idx}`;
+}
+
 const COLS = [
-  { key: "original",   label: "Original",     panelKey: null                        },
-  { key: "zones",      label: "Zones",         panelKey: () => "zones"               },
-  { key: "prediction", label: "Pred Mask",     panelKey: () => "prediction"          },
-  { key: "label",      label: "Label GT",      panelKey: () => "label"               },
-  { key: "saliency",   label: "Saliency",      panelKey: (r) => `saliency_${r.idx}`  },
-  { key: "occlusion",  label: "Occlusion",     panelKey: (r) => `occlusion_${r.idx}` },
-  { key: "ablation",   label: "AblationCAM",   panelKey: () => "ablation"            },
+  { key: "original",   label: "Original",   panelKey: null                        },
+  { key: "zones",      label: "Zones",       panelKey: () => "zones"               },
+  { key: "prediction", label: "Pred Mask",   panelKey: () => "prediction"          },
+  { key: "label",      label: "Label GT",    panelKey: () => "label"               },
+  { key: "saliency",   label: "Saliency",    panelKey: (r) => `saliency_${r.idx}`  },
+  { key: "occlusion",  label: "Occlusion",   panelKey: (r) => getOccPanelKey(r)    },
+  { key: "ablation",   label: "AblationCAM", panelKey: () => "ablation"            },
 ];
 
-let panels = {};        // { panelKey: [base64DataURL, ...] }
-let cachedImages = {};  // { panelKey: [HTMLImageElement, ...] }
+// ── State ─────────────────────────────────────────────────────────────────────
+let currentMode   = 'model';
+let activeModel   = MODEL;
+let compareMethod = 'saliency';
+let modelDataCache = {};   // model → { panels, n_slices, stats, record, cachedImages, ... }
+
+// Model Mode
+let panels = {};
+let cachedImages = {};
 let nSlices = 0;
 let currentAlpha = 0.6;
 let showZoneContours = false;
-let cachedContours = {};  // { sliceIdx: ImageData }
+let cachedContours = {};
 
-// Offscreen canvas for confined-alpha processing
+// Compare Mode
+let cmpCachedImages  = {};    // model → cachedImages
+let cmpCurrentAlpha  = 0.6;
+let cmpShowContours  = false;
+let cmpCachedContours = {};   // model → { sliceIdx: ImageData }
+let cmpColVisible    = { zones: true, pred: true, label: true };
+let refModel         = null;
+
+// Offscreen scratch canvas
 const _tmpCanvas = document.createElement("canvas");
 _tmpCanvas.width = 200; _tmpCanvas.height = 200;
 const _tmpCtx = _tmpCanvas.getContext("2d");
 
-// ── Zone contour helpers ─────────────────────────────────────────────────────
-function computeContourData(sl) {
-  if (!cachedImages["zones"]?.[sl]) return null;
+// ── Zone contours ─────────────────────────────────────────────────────────────
+function computeContourData(sl, imgCache) {
+  if (!imgCache["zones"]?.[sl]) return null;
   _tmpCtx.clearRect(0, 0, 200, 200);
-  _tmpCtx.drawImage(cachedImages["zones"][sl], 0, 0, 200, 200);
+  _tmpCtx.drawImage(imgCache["zones"][sl], 0, 0, 200, 200);
   const zd = _tmpCtx.getImageData(0, 0, 200, 200).data;
   const contourData = new ImageData(200, 200);
   const cd = contourData.data;
   const W = 200, H = 200;
-
-  // Snap every pixel to a discrete zone label to eliminate LANCZOS upsampling
-  // artifacts that would otherwise create thick blurry edges.
-  // 0=background, 1=PZ (#3a7bd5), 2=TZ (#d93025)
-  const PZ_COLOR = [0x3a, 0x7b, 0xd5];
-  const TZ_COLOR = [0xd9, 0x30, 0x25];
+  const PZ = [0x3a, 0x7b, 0xd5], TZ = [0xd9, 0x30, 0x25];
   const labels = new Uint8Array(W * H);
   for (let k = 0; k < W * H; k++) {
     const i = k * 4;
-    if (zd[i + 3] < 128) continue; // background → label stays 0
+    if (zd[i + 3] < 128) continue;
     const r = zd[i], g = zd[i+1], b = zd[i+2];
-    const dPZ = Math.abs(r - 0x3a) + Math.abs(g - 0x7b) + Math.abs(b - 0xd5);
-    const dTZ = Math.abs(r - 0xd9) + Math.abs(g - 0x30) + Math.abs(b - 0x25);
+    const dPZ = Math.abs(r-0x3a)+Math.abs(g-0x7b)+Math.abs(b-0xd5);
+    const dTZ = Math.abs(r-0xd9)+Math.abs(g-0x30)+Math.abs(b-0x25);
     labels[k] = dPZ <= dTZ ? 1 : 2;
   }
-
-  // 1px edge: zone pixels where any 4-neighbor has a different label (incl. background)
-  const COLORS = [null, PZ_COLOR, TZ_COLOR];
-  for (let y = 0; y < H; y++) {
-    for (let x = 0; x < W; x++) {
-      const k = y * W + x;
-      const zone = labels[k];
-      if (zone === 0) continue;
-      if (x === 0     || labels[k - 1] !== zone ||
-          x === W - 1 || labels[k + 1] !== zone ||
-          y === 0     || labels[k - W] !== zone ||
-          y === H - 1 || labels[k + W] !== zone) {
-        const i = k * 4;
-        const c = COLORS[zone];
-        cd[i] = c[0]; cd[i+1] = c[1]; cd[i+2] = c[2]; cd[i+3] = 255;
-      }
+  const COLORS = [null, PZ, TZ];
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+    const k = y * W + x, zone = labels[k];
+    if (zone === 0) continue;
+    if (x===0||labels[k-1]!==zone||x===W-1||labels[k+1]!==zone||
+        y===0||labels[k-W]!==zone||y===H-1||labels[k+W]!==zone) {
+      const i = k*4, c = COLORS[zone];
+      cd[i]=c[0]; cd[i+1]=c[1]; cd[i+2]=c[2]; cd[i+3]=255;
     }
   }
   return contourData;
 }
 
-function getContourData(sl) {
-  if (!cachedContours[sl]) cachedContours[sl] = computeContourData(sl);
-  return cachedContours[sl];
+function getContourFor(sl, imgCache, contourCache) {
+  if (!contourCache[sl]) contourCache[sl] = computeContourData(sl, imgCache);
+  return contourCache[sl];
 }
 
-// ── Composite one overlay cell ───────────────────────────────────────────────
-// All overlay PNGs have a meaningful alpha channel (alpha ∝ signal strength,
-// 0 for background/zero-value pixels).  We scale that alpha by currentAlpha so
-// the slider only affects signal pixels — the MRI always shows through background.
+// ── Composite helpers ─────────────────────────────────────────────────────────
+function compositeOnCanvas(canvas, bgImgEl, overlayImgEl, alpha, showContours, imgCache, contourCache, sl) {
+  const ctx = canvas.getContext("2d");
+  ctx.clearRect(0, 0, 200, 200);
+  ctx.fillStyle = "#000"; ctx.fillRect(0, 0, 200, 200);
+  if (bgImgEl) { ctx.globalAlpha = 1.0; ctx.drawImage(bgImgEl, 0, 0, 200, 200); }
+  if (overlayImgEl) {
+    _tmpCtx.clearRect(0, 0, 200, 200);
+    _tmpCtx.drawImage(overlayImgEl, 0, 0, 200, 200);
+    const d = _tmpCtx.getImageData(0, 0, 200, 200);
+    for (let i = 0; i < d.data.length; i += 4) d.data[i+3] = Math.round(d.data[i+3] * alpha);
+    _tmpCtx.putImageData(d, 0, 0);
+    ctx.globalAlpha = 1.0; ctx.drawImage(_tmpCanvas, 0, 0, 200, 200);
+  }
+  if (showContours) {
+    const cd = getContourFor(sl, imgCache, contourCache);
+    if (cd) { _tmpCtx.clearRect(0,0,200,200); _tmpCtx.putImageData(cd,0,0); ctx.globalAlpha=1.0; ctx.drawImage(_tmpCanvas,0,0,200,200); }
+  }
+}
+
+// ── Model Mode compositing ────────────────────────────────────────────────────
 function compositeCell(row, col, sl) {
-  if (!col.panelKey) return;  // original column — handled by <img>
+  if (!col.panelKey) return;
   const overlayKey = col.panelKey(row);
   const canvas = document.getElementById(`canvas-${row.key}-${col.key}`);
   if (!canvas) return;
-  const ctx = canvas.getContext("2d");
-  ctx.clearRect(0, 0, 200, 200);
-  ctx.fillStyle = "#000";
-  ctx.fillRect(0, 0, 200, 200);
-
-  // Background: the row's MRI channel
-  if (cachedImages[row.key]?.[sl]) {
-    ctx.globalAlpha = 1.0;
-    ctx.drawImage(cachedImages[row.key][sl], 0, 0, 200, 200);
-  }
-
-  // Overlay: use PNG alpha channel scaled by currentAlpha
-  if (panels[overlayKey] && cachedImages[overlayKey]?.[sl]) {
-    _tmpCtx.clearRect(0, 0, 200, 200);
-    _tmpCtx.drawImage(cachedImages[overlayKey][sl], 0, 0, 200, 200);
-    const imgData = _tmpCtx.getImageData(0, 0, 200, 200);
-    const d = imgData.data;
-    for (let i = 0; i < d.length; i += 4) {
-      // Scale existing alpha by slider value; background pixels (alpha≈0) stay transparent
-      d[i + 3] = Math.round(d[i + 3] * currentAlpha);
-    }
-    _tmpCtx.putImageData(imgData, 0, 0);
-    ctx.globalAlpha = 1.0;
-    ctx.drawImage(_tmpCanvas, 0, 0, 200, 200);
-  }
-
-  // Zone contour overlay (if enabled, skip for original/zones columns)
-  if (showZoneContours && col.key !== "original" && col.key !== "zones") {
-    const contourData = getContourData(sl);
-    if (contourData) {
-      _tmpCtx.clearRect(0, 0, 200, 200);
-      _tmpCtx.putImageData(contourData, 0, 0);
-      ctx.globalAlpha = 1.0;
-      ctx.drawImage(_tmpCanvas, 0, 0, 200, 200);
-    }
-  }
+  const overlayImg = (panels[overlayKey] && cachedImages[overlayKey]?.[sl]) ? cachedImages[overlayKey][sl] : null;
+  const showC = showZoneContours && col.key !== "original" && col.key !== "zones";
+  compositeOnCanvas(canvas, cachedImages[row.key]?.[sl], overlayImg, currentAlpha, showC, cachedImages, cachedContours, sl);
 }
 
 function recompositeAll() {
   const sl = parseInt(document.getElementById("slice-slider").value) || 0;
-  for (const row of ROWS) {
-    for (const col of COLS) {
-      compositeCell(row, col, sl);
-    }
-  }
+  for (const row of ROWS) for (const col of COLS) compositeCell(row, col, sl);
 }
 
-// ── Slice display ────────────────────────────────────────────────────────────
 function showSlice(sl) {
   for (const row of ROWS) {
-    // Original column image
     const img = document.getElementById(`img-${row.key}`);
     if (img && panels[row.key]?.[sl]) img.src = panels[row.key][sl];
-    // Overlay columns
-    for (const col of COLS) {
-      compositeCell(row, col, sl);
-    }
+    for (const col of COLS) compositeCell(row, col, sl);
   }
   document.getElementById("slice-label").textContent = `${sl + 1} / ${nSlices}`;
 }
 
-// ── Pre-load all base64 PNGs into Image objects ──────────────────────────────
+// ── Image preloading ──────────────────────────────────────────────────────────
 async function preloadImages(panelsData) {
+  const cache = {};
   await Promise.all(Object.entries(panelsData).map(([key, slices]) => {
-    cachedImages[key] = [];
+    cache[key] = [];
     return Promise.all(slices.map((src, i) => new Promise(resolve => {
       const img = new Image();
-      img.onload = resolve;
-      img.src = src;
-      cachedImages[key][i] = img;
+      img.onload = resolve; img.src = src;
+      cache[key][i] = img;
     })));
   }));
+  return cache;
 }
 
-// ── Build 3-row × 7-col viewer grid ─────────────────────────────────────────
+// ── Model Mode grid ───────────────────────────────────────────────────────────
 function buildGrid(availablePanels) {
   const grid = document.getElementById("viewer-grid");
   grid.innerHTML = "";
+  grid.className = ROTATE_MODELS.has(activeModel) ? "rotate-left" : "";
+  grid.style.gridTemplateColumns = "80px repeat(7, minmax(0, 1fr))";
 
-  // Header row: empty corner + column labels
-  const corner = document.createElement("div");
-  grid.appendChild(corner);
+  grid.appendChild(document.createElement("div"));
   for (const col of COLS) {
     const hdr = document.createElement("div");
     hdr.className = `col-header col-group-${col.key}`;
     hdr.textContent = col.label;
     grid.appendChild(hdr);
   }
-
-  // Data rows
   for (const row of ROWS) {
-    // Row label
-    const rowLbl = document.createElement("div");
-    rowLbl.className = "row-label";
-    rowLbl.textContent = row.label;
-    grid.appendChild(rowLbl);
-
+    const lbl = document.createElement("div"); lbl.className = "row-label"; lbl.textContent = row.label;
+    grid.appendChild(lbl);
     for (const col of COLS) {
       if (col.key === "original") {
-        // Original: plain <img>
-        const box = document.createElement("div");
-        box.className = "panel-box";
-        const img = document.createElement("img");
-        img.id  = `img-${row.key}`;
-        img.alt = row.key;
-        box.appendChild(img);
-        grid.appendChild(box);
+        const box = document.createElement("div"); box.className = "panel-box";
+        const img = document.createElement("img"); img.id = `img-${row.key}`; img.alt = row.key;
+        box.appendChild(img); grid.appendChild(box);
       } else {
         const overlayKey = col.panelKey(row);
         const hasData = overlayKey in availablePanels;
-        const wrapper = document.createElement("div");
-        wrapper.className = `col-group-${col.key}`;
+        const wrapper = document.createElement("div"); wrapper.className = `col-group-${col.key}`;
         if (hasData) {
-          const box = document.createElement("div");
-          box.className = "panel-box";
+          const box = document.createElement("div"); box.className = "panel-box";
           const canvas = document.createElement("canvas");
-          canvas.id     = `canvas-${row.key}-${col.key}`;
-          canvas.width  = 200;
-          canvas.height = 200;
-          box.appendChild(canvas);
-          wrapper.appendChild(box);
+          canvas.id = `canvas-${row.key}-${col.key}`; canvas.width = 200; canvas.height = 200;
+          box.appendChild(canvas); wrapper.appendChild(box);
         } else {
-          const empty = document.createElement("div");
-          empty.className = "panel-empty";
-          empty.textContent = "—";
+          const empty = document.createElement("div"); empty.className = "panel-empty"; empty.textContent = "—";
           wrapper.appendChild(empty);
         }
         grid.appendChild(wrapper);
@@ -490,205 +488,514 @@ function buildGrid(availablePanels) {
   }
 }
 
+// ── Compare Mode compositing ──────────────────────────────────────────────────
+function getCmpOccKey(m, rowIdx) {
+  const mp = modelDataCache[m]?.panels;
+  if (mp && `occlusion_${rowIdx}` in mp) return `occlusion_${rowIdx}`;
+  if (mp && `occlusion_zm_${rowIdx}` in mp) return `occlusion_zm_${rowIdx}`;
+  return `occlusion_${rowIdx}`;
+}
 
-// ── Alpha control ────────────────────────────────────────────────────────────
-const alphaSlider = document.getElementById("overlay-alpha");
-const alphaLabel  = document.getElementById("alpha-label");
-alphaSlider.addEventListener("input", () => {
-  currentAlpha = parseFloat(alphaSlider.value);
-  alphaLabel.textContent = currentAlpha.toFixed(2);
-  recompositeAll();
-});
+function cmpCompositeCell(m, row, sl, method) {
+  const canvas = document.getElementById(`cmp-canvas-${m}-${row.key}`);
+  if (!canvas) return;
+  const mImgs = cmpCachedImages[m];
+  if (!mImgs) return;
+  const overlayKey = method === 'ablation' ? 'ablation'
+    : method === 'occlusion' ? getCmpOccKey(m, row.idx)
+    : `saliency_${row.idx}`;
+  const contourCache = cmpCachedContours[m] ?? (cmpCachedContours[m] = {});
+  compositeOnCanvas(canvas, mImgs[row.key]?.[sl], mImgs[overlayKey]?.[sl] ?? null,
+    cmpCurrentAlpha, cmpShowContours, mImgs, contourCache, sl);
+}
 
-document.getElementById("contour-toggle").addEventListener("change", e => {
-  showZoneContours = e.target.checked;
-  recompositeAll();
-});
+function cmpCompositeShared(colKey, row, sl) {
+  const canvas = document.getElementById(`cmp-shared-${colKey}-${row.key}`);
+  if (!canvas || !refModel) return;
+  const refImgs = cmpCachedImages[refModel];
+  if (!refImgs) return;
+  const overlayKey = colKey === 'zones' ? 'zones' : colKey === 'pred' ? 'prediction' : 'label';
+  const showC = cmpShowContours && colKey !== 'zones';
+  const contourCache = cmpCachedContours[refModel] ?? (cmpCachedContours[refModel] = {});
+  compositeOnCanvas(canvas, refImgs[row.key]?.[sl], refImgs[overlayKey]?.[sl] ?? null,
+    cmpCurrentAlpha, showC, refImgs, contourCache, sl);
+}
 
-// AblationCAM column toggle (hidden by default)
-function setAblationVisible(visible) {
+function getCmpSlice() {
+  return parseInt(document.getElementById("cmp-slice-slider").value) || 0;
+}
+
+function recompositeCmpAll() {
+  const sl = getCmpSlice();
+  for (const row of ROWS) {
+    if (refModel && cmpCachedImages[refModel]?.[row.key]?.[sl]) {
+      const origImg = document.getElementById(`cmp-orig-${row.key}`);
+      if (origImg) origImg.src = cmpCachedImages[refModel][row.key][sl].src;
+    }
+    for (const ck of ['zones','pred','label']) cmpCompositeShared(ck, row, sl);
+    for (const m of ALL_MODELS) {
+      if (ALL_MODEL_RECORDS[m]?.predicted_positive) cmpCompositeCell(m, row, sl, compareMethod);
+    }
+  }
+}
+
+// ── Build Compare Mode grid ───────────────────────────────────────────────────
+function buildCompareGrid(method) {
   const grid = document.getElementById("viewer-grid");
-  grid.style.gridTemplateColumns = visible
+  grid.innerHTML = ""; grid.className = "";
+  const nModelCols = ALL_MODELS.length;
+  grid.style.gridTemplateColumns = `80px repeat(${1 + 3 + nModelCols}, minmax(0, 1fr))`;
+
+  // Header row
+  grid.appendChild(document.createElement("div")); // corner
+  const hdrOrig = document.createElement("div"); hdrOrig.className = "col-header"; hdrOrig.textContent = "Original";
+  grid.appendChild(hdrOrig);
+  for (const [ck, label] of [["zones","Zones"],["pred","Pred Mask"],["label","Label GT"]]) {
+    const hdr = document.createElement("div");
+    hdr.className = `col-header cmp-shared-col-${ck}`;
+    hdr.textContent = label;
+    if (!cmpColVisible[ck]) hdr.classList.add("col-hidden");
+    grid.appendChild(hdr);
+  }
+  for (const m of ALL_MODELS) {
+    const hasPos = ALL_MODEL_RECORDS[m]?.predicted_positive;
+    const hdr = document.createElement("div"); hdr.className = "cmp-model-header";
+    hdr.style.cssText = hasPos
+      ? `background:${MODEL_COLORS_HEX[m]}22;color:${MODEL_COLORS_HEX[m]};border-bottom:2px solid ${MODEL_COLORS_HEX[m]}`
+      : "background:#f1f5f9;color:#94a3b8;border-bottom:2px solid #e2e8f0";
+    hdr.textContent = MODEL_LABELS[m];
+    grid.appendChild(hdr);
+  }
+
+  // Data rows
+  for (const row of ROWS) {
+    const lbl = document.createElement("div"); lbl.className = "row-label"; lbl.textContent = row.label;
+    grid.appendChild(lbl);
+
+    // Original
+    const origBox = document.createElement("div"); origBox.className = "panel-box";
+    const origImg = document.createElement("img"); origImg.id = `cmp-orig-${row.key}`; origImg.alt = row.label;
+    if (refModel && ROTATE_MODELS.has(refModel)) origBox.classList.add("rotate-cell");
+    origBox.appendChild(origImg); grid.appendChild(origBox);
+
+    // Shared overlay cols
+    for (const ck of ['zones','pred','label']) {
+      const wrapper = document.createElement("div"); wrapper.className = `cmp-shared-col-${ck}`;
+      if (!cmpColVisible[ck]) wrapper.classList.add("col-hidden");
+      const refPanelKey = ck === 'zones' ? 'zones' : ck === 'pred' ? 'prediction' : 'label';
+      const refPanels = modelDataCache[refModel]?.panels;
+      if (refModel && refPanels && refPanelKey in refPanels) {
+        const box = document.createElement("div"); box.className = "panel-box";
+        if (refModel && ROTATE_MODELS.has(refModel)) box.classList.add("rotate-cell");
+        const canvas = document.createElement("canvas");
+        canvas.id = `cmp-shared-${ck}-${row.key}`; canvas.width = 200; canvas.height = 200;
+        box.appendChild(canvas); wrapper.appendChild(box);
+      } else {
+        const empty = document.createElement("div"); empty.className = "panel-empty"; empty.textContent = "—";
+        wrapper.appendChild(empty);
+      }
+      grid.appendChild(wrapper);
+    }
+
+    // Per-model XAI cols
+    for (const m of ALL_MODELS) {
+      const hasPos = ALL_MODEL_RECORDS[m]?.predicted_positive;
+      const mPanels = modelDataCache[m]?.panels;
+      const xaiKey = method === 'ablation' ? 'ablation'
+        : method === 'occlusion' ? getCmpOccKey(m, row.idx)
+        : `saliency_${row.idx}`;
+      const hasXai = hasPos && mPanels && (xaiKey in mPanels);
+      const wrapper = document.createElement("div");
+      if (hasXai) {
+        const box = document.createElement("div"); box.className = "panel-box";
+        if (ROTATE_MODELS.has(m)) box.classList.add("rotate-cell");
+        const canvas = document.createElement("canvas");
+        canvas.id = `cmp-canvas-${m}-${row.key}`; canvas.width = 200; canvas.height = 200;
+        box.appendChild(canvas); wrapper.appendChild(box);
+      } else {
+        const empty = document.createElement("div"); empty.className = "panel-empty";
+        empty.textContent = hasPos ? "—" : "No pred.";
+        wrapper.appendChild(empty);
+      }
+      grid.appendChild(wrapper);
+    }
+  }
+}
+
+// ── Compare Mode sidebar ──────────────────────────────────────────────────────
+function buildCompareSidebar() {
+  const container = document.getElementById("cmp-model-stats");
+  container.innerHTML = "";
+  for (const m of ALL_MODELS) {
+    const rec   = ALL_MODEL_RECORDS[m];
+    const mData = modelDataCache[m];
+    const card  = document.createElement("div");
+    card.className = "cmp-stat-card";
+    card.style.borderLeftColor = MODEL_COLORS_HEX[m];
+    const conf   = mData?.stats?.confidence ?? rec?.confidence ?? null;
+    const cls    = rec?.classification ?? "—";
+    const hasPos = rec?.predicted_positive ?? false;
+    let html = `<div class="d-flex align-items-center gap-2 mb-1">
+      <span class="badge px-2" style="background:${MODEL_COLORS_HEX[m]}">${MODEL_LABELS[m]}</span>
+      <span class="badge badge-${cls} text-white rounded-pill px-2" style="font-size:.65rem">${cls.toUpperCase()}</span>
+      ${hasPos ? '' : '<span class="text-muted small">(no pred)</span>'}
+    </div>`;
+    if (conf !== null) {
+      const pct = Math.round(conf * 100);
+      const barColor = conf >= 0.8 ? '#dc3545' : conf >= 0.5 ? '#fd7e14' : '#6c757d';
+      html += `<div class="small text-muted mb-1">Confidence: <strong>${conf.toFixed(3)}</strong></div>
+        <div style="height:6px;border-radius:3px;background:#e9ecef;margin-bottom:6px">
+          <div style="height:6px;border-radius:3px;width:${pct}%;background:${barColor}"></div></div>`;
+    } else {
+      html += `<div class="small text-muted mb-1">Confidence: —</div>`;
+    }
+    if (hasPos && mData?.stats) {
+      const statKey = compareMethod === 'ablation' ? 'saliency' : compareMethod;
+      const fracs = mData.stats[statKey]?.ch_fraction;
+      if (fracs) {
+        const methodLabel = compareMethod === 'ablation' ? 'Saliency' : compareMethod.charAt(0).toUpperCase() + compareMethod.slice(1);
+        html += `<div class="small text-muted mt-1 mb-1">${methodLabel} channels:</div>`;
+        ['T2W','ADC','HBV'].forEach((name, i) => {
+          html += `<div class="d-flex align-items-center gap-1 mb-1">
+            <span class="small text-muted" style="min-width:28px">${name}</span>
+            <div style="flex:1;height:8px;border-radius:4px;background:#e9ecef">
+              <div style="height:8px;border-radius:4px;width:${Math.round(fracs[i]*100)}%;background:${CH_COLORS[i]}"></div></div>
+            <span class="small text-muted" style="min-width:32px">${(fracs[i]*100).toFixed(0)}%</span>
+          </div>`;
+        });
+      }
+    }
+    card.innerHTML = html;
+    container.appendChild(card);
+  }
+}
+
+// ── Model switcher UI ─────────────────────────────────────────────────────────
+function buildModelSwitcher() {
+  const container = document.getElementById("model-switcher");
+  container.innerHTML = "";
+  for (const m of ALL_MODELS) {
+    const btn = document.createElement("button");
+    btn.type = "button"; btn.id = `btn-model-${m}`;
+    btn.className = "btn btn-sm";
+    btn.textContent = MODEL_LABELS[m];
+    btn.onclick = () => switchModel(m);
+    container.appendChild(btn);
+  }
+  updateModelSwitcher();
+}
+
+function updateModelSwitcher() {
+  for (const m of ALL_MODELS) {
+    const btn = document.getElementById(`btn-model-${m}`);
+    if (!btn) continue;
+    const isActive  = m === activeModel;
+    const canClick  = ALL_MODEL_RECORDS[m]?.predicted_positive;
+    const hex       = MODEL_COLORS_HEX[m];
+    if (isActive) {
+      btn.style.cssText = `background:${hex};border-color:${hex};color:#fff;font-weight:700;border-width:2px`;
+      btn.disabled = false;
+    } else if (canClick) {
+      btn.style.cssText = `background:transparent;border-color:${hex};color:${hex};border-width:2px`;
+      btn.disabled = false;
+    } else {
+      btn.style.cssText = `background:transparent;border-color:#ccc;color:#aaa;opacity:0.4;border-width:2px`;
+      btn.disabled = true;
+    }
+  }
+}
+
+// ── Switch model (Model Mode) ─────────────────────────────────────────────────
+async function switchModel(model) {
+  if (model === activeModel) return;
+  if (!ALL_MODEL_RECORDS[model]?.predicted_positive) return;
+  const grid = document.getElementById("viewer-grid");
+  grid.style.opacity = "0.4";
+
+  if (!modelDataCache[model]) {
+    const resp = await fetch(`/api/case/${model}/${CASE_ID}.json`);
+    if (!resp.ok) { grid.style.opacity = "1"; return; }
+    modelDataCache[model] = await resp.json();
+  }
+  if (!modelDataCache[model].cachedImages) {
+    modelDataCache[model].cachedImages = await preloadImages(modelDataCache[model].panels);
+  }
+
+  activeModel    = model;
+  const mData    = modelDataCache[model];
+  panels         = mData.panels;
+  cachedImages   = mData.cachedImages;
+  nSlices        = mData.n_slices;
+  cachedContours = {};
+
+  // Sync occlusion dropdown
+  const occStrategies = mData.occlusion_strategies || [];
+  const occSelect = document.getElementById("occ-strategy-select");
+  const occWrap   = document.getElementById("occ-strategy-wrap");
+  occSelect.innerHTML = "";
+  const stratLabels = { zero: "Zero baseline", zone_median: "Zone median" };
+  for (const s of occStrategies) {
+    const opt = document.createElement("option"); opt.value = s; opt.textContent = stratLabels[s] ?? s;
+    occSelect.appendChild(opt);
+  }
+  occWrap.classList.toggle("d-none", occStrategies.length <= 1);
+
+  buildGrid(panels);
+  setAblationVisible(document.getElementById("ablation-toggle").checked);
+  const sl = parseInt(document.getElementById("slice-slider").value) || 0;
+  showSlice(sl);
+  grid.style.opacity = "1";
+  updateModelSwitcher();
+  updateModelSidebar(mData);
+
+  const badge = document.getElementById("header-model-badge");
+  if (badge) { badge.className = `badge bg-${model} px-3 fs-6`; badge.textContent = model; }
+}
+
+// ── Update sidebar for current model ─────────────────────────────────────────
+function updateModelSidebar(mData) {
+  const s = mData.stats;
+  plotConfidence(s.confidence ?? null);
+  plotInputAblation(s.input_ablation);
+  plotPie("plot-sal-pie", s.saliency?.ch_fraction ?? null);
+  plotPie("plot-occ-pie", s.occlusion?.ch_fraction ?? null);
+  plotBar("plot-sal-bar", s.saliency?.ch_mean ?? null);
+  plotBar("plot-occ-bar", s.occlusion?.ch_mean ?? null);
+  const confRow = document.getElementById("cls-confidence-row");
+  const confEl  = document.getElementById("cls-confidence");
+  if (confRow && confEl) {
+    if (s.confidence != null) { confEl.textContent = s.confidence.toFixed(3); confRow.style.display = ""; }
+    else confRow.style.display = "none";
+  }
+  const predEl = document.getElementById("cls-predicted");
+  if (predEl) predEl.textContent = mData.record?.predicted_positive ? "Yes" : "No";
+}
+
+// ── Switch mode ───────────────────────────────────────────────────────────────
+async function switchMode(mode) {
+  if (mode === currentMode) return;
+  currentMode = mode;
+  document.getElementById("btn-mode-model").className   = mode === 'model'   ? "btn btn-sm btn-primary" : "btn btn-sm btn-outline-secondary";
+  document.getElementById("btn-mode-compare").className = mode === 'compare' ? "btn btn-sm btn-primary" : "btn btn-sm btn-outline-secondary";
+  document.getElementById("model-mode-controls").style.display   = mode === 'model'   ? "" : "none";
+  document.getElementById("compare-mode-controls").style.display = mode === 'compare' ? "" : "none";
+  document.getElementById("model-sidebar").style.display    = mode === 'model'   ? "" : "none";
+  document.getElementById("compare-sidebar").style.display  = mode === 'compare' ? "" : "none";
+  document.getElementById("no-xai-msg").style.display = "none";
+
+  if (mode === 'model') {
+    buildGrid(panels);
+    setAblationVisible(document.getElementById("ablation-toggle").checked);
+    showSlice(parseInt(document.getElementById("slice-slider").value) || 0);
+  } else {
+    await fetchCompareData();
+    buildCompareGrid(compareMethod);
+    const sl = parseInt(document.getElementById("slice-slider").value) || 0;
+    const cmpSlider = document.getElementById("cmp-slice-slider");
+    cmpSlider.max = nSlices - 1; cmpSlider.value = sl;
+    document.getElementById("cmp-slice-label").textContent = `${sl+1} / ${nSlices}`;
+    recompositeCmpAll();
+    buildCompareSidebar();
+  }
+}
+
+// ── Switch compare method ─────────────────────────────────────────────────────
+function switchCompareMethod(method) {
+  compareMethod = method;
+  for (const m of ['saliency','occlusion','ablation']) {
+    const btn = document.getElementById(`btn-method-${m}`);
+    if (btn) btn.className = m === method ? "btn btn-sm btn-primary" : "btn btn-sm btn-outline-secondary";
+  }
+  buildCompareGrid(method);
+  recompositeCmpAll();
+  buildCompareSidebar();
+}
+
+// ── Toggle shared column in compare mode ──────────────────────────────────────
+function toggleCmpCol(colKey, btn) {
+  cmpColVisible[colKey] = !cmpColVisible[colKey];
+  btn.classList.toggle("active", cmpColVisible[colKey]);
+  document.querySelectorAll(`.cmp-shared-col-${colKey}`)
+    .forEach(el => el.classList.toggle("col-hidden", !cmpColVisible[colKey]));
+}
+
+// ── Fetch all positive-model data for compare mode ───────────────────────────
+async function fetchCompareData() {
+  const positiveModels = ALL_MODELS.filter(m => ALL_MODEL_RECORDS[m]?.predicted_positive);
+  await Promise.all(positiveModels.map(async m => {
+    if (!modelDataCache[m]) {
+      const resp = await fetch(`/api/case/${m}/${CASE_ID}.json`);
+      if (resp.ok) modelDataCache[m] = await resp.json();
+    }
+    if (modelDataCache[m] && !modelDataCache[m].cachedImages) {
+      modelDataCache[m].cachedImages = await preloadImages(modelDataCache[m].panels);
+    }
+    if (modelDataCache[m]) cmpCachedImages[m] = modelDataCache[m].cachedImages;
+  }));
+  refModel = positiveModels[0] ?? null;
+  cmpCachedContours = {};
+}
+
+// ── Controls ──────────────────────────────────────────────────────────────────
+document.getElementById("overlay-alpha").addEventListener("input", e => {
+  currentAlpha = parseFloat(e.target.value);
+  document.getElementById("alpha-label").textContent = currentAlpha.toFixed(2);
+  if (currentMode === 'model') recompositeAll();
+});
+document.getElementById("cmp-overlay-alpha").addEventListener("input", e => {
+  cmpCurrentAlpha = parseFloat(e.target.value);
+  document.getElementById("cmp-alpha-label").textContent = cmpCurrentAlpha.toFixed(2);
+  if (currentMode === 'compare') recompositeCmpAll();
+});
+document.getElementById("contour-toggle").addEventListener("change", e => {
+  showZoneContours = e.target.checked; recompositeAll();
+});
+document.getElementById("cmp-contour-toggle").addEventListener("change", e => {
+  cmpShowContours = e.target.checked; cmpCachedContours = {}; recompositeCmpAll();
+});
+document.getElementById("cmp-slice-slider").addEventListener("input", e => {
+  const sl = parseInt(e.target.value);
+  document.getElementById("cmp-slice-label").textContent = `${sl+1} / ${nSlices}`;
+  recompositeCmpAll();
+});
+
+function setAblationVisible(visible) {
+  document.getElementById("viewer-grid").style.gridTemplateColumns = visible
     ? "80px repeat(7, minmax(0, 1fr))"
     : "80px repeat(6, minmax(0, 1fr))";
-  document.querySelectorAll(".col-group-ablation").forEach(el => {
-    el.classList.toggle("col-hidden", !visible);
-  });
+  document.querySelectorAll(".col-group-ablation").forEach(el => el.classList.toggle("col-hidden", !visible));
 }
-document.getElementById("ablation-toggle").addEventListener("change", e => {
-  setAblationVisible(e.target.checked);
-});
+document.getElementById("ablation-toggle").addEventListener("change", e => setAblationVisible(e.target.checked));
 
-// ── Plotly helpers ───────────────────────────────────────────────────────────
-const PLOTLY_LAYOUT_MINI = {
-  margin: { t: 4, b: 30, l: 30, r: 10 },
-  paper_bgcolor: "white", plot_bgcolor: "white",
-  font: { size: 11 }, showlegend: false,
-};
+// ── Plotly helpers ────────────────────────────────────────────────────────────
+const PLOTLY_LAYOUT_MINI = { margin:{t:4,b:30,l:30,r:10}, paper_bgcolor:"white", plot_bgcolor:"white", font:{size:11}, showlegend:false };
 
 function plotConfidence(confidence) {
   const div = document.getElementById("plot-confidence");
   if (!div) return;
-  if (confidence == null) {
-    div.innerHTML = '<p class="text-muted small text-center pt-3">Not available</p>';
-    return;
-  }
+  if (confidence == null) { div.innerHTML = '<p class="text-muted small text-center pt-3">Not available</p>'; return; }
   const color = confidence >= 0.8 ? "#dc3545" : confidence >= 0.5 ? "#fd7e14" : "#6c757d";
   Plotly.newPlot("plot-confidence", [{
-    type: "indicator", mode: "gauge+number",
-    value: confidence,
-    number: { valueformat: ".3f", font: { size: 20 } },
-    gauge: {
-      axis: { range: [0, 1], tickformat: ".1f", tickfont: { size: 9 } },
-      bar: { color },
-      steps: [
-        { range: [0, 0.5], color: "#f8f9fa" },
-        { range: [0.5, 0.8], color: "#fff3cd" },
-        { range: [0.8, 1.0], color: "#f8d7da" },
-      ],
-      threshold: { line: { color: "#333", width: 2 }, thickness: 0.75, value: 0.5 },
-    },
-  }], { margin: { t: 10, b: 10, l: 20, r: 20 }, paper_bgcolor: "white", height: 110 },
-  { displayModeBar: false });
+    type:"indicator", mode:"gauge+number", value:confidence,
+    number:{valueformat:".3f",font:{size:20}},
+    gauge:{axis:{range:[0,1],tickformat:".1f",tickfont:{size:9}},bar:{color},
+      steps:[{range:[0,0.5],color:"#f8f9fa"},{range:[0.5,0.8],color:"#fff3cd"},{range:[0.8,1.0],color:"#f8d7da"}],
+      threshold:{line:{color:"#333",width:2},thickness:0.75,value:0.5}},
+  }], {margin:{t:10,b:10,l:20,r:20},paper_bgcolor:"white",height:110}, {displayModeBar:false});
 }
 
 function plotInputAblation(weights) {
-  if (!weights) {
-    document.getElementById("plot-inp-abl").innerHTML =
-      '<p class="text-muted small text-center pt-3">Not computed</p>';
-    return;
-  }
-  Plotly.newPlot("plot-inp-abl", [{
-    type: "bar", orientation: "h",
-    x: weights, y: CH_NAMES,
-    marker: { color: CH_COLORS },
-    text: weights.map(v => v.toFixed(3)), textposition: "auto",
-  }], { ...PLOTLY_LAYOUT_MINI, xaxis: { title: "importance" } }, { displayModeBar: false });
+  if (!weights) { document.getElementById("plot-inp-abl").innerHTML = '<p class="text-muted small text-center pt-3">Not computed</p>'; return; }
+  Plotly.newPlot("plot-inp-abl", [{type:"bar",orientation:"h",x:weights,y:CH_NAMES,marker:{color:CH_COLORS},text:weights.map(v=>v.toFixed(3)),textposition:"auto"}],
+    {...PLOTLY_LAYOUT_MINI,xaxis:{title:"importance"}},{displayModeBar:false});
 }
 
 function plotPie(divId, fractions) {
-  if (!fractions) {
-    document.getElementById(divId).innerHTML =
-      '<p class="text-muted small text-center pt-3">Not computed</p>';
-    return;
-  }
-  Plotly.newPlot(divId, [{
-    type: "pie", labels: CH_NAMES, values: fractions,
-    marker: { colors: CH_COLORS },
-    textinfo: "label+percent", hole: 0.35,
-  }], { margin: { t: 10, b: 10, l: 10, r: 10 }, paper_bgcolor: "white",
-        font: { size: 10 }, showlegend: false }, { displayModeBar: false });
+  if (!fractions) { document.getElementById(divId).innerHTML = '<p class="text-muted small text-center pt-3">Not computed</p>'; return; }
+  Plotly.newPlot(divId,[{type:"pie",labels:CH_NAMES,values:fractions,marker:{colors:CH_COLORS},textinfo:"label+percent",hole:0.35}],
+    {margin:{t:10,b:10,l:10,r:10},paper_bgcolor:"white",font:{size:10},showlegend:false},{displayModeBar:false});
 }
 
 function plotBar(divId, means) {
-  if (!means) {
-    document.getElementById(divId).innerHTML =
-      '<p class="text-muted small text-center pt-3">Not computed</p>';
-    return;
-  }
-  Plotly.newPlot(divId, [{
-    type: "bar", x: CH_NAMES, y: means,
-    marker: { color: CH_COLORS },
-    text: means.map(v => v.toExponential(2)), textposition: "auto",
-  }], { ...PLOTLY_LAYOUT_MINI, yaxis: { title: "mean attr." } }, { displayModeBar: false });
+  if (!means) { document.getElementById(divId).innerHTML = '<p class="text-muted small text-center pt-3">Not computed</p>'; return; }
+  Plotly.newPlot(divId,[{type:"bar",x:CH_NAMES,y:means,marker:{color:CH_COLORS},text:means.map(v=>v.toExponential(2)),textposition:"auto"}],
+    {...PLOTLY_LAYOUT_MINI,yaxis:{title:"mean attr."}},{displayModeBar:false});
 }
 
-// ── Main load ────────────────────────────────────────────────────────────────
+// ── Legend ────────────────────────────────────────────────────────────────────
+const COLORMAP_KEYS = ["prediction","saliency_0","occlusion_0","ablation"];
+const COLORMAP_GRAD = "linear-gradient(to right,#30123b,#4776ef,#1dbd9d,#b1f23c,#fb8a26,#7a0502)";
+
+function populateLegend(availablePanels) {
+  const card = document.getElementById("legend-card");
+  if ("zones" in availablePanels) document.getElementById("legend-zones").style.display = "";
+  const cmDiv = document.getElementById("legend-colormaps");
+  if (COLORMAP_KEYS.some(k => k in availablePanels)) {
+    cmDiv.insertAdjacentHTML("beforeend",`
+      <div style="height:10px;border-radius:3px;background:${COLORMAP_GRAD};margin-bottom:2px"></div>
+      <div class="d-flex justify-content-between" style="font-size:.65rem;color:#888"><span>Low</span><span>High</span></div>`);
+  }
+  if ("zones" in availablePanels || COLORMAP_KEYS.some(k => k in availablePanels)) card.style.display = "";
+}
+
+// ── Main load ─────────────────────────────────────────────────────────────────
 (async () => {
   const loadMsg = document.getElementById("loading-msg");
   try {
     loadMsg.textContent = "Fetching & rendering slices (server-side)…";
     const resp = await fetch(`/api/case/${MODEL}/${CASE_ID}.json`);
     if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-
     loadMsg.textContent = "Decoding response…";
     const data = await resp.json();
+
+    modelDataCache[MODEL] = data;
     panels  = data.panels;
     nSlices = data.n_slices;
+
+    const occStrategies = data.occlusion_strategies || [];
+    const occSelect = document.getElementById("occ-strategy-select");
+    const occWrap   = document.getElementById("occ-strategy-wrap");
+    occSelect.innerHTML = "";
+    const stratLabels = { zero: "Zero baseline", zone_median: "Zone median" };
+    for (const s of occStrategies) {
+      const opt = document.createElement("option"); opt.value = s; opt.textContent = stratLabels[s] ?? s;
+      occSelect.appendChild(opt);
+    }
+    occWrap.classList.toggle("d-none", occStrategies.length <= 1);
+    occSelect.addEventListener("change", () => showSlice(parseInt(document.getElementById("slice-slider").value)));
 
     buildGrid(panels);
     setAblationVisible(false);
     populateLegend(panels);
 
     loadMsg.textContent = "Pre-loading images…";
-    await preloadImages(panels);
+    cachedImages = await preloadImages(panels);
+    modelDataCache[MODEL].cachedImages = cachedImages;
     cachedContours = {};
 
     const slider = document.getElementById("slice-slider");
-    slider.max = nSlices - 1;
+    slider.max   = nSlices - 1;
     slider.value = Math.floor(nSlices / 2);
     slider.addEventListener("input", e => showSlice(parseInt(e.target.value)));
     showSlice(parseInt(slider.value));
     document.getElementById("gif-btn").disabled = false;
 
-    const hasXAI = "saliency_0" in panels || "occlusion_0" in panels || "ablation" in panels;
+    const hasXAI = ["saliency_0","occlusion_0","occlusion_zm_0","ablation"].some(k => k in panels);
     if (!hasXAI) document.getElementById("no-xai-msg").style.display = "";
 
-    const stats = data.stats;
-    plotConfidence(stats.confidence ?? null);
-    plotInputAblation(stats.input_ablation);
-    plotPie("plot-sal-pie", stats.saliency?.ch_fraction ?? null);
-    plotPie("plot-occ-pie", stats.occlusion?.ch_fraction ?? null);
-    plotBar("plot-sal-bar", stats.saliency?.ch_mean ?? null);
-    plotBar("plot-occ-bar", stats.occlusion?.ch_mean ?? null);
+    const s = data.stats;
+    plotConfidence(s.confidence ?? null);
+    plotInputAblation(s.input_ablation);
+    plotPie("plot-sal-pie", s.saliency?.ch_fraction ?? null);
+    plotPie("plot-occ-pie", s.occlusion?.ch_fraction ?? null);
+    plotBar("plot-sal-bar", s.saliency?.ch_mean ?? null);
+    plotBar("plot-occ-bar", s.occlusion?.ch_mean ?? null);
 
+    buildModelSwitcher();
   } catch (err) {
-    loadMsg.textContent = `Error: ${err.message}`;
-    return;
+    loadMsg.textContent = `Error: ${err.message}`; return;
   }
   document.getElementById("loading-overlay").style.display = "none";
 })();
 
-// ── Legend ───────────────────────────────────────────────────────────────────
-const COLORMAP_KEYS = ["prediction", "saliency_0", "occlusion_0", "ablation"];
-const COLORMAP_GRAD = "linear-gradient(to right,#30123b,#4776ef,#1dbd9d,#b1f23c,#fb8a26,#7a0502)";
-
-function populateLegend(availablePanels) {
-  const card = document.getElementById("legend-card");
-  if ("zones" in availablePanels) {
-    document.getElementById("legend-zones").style.display = "";
-  }
-  const cmDiv = document.getElementById("legend-colormaps");
-  const hasColormap = COLORMAP_KEYS.some(k => k in availablePanels);
-  if (hasColormap) {
-    cmDiv.insertAdjacentHTML("beforeend", `
-      <div style="height:10px;border-radius:3px;background:${COLORMAP_GRAD};margin-bottom:2px"></div>
-      <div class="d-flex justify-content-between" style="font-size:.65rem;color:#888">
-        <span>Low</span><span>High</span>
-      </div>
-    `);
-  }
-  const hasSomething = "zones" in availablePanels || hasColormap;
-  if (hasSomething) card.style.display = "";
-}
-
-// ── GIF generation ───────────────────────────────────────────────────────────
+// ── GIF export ────────────────────────────────────────────────────────────────
 document.getElementById("gif-btn").addEventListener("click", async () => {
   const dur   = document.getElementById("gif-fps").value;
   const alpha = document.getElementById("overlay-alpha").value;
-
   const gifModal = new bootstrap.Modal(document.getElementById("gifModal"));
   const progress = document.getElementById("gif-progress");
   const result   = document.getElementById("gif-result");
   const dl       = document.getElementById("gif-download");
-
-  result.style.display = "none";
-  dl.style.display = "none";
-  progress.style.display = "";
-  progress.innerHTML = `
-    <div class="spinner-border text-primary mb-2" role="status"></div>
-    <p class="text-muted small mb-0">Rendering full table GIF (all slices)…</p>`;
+  result.style.display = "none"; dl.style.display = "none"; progress.style.display = "";
+  progress.innerHTML = `<div class="spinner-border text-primary mb-2" role="status"></div><p class="text-muted small mb-0">Rendering full table GIF (all slices)…</p>`;
   gifModal.show();
-
   try {
     const params = new URLSearchParams({ alpha, duration_ms: dur });
-    const resp = await fetch(`/api/gif_table/${MODEL}/${CASE_ID}?${params}`);
+    const resp = await fetch(`/api/gif_table/${activeModel}/${CASE_ID}?${params}`);
     if (!resp.ok) throw new Error(`Server error ${resp.status}`);
     const url = URL.createObjectURL(await resp.blob());
-    result.src = url;
-    result.style.display = "";
-    dl.href = url; dl.download = `${CASE_ID}_table.gif`;
-    dl.style.display = "";
+    result.src = url; result.style.display = "";
+    dl.href = url; dl.download = `${CASE_ID}_table.gif`; dl.style.display = "";
     progress.style.display = "none";
   } catch (err) {
     progress.innerHTML = `<p class="text-danger">Error: ${err.message}</p>`;

@@ -9,12 +9,18 @@
 #SBATCH --cpus-per-task=4
 #SBATCH --mem=28G
 #SBATCH --job-name="Swin-XAI-metrics"
-#SBATCH --output=logs/xai/Swin_%A_%a.txt
-#SBATCH --error=logs/xai/Swin_%A_%a.err
+#SBATCH --output=/dev/null
+#SBATCH --error=/dev/null
 #SBATCH --array=0-4
 
 WORKDIR=${SLURM_SUBMIT_DIR}
 cd ${WORKDIR}
+
+START_TIME=$(date +%Y-%m-%d_%H-%M-%S)
+JOB_ID=${SLURM_ARRAY_JOB_ID:-$SLURM_JOB_ID}
+LOG_BASE="logs/Swin/${JOB_ID}_${SLURM_ARRAY_TASK_ID}_${START_TIME}"
+mkdir -p "$(dirname "$LOG_BASE")"
+exec > "${LOG_BASE}.txt" 2> "${LOG_BASE}.err"
 echo "we are running from this directory: $SLURM_SUBMIT_DIR"
 echo "the name of the job is: $SLURM_JOB_NAME"
 echo "The job ID is $SLURM_JOB_ID"

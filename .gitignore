@@ -9,5 +9,10 @@ wheels/
 # Virtual environments
 .venv
 .claude
+
+# Other
+logs/
 results/
+results.bak/
 uv.lock
+images/

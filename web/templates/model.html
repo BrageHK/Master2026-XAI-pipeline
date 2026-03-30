@@ -147,6 +147,11 @@
         <option value="{{ f }}">Fold {{ f }}</option>
         {% endfor %}
       </select>
+      <span class="vr"></span>
+      <div class="form-check form-check-inline mb-0">
+        <input class="form-check-input" type="checkbox" id="chk-all-models-pos">
+        <label class="form-check-label small fw-semibold" for="chk-all-models-pos" title="Show only cases where all models predicted positive">All models positive</label>
+      </div>
     </div>
   </div>
   <div class="card-body p-0">
@@ -178,6 +183,7 @@
               data-cls="{{ cls }}"
               data-fold="{{ r.fold }}"
               data-case="{{ r.case_id }}"
+              data-all-models-pos="{{ 'true' if r.case_id in all_models_pos else 'false' }}"
               data-confidence="{{ r.confidence if r.confidence is not none else '' }}"
               data-gt-zone="{{ r.primary_zone or '' }}"
               data-pred-pz="{{ r.pred_pz_voxels if r.pred_pz_voxels is not none else '' }}"
@@ -269,27 +275,40 @@ $('#chk-all').on('change', function () {
   $('.cls-filter').prop('checked', this.checked).trigger('change');
 });
 
+function applyFilters() {
+  const checkedVals = $('.cls-filter:checked').map((_, el) => el.value).get();
+  const fold = $('#fold-filter').val();
+  const allModelsOnly = $('#chk-all-models-pos').is(':checked');
+  $.fn.dataTable.ext.search = [
+    function (_, __, dataIndex, row) {
+      const cls   = $(row[2]).text().trim().toLowerCase();
+      const rFold = $(row[1]).text().trim();
+      if (!checkedVals.includes(cls)) return false;
+      if (fold !== '' && rFold !== fold) return false;
+      if (allModelsOnly) {
+        const tr  = table.row(dataIndex).node();
+        const amp = $(tr).attr('data-all-models-pos');
+        if (amp !== 'true') return false;
+      }
+      return true;
+    }
+  ];
+  table.draw();
+}
+
 // Classification filter checkboxes
 $('.cls-filter').on('change', function () {
   const total   = $('.cls-filter').length;
   const checked = $('.cls-filter:checked').length;
   $('#chk-all').prop('indeterminate', checked > 0 && checked < total)
                .prop('checked', checked === total);
-  const checkedVals = $('.cls-filter:checked').map((_, el) => el.value).get();
-  $.fn.dataTable.ext.search = [
-    function (_, __, ___, row) {
-      const cls   = $(row[2]).text().trim().toLowerCase();
-      const fold  = $('#fold-filter').val();
-      const rFold = $(row[1]).text().trim();
-      return checkedVals.includes(cls) && (fold === '' || rFold === fold);
-    }
-  ];
-  table.draw();
+  applyFilters();
 });
 
 // Fold filter
-$('#fold-filter').on('change', function () {
-  $('.cls-filter').trigger('change');
-});
+$('#fold-filter').on('change', applyFilters);
+
+// All-models-positive toggle
+$('#chk-all-models-pos').on('change', applyFilters);
 </script>
 {% endblock %}

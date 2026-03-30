@@ -1,9 +1,8 @@
 #!/bin/bash
-#SBATCH --partition=GPUQ
+#SBATCH --partition=short
 #SBATCH --account=share-ie-idi
-#SBATCH --time=55:00:00
+#SBATCH --time=00:20:00
 #SBATCH --gres=gpu:1
-#SBATCH --constraint="gpu80g"
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
 #SBATCH --cpus-per-task=4
@@ -11,14 +10,17 @@
 #SBATCH --job-name="U-Mamba-XAI-metrics"
 #SBATCH --output=/dev/null
 #SBATCH --error=/dev/null
-#SBATCH --array=0-4
 
 WORKDIR=${SLURM_SUBMIT_DIR}
 cd ${WORKDIR}
 
 START_TIME=$(date +%Y-%m-%d_%H-%M-%S)
 JOB_ID=${SLURM_ARRAY_JOB_ID:-$SLURM_JOB_ID}
-LOG_BASE="logs/UMamba/${JOB_ID}_${SLURM_ARRAY_TASK_ID}_${START_TIME}"
+if [ -n "$SLURM_ARRAY_TASK_ID" ]; then
+    LOG_BASE="logs/UMamba/${JOB_ID}_${SLURM_ARRAY_TASK_ID}_${START_TIME}"
+else
+    LOG_BASE="logs/UMamba/${JOB_ID}_${START_TIME}"
+fi
 mkdir -p "$(dirname "$LOG_BASE")"
 exec > "${LOG_BASE}.txt" 2> "${LOG_BASE}.err"
 echo "we are running from this directory: $SLURM_SUBMIT_DIR"
@@ -32,4 +34,4 @@ echo "Total of $SLURM_NTASKS cores"
 
 module purge
 
-uv run generate_xai_data.py --fold "$SLURM_ARRAY_TASK_ID" --models "umamba_mtl" --methods "all" --no-skip
+uv run generate_xai_data.py --fold "0" --models "umamba_mtl" --methods "all"

@@ -1,16 +1,16 @@
 #!/bin/bash
 #SBATCH --partition=GPUQ
 #SBATCH --account=share-ie-idi
-#SBATCH --time=55:00:00
+#SBATCH --time=64:00:00
 #SBATCH --gres=gpu:1
 #SBATCH --constraint="gpu80g"
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
-#SBATCH --cpus-per-task=4
+#SBATCH --cpus-per-task=8
 #SBATCH --mem=28G
 #SBATCH --job-name="XAI-all-models"
-#SBATCH --output=logs/xai/all_%A_%a.txt
-#SBATCH --error=logs/xai/all_%A_%a.err
+#SBATCH --output=/dev/null
+#SBATCH --error=/dev/null
 #SBATCH --array=0-14
 
 WORKDIR=${SLURM_SUBMIT_DIR}
@@ -23,6 +23,8 @@ echo "Number of nodes: $SLURM_JOB_NUM_NODES"
 echo "We are using $SLURM_CPUS_ON_NODE cores"
 echo "We are using $SLURM_CPUS_ON_NODE cores per node"
 echo "Total of $SLURM_NTASKS cores"
+
+nvidia-smi
 
 module purge
 
@@ -39,6 +41,11 @@ else
     MODEL="umamba_mtl"
     FOLD=$((TASK_ID - 10))
 fi
+
+START_TIME=$(date +%Y-%m-%d_%H-%M-%S)
+LOG_BASE="logs/${MODEL}/${SLURM_ARRAY_JOB_ID}_${SLURM_ARRAY_TASK_ID}_${START_TIME}"
+mkdir -p "$(dirname "$LOG_BASE")"
+exec > "${LOG_BASE}.txt" 2> "${LOG_BASE}.err"
 
 echo "Running model=$MODEL fold=$FOLD"
 uv run generate_xai_data.py --fold "$FOLD" --models "$MODEL" --methods "all" --no-skip

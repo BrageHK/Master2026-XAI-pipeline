@@ -33,7 +33,8 @@ PROJECT_ROOT = Path(__file__).parent.parent
 METRICS_DIR  = PROJECT_ROOT / "results" / "metrics"
 XAI_DIR      = PROJECT_ROOT / "results" / "xai"
 ANALYSIS_DIR = PROJECT_ROOT / "results" / "analysis"
-MODELS       = ["umamba_mtl", "swin_unetr", "nnunet"]
+MODELS        = ["umamba_mtl", "swin_unetr", "nnunet"]
+ZONES_PRED_DIR = XAI_DIR / "zones"   # umamba predicted zones: zones/fold_N/case_id.npz
 
 CHANNEL_NAMES = ["T2W", "ADC", "HBV"]
 
@@ -210,14 +211,37 @@ def _available_charts(model: str) -> dict:
 # ---------------------------------------------------------------------------
 
 @lru_cache(maxsize=64)
-def _load_npz(model: str, case_id: str) -> dict:
-    """Load a case NPZ, searching fold_0..fold_4. Result is cached."""
+def _load_npz(model: str, case_id: str) -> tuple:
+    """Load a case NPZ, searching fold_0..fold_4. Returns (data_dict, fold_number)."""
     for fold in range(5):
         path = XAI_DIR / model / f"fold_{fold}" / f"{case_id}.npz"
         if path.exists():
             raw = np.load(path, allow_pickle=True)
-            return {k: raw[k] for k in raw.files}
+            return {k: raw[k] for k in raw.files}, fold
     raise FileNotFoundError(f"NPZ not found: {model}/{case_id}")
+
+
+def _load_zones_pred(case_id: str, fold: int) -> np.ndarray | None:
+    """Load umamba predicted zones (orientation-corrected crop) from ZONES_PRED_DIR.
+
+    Returns zones_crop array (D_crop, W, H) int8 in the same orientation as model NPZ
+    zones, or None if not available.
+    Falls back to searching other folds if the primary fold file is missing.
+    """
+    path = ZONES_PRED_DIR / f"fold_{fold}" / f"{case_id}.npz"
+    if not path.exists():
+        for f in range(5):
+            alt = ZONES_PRED_DIR / f"fold_{f}" / f"{case_id}.npz"
+            if alt.exists():
+                path = alt
+                break
+        else:
+            return None
+    raw = np.load(path, allow_pickle=True)
+    if "zones_crop" in raw.files:
+        return raw["zones_crop"]   # (D_crop, W, H) int8
+    # Old-format file: only has full zones — return None and let caller fall back
+    return None
 
 
 def _is_sentinel(arr) -> bool:
@@ -332,7 +356,7 @@ def _build_case_payload(model: str, case_id: str) -> dict:
 
     All rendering happens here — the client only swaps <img> src attributes.
     """
-    npz = _load_npz(model, case_id)
+    npz, fold_found = _load_npz(model, case_id)
 
     image      = npz["image"]       # (3, D, H, W)
     pred       = npz["prediction"]  # (1, D, H, W)
@@ -341,9 +365,24 @@ def _build_case_payload(model: str, case_id: str) -> dict:
     occ_tz     = npz.get("occlusion_tz",   np.zeros((0,), dtype=np.float32))
     occ_pz     = npz.get("occlusion_pz",   np.zeros((0,), dtype=np.float32))
     ablation   = npz.get("ablation",       np.zeros((0,), dtype=np.float32))
-    zones      = _fix_zones(npz.get("zones", np.zeros((0,), dtype=np.int8)), model)
+    zones_npz  = _fix_zones(npz.get("zones", np.zeros((0,), dtype=np.int8)), model)
     label      = npz.get("label",          np.zeros((0,), dtype=np.float32))
     inp_abl    = npz.get("input_ablation", np.zeros((0,), dtype=np.float32))
+
+    # Zone display priority: umamba predictions > NPZ zones > error
+    zones_error_msg: str | None = None
+    zones_pred = _load_zones_pred(case_id, fold_found)
+    if zones_pred is not None and zones_pred.ndim == 3:
+        zones = zones_pred    # (D_crop, W, H) orientation-corrected
+    elif not _is_sentinel(zones_npz) and zones_npz.ndim == 3:
+        zones = zones_npz     # fallback to model-native zones
+    else:
+        zones = None
+        zones_error_msg = "Prostate zone predictions are missing for this case."
+
+    # zones_npz (model-native space) is used for zone-median occlusion merging,
+    # which must match the spatial dimensions of occ_tz/occ_pz
+    zones_for_occlusion = zones_npz
 
     n_slices = image.shape[1]
     panels: dict = {}
@@ -377,19 +416,42 @@ def _build_case_payload(model: str, case_id: str) -> dict:
             panels[f"occlusion_{i}"] = _render_all_slices(occ_abs[i], "turbo", 0.0, occ_vmax, transparent=True)
 
     # Zone-median occlusion: merge TZ and PZ attribution maps by zone mask
+    # Uses zones_for_occlusion (model-native space) which matches occ_tz/occ_pz dimensions.
     occ_merged = None
     if (not _is_sentinel(occ_tz) and occ_tz.ndim == 4
             and not _is_sentinel(occ_pz) and occ_pz.ndim == 4
-            and not _is_sentinel(zones) and zones.ndim == 3):
+            and not _is_sentinel(zones_for_occlusion) and zones_for_occlusion.ndim == 3):
         occ_merged = np.zeros_like(occ_tz)
-        occ_merged[:, zones == 2] = occ_tz[:, zones == 2]   # TZ region → TZ attribution
-        occ_merged[:, zones == 1] = occ_pz[:, zones == 1]   # PZ region → PZ attribution
+        occ_merged[:, zones_for_occlusion == 2] = occ_tz[:, zones_for_occlusion == 2]
+        occ_merged[:, zones_for_occlusion == 1] = occ_pz[:, zones_for_occlusion == 1]
         occ_merged_abs = np.abs(occ_merged)
         occ_zm_vmax = float(np.percentile(occ_merged_abs, 99)) or 1e-6
         for i in range(3):
             panels[f"occlusion_zm_{i}"] = _render_all_slices(
                 occ_merged_abs[i], "turbo", 0.0, occ_zm_vmax, transparent=True
             )
+
+    # TZ-masked and PZ-masked: zone attribution in its region, average of both elsewhere
+    if (not _is_sentinel(occ_tz) and occ_tz.ndim == 4
+            and not _is_sentinel(occ_pz) and occ_pz.ndim == 4
+            and not _is_sentinel(zones_for_occlusion) and zones_for_occlusion.ndim == 3):
+        occ_avg = (occ_tz + occ_pz) / 2.0
+
+        occ_tz_masked = occ_avg.copy()
+        occ_tz_masked[:, zones_for_occlusion == 2] = occ_tz[:, zones_for_occlusion == 2]
+        occ_tz_masked_abs = np.abs(occ_tz_masked)
+        occ_tz_vmax = float(np.percentile(occ_tz_masked_abs, 99)) or 1e-6
+        for i in range(3):
+            panels[f"occlusion_tz_masked_{i}"] = _render_all_slices(
+                occ_tz_masked_abs[i], "turbo", 0.0, occ_tz_vmax, transparent=True)
+
+        occ_pz_masked = occ_avg.copy()
+        occ_pz_masked[:, zones_for_occlusion == 1] = occ_pz[:, zones_for_occlusion == 1]
+        occ_pz_masked_abs = np.abs(occ_pz_masked)
+        occ_pz_vmax = float(np.percentile(occ_pz_masked_abs, 99)) or 1e-6
+        for i in range(3):
+            panels[f"occlusion_pz_masked_{i}"] = _render_all_slices(
+                occ_pz_masked_abs[i], "turbo", 0.0, occ_pz_vmax, transparent=True)
 
     # AblationCAM (single-channel spatial map)
     if not _is_sentinel(ablation) and ablation.ndim == 4:
@@ -398,7 +460,7 @@ def _build_case_payload(model: str, case_id: str) -> dict:
         panels["ablation"] = _render_all_slices(abl_map, "turbo", 0.0, v1, transparent=True)
 
     # Zones (discrete colormap)
-    if not _is_sentinel(zones) and zones.ndim == 3:
+    if zones is not None and zones.ndim == 3:
         panels["zones"] = _render_all_slices(zones.astype(np.float32), "", 0, 2,
                                               is_zone=True, transparent=True)
 
@@ -416,6 +478,10 @@ def _build_case_payload(model: str, case_id: str) -> dict:
         occlusion_strategies.append("zero")
     if "occlusion_zm_0" in panels:
         occlusion_strategies.append("zone_median")
+    if "occlusion_tz_masked_0" in panels:
+        occlusion_strategies.append("tz_masked")
+    if "occlusion_pz_masked_0" in panels:
+        occlusion_strategies.append("pz_masked")
 
     # Stats: pull from in-memory sample_data (refreshed periodically)
     record = _get_case_index().get(model, {}).get(case_id, {})
@@ -441,7 +507,7 @@ def _build_case_payload(model: str, case_id: str) -> dict:
     }
 
     return {"n_slices": n_slices, "panels": panels, "stats": stats, "record": record,
-            "occlusion_strategies": occlusion_strategies}
+            "occlusion_strategies": occlusion_strategies, "zones_error_msg": zones_error_msg}
 
 
 # ---------------------------------------------------------------------------
@@ -458,11 +524,21 @@ def index():
 def model_view(model: str):
     if model not in MODELS:
         abort(404)
-    records = _get_case_data().get(model, [])
+    case_data = _get_case_data()
+    records = case_data.get(model, [])
     stats   = _model_stats(model)
     charts  = _available_charts(model)
+
+    # Case IDs predicted positive by every model
+    pos_sets = [
+        {r["case_id"] for r in case_data.get(m, []) if r.get("predicted_positive")}
+        for m in MODELS
+    ]
+    all_models_pos: set = pos_sets[0].intersection(*pos_sets[1:]) if pos_sets else set()
+
     return render_template("model.html", model=model, records=records,
-                           stats=stats, charts=charts)
+                           stats=stats, charts=charts,
+                           all_models_pos=all_models_pos)
 
 
 @app.route("/model/<model>/case/<case_id>")
@@ -516,7 +592,7 @@ def api_gif(model: str, case_id: str):
     duration_ms = int(request.args.get("duration_ms", 120))
 
     try:
-        npz = _load_npz(model, case_id)
+        npz, _fold = _load_npz(model, case_id)
     except FileNotFoundError:
         abort(404)
 
@@ -603,7 +679,7 @@ def api_gif_table(model: str, case_id: str):
     duration_ms = int(request.args.get("duration_ms", 120))
 
     try:
-        npz = _load_npz(model, case_id)
+        npz, _fold = _load_npz(model, case_id)
     except FileNotFoundError:
         abort(404)
 

@@ -463,6 +463,218 @@ def _zones_from_nnunet(
     return zone_remapped[d0:d1]
 
 
+def _gt_depth_crop(batch: dict, D: int) -> Tuple[int, int]:
+    """Compute depth crop [d0, d1] from GT zones in a MONAI batch (existing behaviour)."""
+    if "zones" in batch:
+        z = batch["zones"][0].cpu().numpy()   # (3, H, W, D)
+        zone_mask = (z[1] + z[2]) > 0.5       # (H, W, D)
+        if zone_mask.any():
+            coords = np.argwhere(zone_mask)    # (N, 3): (h, w, d)
+            d_min  = int(coords[:, 2].min())
+            d_max  = int(coords[:, 2].max())
+            return max(0, d_min - 1), min(D, d_max + 2)
+    return 0, D
+
+
+def _load_umamba_zones(case_id: str, fold: int) -> Optional[dict]:
+    """Load umamba predicted zones for *case_id* / *fold*.
+
+    Returns a dict with keys:
+      zones      (D, H, W) int8  – full zone prediction in MONAI space
+      affine     (4, 4) float64  – MONAI RAS affine (may be None for old files)
+      d0, d1     int             – depth crop indices (may be None for old files)
+      zones_crop (D_crop, W, H) int8 – orientation-corrected cropped zones (may be None)
+    Returns None if the file does not exist.
+    """
+    path = DEFAULT_OUTPUT_ZONES / f"fold_{fold}" / f"{case_id}.npz"
+    if not path.exists():
+        return None
+    raw = np.load(path, allow_pickle=True)
+    return {
+        "zones":      raw["zones"],
+        "affine":     raw["affine"]     if "affine"     in raw.files else None,
+        "d0":         int(raw["d0"])    if "d0"         in raw.files else None,
+        "d1":         int(raw["d1"])    if "d1"         in raw.files else None,
+        "zones_crop": raw["zones_crop"] if "zones_crop" in raw.files else None,
+    }
+
+
+def _ensure_umamba_zones(fold: int, device: torch.device) -> None:
+    """Forward-pass umamba to generate zone prediction files for any missing cases.
+
+    Only does work when zone files are absent; skips cases that already have files.
+    Called automatically before swin/nnunet processing when zone_source='umamba_pred'.
+    """
+    from shared_modules.data_module import DataModule   # noqa: E402
+    from shared_modules.utils import load_config        # noqa: E402
+
+    zones_fold_dir = DEFAULT_OUTPUT_ZONES / f"fold_{fold}"
+    zones_fold_dir.mkdir(parents=True, exist_ok=True)
+
+    config = load_config(f"U_MambaMTL_XAI/experiments/picai/umamba_mtl/config.yaml")
+    config.data.json_list        = str(UMAMBA_ROOT / f"json_datalists/picai/fold_{fold}.json")
+    config.gpus                  = [device.index if device.type == "cuda" else 0]
+    config.cache_rate            = 0.0
+    config.transforms.label_keys = ["pca", "prostate_pred", "zones"]
+
+    dm = DataModule(config=config)
+    dm.setup("validation")
+    dl = dm.val_dataloader()
+
+    missing = [
+        Path(b["image"].meta["filename_or_obj"][0]).name.split("_0000")[0]
+        for b in dl
+        if not (zones_fold_dir / f"{Path(b['image'].meta['filename_or_obj'][0]).name.split('_0000')[0]}.npz").exists()
+    ]
+    if not missing:
+        print(f"  [ensure_umamba_zones] All zone files present for fold {fold}.")
+        return
+
+    print(f"  [ensure_umamba_zones] Generating zones for {len(missing)} missing cases in fold {fold}.")
+    network = load_model("umamba_mtl", fold, device)
+
+    # Re-iterate — a DataModule can only be set up once, recreate it
+    dm2 = DataModule(config=config)
+    dm2.setup("validation")
+    for batch in dm2.val_dataloader():
+        fname   = Path(batch["image"].meta["filename_or_obj"][0]).name
+        case_id = fname.split("_0000")[0]
+        if case_id not in missing:
+            continue
+
+        x = batch["image"].to(device)
+        with torch.no_grad():
+            out = network(x)
+            if isinstance(out, (list, tuple)):
+                out = out[0]
+            zone_logits   = out[:, 2:5]                                    # (1, 3, H, W, D)
+            zone_pred_hwD = zone_logits.softmax(dim=1).argmax(dim=1)[0]    # (H, W, D)
+
+        zones_pred_Dhw = zone_pred_hwD.cpu().numpy().transpose(2, 0, 1).astype(np.int8)  # (D, H, W)
+        monai_affine   = batch["image"].affine.cpu().numpy().astype(np.float64)           # (4, 4)
+
+        # Depth crop from own zone predictions
+        zone_present = (zones_pred_Dhw > 0).any(axis=(1, 2))  # (D,)
+        if zone_present.any():
+            d_idx = np.argwhere(zone_present)[:, 0]
+            d0    = max(0, int(d_idx.min()) - 1)
+            d1    = min(zones_pred_Dhw.shape[0], int(d_idx.max()) + 2)
+        else:
+            d0, d1 = 0, zones_pred_Dhw.shape[0]
+
+        zones_crop_wh = zones_pred_Dhw[d0:d1].transpose(0, 2, 1)   # (D_crop, W, H)
+
+        np.savez_compressed(
+            zones_fold_dir / f"{case_id}.npz",
+            zones      = zones_pred_Dhw,
+            affine     = monai_affine,
+            d0         = np.int32(d0),
+            d1         = np.int32(d1),
+            zones_crop = zones_crop_wh,
+        )
+        del x, out, zone_logits, zone_pred_hwD, zones_pred_Dhw, zones_crop_wh
+        gc.collect()
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
+
+    del network
+    gc.collect()
+    if torch.cuda.is_available():
+        torch.cuda.empty_cache()
+    print(f"  [ensure_umamba_zones] Done.")
+
+
+def _zones_from_umamba_npz(
+    case_id: str,
+    fold: int,
+    plans: dict,
+    prep_props: dict,
+    d0: int,
+    d1: int,
+    h0: int,
+    w0: int,
+    occ_crop_hw: Optional[int],
+) -> Optional[np.ndarray]:
+    """Map umamba predicted zones (MONAI space) into nnUNet preprocessed space.
+
+    Drop-in replacement for _zones_from_nnunet() when zone_source='umamba_pred'.
+    Falls back to _zones_from_nnunet() on any failure.
+    Returns (D_crop, H_crop, W_crop) int8 or None.
+    """
+    import tempfile
+    import nibabel as nib
+    import SimpleITK as sitk  # noqa: E402
+    from nnUNet.nnunet.preprocessing.preprocessing import resample_data_or_seg  # noqa: E402
+
+    zone_data = _load_umamba_zones(case_id, fold)
+    if zone_data is None or zone_data["affine"] is None:
+        print(f"    [umamba_pred] No zone file/affine for {case_id} — falling back to GT zones.")
+        return _zones_from_nnunet(case_id, plans, prep_props, d0, d1, h0, w0, occ_crop_hw)
+
+    ref_path = IMAGES_TR / f"{case_id}_0000.nii.gz"
+    if not ref_path.exists():
+        return None
+
+    try:
+        zones_Dhw  = zone_data["zones"]   # (D=20, H=128, W=128) int8
+        affine_4x4 = zone_data["affine"]  # (4, 4) float64 MONAI RAS affine for (H,W,D) space
+
+        # nibabel expects array in (H, W, D) to match the affine (which maps H/W/D → RAS)
+        zones_HWD = zones_Dhw.transpose(1, 2, 0).astype(np.float32)  # (H=128, W=128, D=20)
+        nii = nib.Nifti1Image(zones_HWD, affine=affine_4x4)
+
+        with tempfile.NamedTemporaryFile(suffix=".nii.gz", delete=False) as tmp:
+            nib.save(nii, tmp.name)
+            zone_itk = sitk.ReadImage(tmp.name)
+
+        # Resample to imagesTr voxel grid (same as step 1 in _zones_from_nnunet)
+        ref_itk = sitk.ReadImage(str(ref_path))
+        resampler = sitk.ResampleImageFilter()
+        resampler.SetReferenceImage(ref_itk)
+        resampler.SetInterpolator(sitk.sitkNearestNeighbor)
+        resampler.SetDefaultPixelValue(0)
+        zone_itk = resampler.Execute(zone_itk)
+
+        # Steps 2–4: same pipeline as _zones_from_nnunet
+        itk_spacing = np.array(zone_itk.GetSpacing())[::-1]   # (D, H, W)
+        zone_np     = sitk.GetArrayFromImage(zone_itk).astype(np.float32)
+
+        tp          = plans["transpose_forward"]
+        zone_np     = zone_np.transpose(tp)
+        itk_spacing = itk_spacing[list(tp)]
+
+        target_spacing = np.array(plans["plans_per_stage"][0]["current_spacing"])
+        new_shape = np.round(
+            itk_spacing / target_spacing * np.array(zone_np.shape)
+        ).astype(int)
+        zone_full = resample_data_or_seg(
+            zone_np[np.newaxis], new_shape, is_seg=True, axis=None, order=0, do_separate_z=False
+        )[0]
+        zone_full = np.round(zone_full).astype(np.int8)
+
+        crop_bbox = prep_props.get("crop_bbox")
+        if crop_bbox is not None:
+            orig_size = prep_props["original_size_of_raw_data"]
+            slices = []
+            for j in range(zone_full.ndim):
+                pre_tp_axis = tp[j]
+                start, end  = crop_bbox[pre_tp_axis]
+                scale       = zone_full.shape[j] / orig_size[pre_tp_axis]
+                slices.append(slice(int(round(start * scale)), int(round(end * scale))))
+            zone_full = zone_full[tuple(slices)]
+
+        # No label remapping needed — umamba already uses 0=bg, 1=PZ, 2=TZ
+
+        # Step 5: apply XAI crop
+        if occ_crop_hw is not None:
+            return zone_full[d0:d1, h0:h0 + occ_crop_hw, w0:w0 + occ_crop_hw]
+        return zone_full[d0:d1]
+
+    except Exception as exc:
+        print(f"    [umamba_pred] Resampling failed for {case_id}: {exc} — falling back to GT zones.")
+        return _zones_from_nnunet(case_id, plans, prep_props, d0, d1, h0, w0, occ_crop_hw)
+
+
 # ===========================================================================
 # Captum forward wrappers
 # ===========================================================================
@@ -829,6 +1041,8 @@ def process_fold_monai(
     device: Optional[torch.device] = None,
     occ_strategy: str = "zero",
     n_zone_patches: int = 10,
+    zone_source: str = "umamba_pred",
+    zones_only: bool = False,
 ) -> None:
     from shared_modules.data_module import DataModule   # noqa: E402
     from shared_modules.utils import load_config        # noqa: E402
@@ -896,34 +1110,72 @@ def process_fold_monai(
 
             print(f"    Predicted positive: {predicted_pos}  (cancer voxels={cancer_voxels}  max_prob={pred_max_prob:.3f})")
 
-            # ---- umamba_mtl: save predicted zones (all cases) ---------------
+            # ---- umamba_mtl: compute predicted zones (all cases) ------------
+            zones_pred_Dhw: Optional[np.ndarray] = None
             if model_name == "umamba_mtl":
                 with torch.no_grad():
-                    zone_logits = out[:, 2:5]                                           # (1, 3, H, W, D)
-                    zone_pred_hwD = zone_logits.softmax(dim=1).argmax(dim=1)[0]         # (H, W, D)
+                    zone_logits   = out[:, 2:5]                                    # (1, 3, H, W, D)
+                    zone_pred_hwD = zone_logits.softmax(dim=1).argmax(dim=1)[0]    # (H, W, D)
                 zones_pred_Dhw = zone_pred_hwD.cpu().numpy().transpose(2, 0, 1).astype(np.int8)  # (D, H, W)
-                zones_pred_dir = DEFAULT_OUTPUT_ZONES / f"fold_{fold}"
-                zones_pred_dir.mkdir(parents=True, exist_ok=True)
-                np.savez_compressed(zones_pred_dir / f"{case_id}.npz", zones=zones_pred_Dhw)
-                del zone_logits, zone_pred_hwD, zones_pred_Dhw
+                del zone_logits, zone_pred_hwD
 
             # ---- Depth crop coordinates based on prostate zones -----------
             D = x.shape[4]
-            if "zones" in batch:
-                z = batch["zones"][0].cpu().numpy()  # (3, H, W, D)
-                zone_mask = (z[1] + z[2]) > 0.5      # PZ or TZ present, (H, W, D)
-                if zone_mask.any():
-                    coords = np.argwhere(zone_mask)   # (N, 3): (h, w, d)
-                    d_min  = int(coords[:, 2].min())
-                    d_max  = int(coords[:, 2].max())
-                    d0     = max(0, d_min - 1)
-                    d1     = min(D, d_max + 2)
+            UMAMBA_ROI_D = 20  # roi_size[2] for umamba_mtl
+
+            if zone_source == "umamba_pred" and model_name == "umamba_mtl":
+                # Use own just-computed zone predictions
+                if zones_pred_Dhw is not None and (zones_pred_Dhw > 0).any():
+                    d_idx = np.argwhere((zones_pred_Dhw > 0).any(axis=(1, 2)))[:, 0]
+                    d0    = max(0, int(d_idx.min()) - 1)
+                    d1    = min(D, int(d_idx.max()) + 2)
                 else:
                     d0, d1 = 0, D
-            else:
-                d0, d1 = 0, D
 
-            print(f"    Depth crop: d={d0}:{d1} ({d1 - d0} slices)")
+            elif zone_source == "umamba_pred" and model_name == "swin_unetr":
+                # Load umamba zones and map to swin coordinate space.
+                # Both models use spacing [0.5,0.5,3.0] and CenterSpatialCrop;
+                # swin roi_d=32 vs umamba roi_d=20 → offset=(32-20)//2=6.
+                SWIN_ROI_D = 32
+                OFFSET     = (SWIN_ROI_D - UMAMBA_ROI_D) // 2  # = 6
+                um_data    = _load_umamba_zones(case_id, fold)
+                if um_data is not None and (um_data["zones"] > 0).any():
+                    um_mask = (um_data["zones"] > 0).any(axis=(1, 2))  # (D_um,)
+                    d_idx   = np.argwhere(um_mask)[:, 0]
+                    d0_um   = max(0, int(d_idx.min()) - 1)
+                    d1_um   = min(UMAMBA_ROI_D, int(d_idx.max()) + 2)
+                    d0      = min(max(0, d0_um + OFFSET), D)
+                    d1      = min(D, d1_um + OFFSET)
+                else:
+                    d0, d1 = _gt_depth_crop(batch, D)
+            else:
+                # GT behaviour — use zones from DataModule batch
+                d0, d1 = _gt_depth_crop(batch, D)
+
+            print(f"    Depth crop: d={d0}:{d1} ({d1 - d0} slices, zone_source={zone_source})")
+
+            # ---- umamba_mtl: save zone prediction file (after d0/d1 known) --
+            if model_name == "umamba_mtl" and zones_pred_Dhw is not None:
+                zones_pred_dir = DEFAULT_OUTPUT_ZONES / f"fold_{fold}"
+                zones_pred_dir.mkdir(parents=True, exist_ok=True)
+                monai_affine  = batch["image"].affine.cpu().numpy().astype(np.float64)  # (4,4)
+                zones_crop_wh = zones_pred_Dhw[d0:d1].transpose(0, 2, 1)               # (D_crop, W, H)
+                np.savez_compressed(
+                    zones_pred_dir / f"{case_id}.npz",
+                    zones      = zones_pred_Dhw,
+                    affine     = monai_affine,
+                    d0         = np.int32(d0),
+                    d1         = np.int32(d1),
+                    zones_crop = zones_crop_wh,
+                )
+                del zones_crop_wh
+
+            if zones_only:
+                del zones_pred_Dhw, x, out, cancer_prob, fixed_mask, batch
+                gc.collect()
+                continue
+
+            del zones_pred_Dhw
 
             # ---- Always: image, prediction, label, zones crop -------------
             image_np   = batch["image"][0].cpu().numpy()   # (3, H, W, D)
@@ -941,7 +1193,21 @@ def process_fold_monai(
             else:
                 lbl_crop = None
 
-            zones_crop = _zones_from_monai_batch(batch, d0, d1)  # (D_crop, H, W) or None
+            if zone_source == "umamba_pred" and model_name == "swin_unetr":
+                # Embed umamba zones into swin depth space, then crop to [d0:d1]
+                um_data = _load_umamba_zones(case_id, fold)
+                if um_data is not None:
+                    SWIN_ROI_D   = 32
+                    UMAMBA_ROI_D = 20
+                    OFFSET       = (SWIN_ROI_D - UMAMBA_ROI_D) // 2
+                    zones_swin   = np.zeros((SWIN_ROI_D, 128, 128), dtype=np.int8)
+                    zones_swin[OFFSET:OFFSET + UMAMBA_ROI_D] = um_data["zones"]
+                    zones_crop = zones_swin[d0:d1]  # (D_crop, H, W)
+                    del zones_swin
+                else:
+                    zones_crop = _zones_from_monai_batch(batch, d0, d1)
+            else:
+                zones_crop = _zones_from_monai_batch(batch, d0, d1)  # (D_crop, H, W) or None
 
             # ---- XAI: only when predicted positive -------------------------
             sal_np = occ_np = occ_tz_np = occ_pz_np = occ_ch_np = abl_np = inp_abl = None
@@ -1098,20 +1364,30 @@ def process_fold_monai(
                     del forward_func_abl, x_abl
 
             # ---- Save .npz only when model predicts positive ---------------
+            # MONAI tensors are (C, H, W, D) / (H, W, D) with H=R, W=A after RAS orientation.
+            # nnUNet tensors are (C, D, H, W) / (D, H, W) with H=AP, W=LR (from ITK z,y,x order).
+            # After the transpose to DHW, MONAI gives (C, D, R, A) while nnUNet gives (C, D, AP, LR).
+            # Swapping the last two spatial axes (H↔W) makes MONAI match nnUNet's axis layout.
+            def _sw(a, ndim):
+                """Swap the last two spatial axes to convert MONAI → nnUNet orientation."""
+                if a is None:
+                    return None
+                return a.transpose(0, 1, 3, 2) if ndim == 4 else a.transpose(0, 2, 1)
+
             if predicted_pos:
                 np.savez_compressed(
                     out_file,
-                    saliency       = _sentinel(sal_np).astype(np.float32) if sal_np is not None else _sentinel(None),
-                    occlusion              = _sentinel(occ_np).astype(np.float32) if occ_np is not None else _sentinel(None),
-                    occlusion_tz           = _sentinel(occ_tz_np).astype(np.float32) if occ_tz_np is not None else _sentinel(None),
-                    occlusion_pz           = _sentinel(occ_pz_np).astype(np.float32) if occ_pz_np is not None else _sentinel(None),
-                    occlusion_ch_baseline  = _sentinel(occ_ch_np).astype(np.float32) if occ_ch_np is not None else _sentinel(None),
-                    ablation       = _sentinel(abl_np).astype(np.float32) if abl_np is not None else _sentinel(None),
+                    saliency       = _sentinel(_sw(sal_np, 4)).astype(np.float32) if sal_np is not None else _sentinel(None),
+                    occlusion              = _sentinel(_sw(occ_np, 4)).astype(np.float32) if occ_np is not None else _sentinel(None),
+                    occlusion_tz           = _sentinel(_sw(occ_tz_np, 4)).astype(np.float32) if occ_tz_np is not None else _sentinel(None),
+                    occlusion_pz           = _sentinel(_sw(occ_pz_np, 4)).astype(np.float32) if occ_pz_np is not None else _sentinel(None),
+                    occlusion_ch_baseline  = _sentinel(_sw(occ_ch_np, 4)).astype(np.float32) if occ_ch_np is not None else _sentinel(None),
+                    ablation       = _sentinel(_sw(abl_np, 4)).astype(np.float32) if abl_np is not None else _sentinel(None),
                     input_ablation = _sentinel(inp_abl),
-                    image          = image_crop.astype(np.float32),
-                    prediction     = pred_crop.astype(np.float32),
-                    label          = _sentinel(lbl_crop).astype(np.float32) if lbl_crop is not None else _sentinel(None),
-                    zones          = zones_crop.astype(np.int8) if zones_crop is not None else _sentinel(None),
+                    image          = image_crop.transpose(0, 1, 3, 2).astype(np.float32),
+                    prediction     = pred_crop.transpose(0, 1, 3, 2).astype(np.float32),
+                    label          = _sentinel(lbl_crop.transpose(0, 1, 3, 2)).astype(np.float32) if lbl_crop is not None else _sentinel(None),
+                    zones          = zones_crop.transpose(0, 2, 1).astype(np.int8) if zones_crop is not None else _sentinel(None),
                     channels           = np.array(CHANNEL_NAMES),
                     case_id            = case_id,
                     fold               = fold,
@@ -1138,7 +1414,7 @@ def process_fold_monai(
             # Also drop numpy intermediates — .numpy() shares storage with MetaTensor,
             # so these prevent the MetaTensor from being freed until GC runs
             image_np = image_crop = pred_np = pred_crop = None
-            lbl_np = lbl_crop = zones_crop = z = None
+            lbl_np = lbl_crop = zones_crop = None
 
         except Exception as exc:
             print(f"    ERROR: {exc}")
@@ -1183,6 +1459,7 @@ def process_fold_nnunet(
     device: Optional[torch.device] = None,
     occ_strategy: str = "zero",
     n_zone_patches: int = 10,
+    zone_source: str = "umamba_pred",
 ) -> None:
     fold_dir = output_dir / f"fold_{fold}"
     fold_dir.mkdir(parents=True, exist_ok=True)
@@ -1257,9 +1534,14 @@ def process_fold_nnunet(
 
             # ---- Load zones (full) to determine crop coordinates ----------
             D_orig = original_dhw[0]
-            zones_full = _zones_from_nnunet(
-                case_id, plans, prep_props, 0, D_orig, 0, 0, None
-            )
+            if zone_source == "umamba_pred":
+                zones_full = _zones_from_umamba_npz(
+                    case_id, fold, plans, prep_props, 0, D_orig, 0, 0, None
+                )
+            else:
+                zones_full = _zones_from_nnunet(
+                    case_id, plans, prep_props, 0, D_orig, 0, 0, None
+                )
 
             # ---- Crop coordinates based on prostate zones -----------------
             if zones_full is not None and zones_full.any():
@@ -1278,7 +1560,7 @@ def process_fold_nnunet(
                 d0, d1 = 0, D_orig
                 h0, w0 = 0, 0
 
-            print(f"    Depth crop: d={d0}:{d1}  h0={h0}  w0={w0}")
+            print(f"    Depth crop: d={d0}:{d1}  h0={h0}  w0={w0}  zone_source={zone_source}")
 
             # ---- Always: image, prediction, label, zones ------------------
             prob_full  = _unpad(cancer_prob.cpu().numpy(), original_dhw)  # (1, D, H, W)
@@ -1534,19 +1816,27 @@ def process_fold(
     device: Optional[torch.device] = None,
     occ_strategy: str = "zero",
     n_zone_patches: int = 10,
+    zone_source: str = "umamba_pred",
 ) -> None:
     model_output_dir = output_dir / model_name
     model_output_dir.mkdir(parents=True, exist_ok=True)
 
+    if device is None:
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
     if model_name == "nnunet":
+        if zone_source == "umamba_pred":
+            _ensure_umamba_zones(fold, device)
         process_fold_nnunet(
             fold, model_output_dir, methods, skip_existing, occ_window, occ_stride, ppe,
-            occ_crop_hw, device, occ_strategy, n_zone_patches,
+            occ_crop_hw, device, occ_strategy, n_zone_patches, zone_source,
         )
     else:
+        if model_name == "swin_unetr" and zone_source == "umamba_pred":
+            _ensure_umamba_zones(fold, device)
         process_fold_monai(
             fold, model_name, model_output_dir, methods, skip_existing, occ_window, occ_stride, ppe,
-            device, occ_strategy, n_zone_patches,
+            device, occ_strategy, n_zone_patches, zone_source,
         )
 
 
@@ -2039,6 +2329,19 @@ def main() -> None:
         metavar="N",
         help="CUDA device index to use (e.g. 0, 1, 2). Defaults to cuda:0 if CUDA is available.",
     )
+    parser.add_argument(
+        "--zone-source",
+        type=str,
+        default="umamba_pred",
+        choices=["umamba_pred", "gt"],
+        help=(
+            "Source for prostate zone maps used to determine depth crop. "
+            "'umamba_pred' (default): use U-MambaMTL predicted zones from "
+            "results/xai/zones/, ensuring consistent depth crop across all models. "
+            "Auto-generates zone files for swin/nnunet folds if umamba hasn't run yet. "
+            "'gt': use per-model ground-truth zone NIfTI files (original behaviour)."
+        ),
+    )
 
     args = parser.parse_args()
 
@@ -2081,6 +2384,7 @@ def main() -> None:
     print(f"Output metrics:    {metrics_dir}")
     print(f"Occlusion window:  {occ_window}  stride: {occ_stride}")
     print(f"Occlusion strategy:{args.occlusion_strategy}  zone patches: {args.occlusion_zone_patches}")
+    print(f"Zone source:       {args.zone_source}")
     print(f"Device:            {device if device is not None else 'auto'}")
 
     for model_name in models:
@@ -2099,6 +2403,7 @@ def main() -> None:
                     device=device,
                     occ_strategy=args.occlusion_strategy,
                     n_zone_patches=args.occlusion_zone_patches,
+                    zone_source=args.zone_source,
                 )
 
         # Compute metrics and charts from saved .npz files

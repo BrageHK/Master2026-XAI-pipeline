@@ -1,0 +1,43 @@
+[project]
+name = "picai-nnunet-xai"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "evalutils==0.3.0",
+    "nnunet",
+    "picai-baseline>=0.5.2",
+    "picai-eval>=1.4.1",
+    "picai-prep>=2.0.0",
+    "simpleitk>=2.1.1.2",
+    "torch>=2.10.0",
+    "captum",
+    "ipywidgets>=8.1.8",
+    "grad-cam>=1.5.5",
+]
+
+[tool.setuptools.packages.find]
+exclude = ["logs*", "results*", "nnUNet*", "nnunet_base*", "nnUNet_addon*"]
+
+[tool.uv.sources]
+nnunet = { path = "nnUNet", editable = true }
+torch = [
+    { index = "pytorch-cu129", marker = "sys_platform == 'linux'" },
+    { index = "pytorch-cpu", marker = "sys_platform == 'darwin'" }
+]
+torchvision = [
+    { index = "pytorch-cu129", marker = "sys_platform == 'linux'" },
+    { index = "pytorch-cpu", marker = "sys_platform == 'darwin'" }
+]
+captum = { git = "https://github.com/pytorch/captum.git" }
+
+[[tool.uv.index]]
+name = "pytorch-cu129"
+url = "https://download.pytorch.org/whl/cu129" # Important! This is 126 for login node, 129 else
+explicit = true
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true

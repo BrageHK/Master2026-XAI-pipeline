@@ -1,0 +1,1060 @@
+{
+    "training": [
+        {
+            "image": [
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10002_1000002_0000.nii.gz",
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10002_1000002_0001.nii.gz",
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10002_1000002_0002.nii.gz"
+            ],
+            "prostate": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/picai_labels/anatomical_delineations/whole_gland/AI/Bosma22b/10002_1000002.nii.gz",
+            "zones": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/picai_labels/anatomical_delineations/zonal_pz_tz/AI/Yuan23/10002_1000002.nii.gz",
+            "pca": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/labelsTr/10002_1000002.nii.gz",
+            "case_pca": 0,
+            "prostate_pred": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/UmambaBot_prostate/preds/10002_1000002_pred.nii.gz",
+            "prostate_prob_map": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/UmambaBot_prostate/prob/10002_1000002_prob.nii.gz"
+        },
+        {
+            "image": [
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10004_1000004_0000.nii.gz",
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10004_1000004_0001.nii.gz",
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10004_1000004_0002.nii.gz"
+            ],
+            "prostate": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/picai_labels/anatomical_delineations/whole_gland/AI/Bosma22b/10004_1000004.nii.gz",
+            "zones": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/picai_labels/anatomical_delineations/zonal_pz_tz/AI/Yuan23/10004_1000004.nii.gz",
+            "pca": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/labelsTr/10004_1000004.nii.gz",
+            "case_pca": 0,
+            "prostate_pred": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/UmambaBot_prostate/preds/10004_1000004_pred.nii.gz",
+            "prostate_prob_map": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/UmambaBot_prostate/prob/10004_1000004_prob.nii.gz"
+        },
+        {
+            "image": [
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10005_1000005_0000.nii.gz",
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10005_1000005_0001.nii.gz",
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10005_1000005_0002.nii.gz"
+            ],
+            "prostate": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/picai_labels/anatomical_delineations/whole_gland/AI/Bosma22b/10005_1000005.nii.gz",
+            "zones": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/picai_labels/anatomical_delineations/zonal_pz_tz/AI/Yuan23/10005_1000005.nii.gz",
+            "pca": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/labelsTr/10005_1000005.nii.gz",
+            "case_pca": 1,
+            "prostate_pred": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/UmambaBot_prostate/preds/10005_1000005_pred.nii.gz",
+            "prostate_prob_map": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/UmambaBot_prostate/prob/10005_1000005_prob.nii.gz"
+        },
+        {
+            "image": [
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10007_1000007_0000.nii.gz",
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10007_1000007_0001.nii.gz",
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10007_1000007_0002.nii.gz"
+            ],
+            "prostate": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/picai_labels/anatomical_delineations/whole_gland/AI/Bosma22b/10007_1000007.nii.gz",
+            "zones": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/picai_labels/anatomical_delineations/zonal_pz_tz/AI/Yuan23/10007_1000007.nii.gz",
+            "pca": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/labelsTr/10007_1000007.nii.gz",
+            "case_pca": 0,
+            "prostate_pred": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/UmambaBot_prostate/preds/10007_1000007_pred.nii.gz",
+            "prostate_prob_map": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/UmambaBot_prostate/prob/10007_1000007_prob.nii.gz"
+        },
+        {
+            "image": [
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10008_1000008_0000.nii.gz",
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10008_1000008_0001.nii.gz",
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10008_1000008_0002.nii.gz"
+            ],
+            "prostate": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/picai_labels/anatomical_delineations/whole_gland/AI/Bosma22b/10008_1000008.nii.gz",
+            "zones": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/picai_labels/anatomical_delineations/zonal_pz_tz/AI/Yuan23/10008_1000008.nii.gz",
+            "pca": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/labelsTr/10008_1000008.nii.gz",
+            "case_pca": 1,
+            "prostate_pred": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/UmambaBot_prostate/preds/10008_1000008_pred.nii.gz",
+            "prostate_prob_map": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/UmambaBot_prostate/prob/10008_1000008_prob.nii.gz"
+        },
+        {
+            "image": [
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10009_1000009_0000.nii.gz",
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10009_1000009_0001.nii.gz",
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10009_1000009_0002.nii.gz"
+            ],
+            "prostate": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/picai_labels/anatomical_delineations/whole_gland/AI/Bosma22b/10009_1000009.nii.gz",
+            "zones": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/picai_labels/anatomical_delineations/zonal_pz_tz/AI/Yuan23/10009_1000009.nii.gz",
+            "pca": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/labelsTr/10009_1000009.nii.gz",
+            "case_pca": 0,
+            "prostate_pred": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/UmambaBot_prostate/preds/10009_1000009_pred.nii.gz",
+            "prostate_prob_map": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/UmambaBot_prostate/prob/10009_1000009_prob.nii.gz"
+        },
+        {
+            "image": [
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10010_1000010_0000.nii.gz",
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10010_1000010_0001.nii.gz",
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10010_1000010_0002.nii.gz"
+            ],
+            "prostate": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/picai_labels/anatomical_delineations/whole_gland/AI/Bosma22b/10010_1000010.nii.gz",
+            "zones": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/picai_labels/anatomical_delineations/zonal_pz_tz/AI/Yuan23/10010_1000010.nii.gz",
+            "pca": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/labelsTr/10010_1000010.nii.gz",
+            "case_pca": 0,
+            "prostate_pred": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/UmambaBot_prostate/preds/10010_1000010_pred.nii.gz",
+            "prostate_prob_map": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/UmambaBot_prostate/prob/10010_1000010_prob.nii.gz"
+        },
+        {
+            "image": [
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10011_1000011_0000.nii.gz",
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10011_1000011_0001.nii.gz",
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10011_1000011_0002.nii.gz"
+            ],
+            "prostate": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/picai_labels/anatomical_delineations/whole_gland/AI/Bosma22b/10011_1000011.nii.gz",
+            "zones": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/picai_labels/anatomical_delineations/zonal_pz_tz/AI/Yuan23/10011_1000011.nii.gz",
+            "pca": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/labelsTr/10011_1000011.nii.gz",
+            "case_pca": 0,
+            "prostate_pred": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/UmambaBot_prostate/preds/10011_1000011_pred.nii.gz",
+            "prostate_prob_map": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/UmambaBot_prostate/prob/10011_1000011_prob.nii.gz"
+        },
+        {
+            "image": [
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10012_1000012_0000.nii.gz",
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10012_1000012_0001.nii.gz",
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10012_1000012_0002.nii.gz"
+            ],
+            "prostate": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/picai_labels/anatomical_delineations/whole_gland/AI/Bosma22b/10012_1000012.nii.gz",
+            "zones": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/picai_labels/anatomical_delineations/zonal_pz_tz/AI/Yuan23/10012_1000012.nii.gz",
+            "pca": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/labelsTr/10012_1000012.nii.gz",
+            "case_pca": 1,
+            "prostate_pred": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/UmambaBot_prostate/preds/10012_1000012_pred.nii.gz",
+            "prostate_prob_map": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/UmambaBot_prostate/prob/10012_1000012_prob.nii.gz"
+        },
+        {
+            "image": [
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10013_1000013_0000.nii.gz",
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10013_1000013_0001.nii.gz",
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10013_1000013_0002.nii.gz"
+            ],
+            "prostate": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/picai_labels/anatomical_delineations/whole_gland/AI/Bosma22b/10013_1000013.nii.gz",
+            "zones": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/picai_labels/anatomical_delineations/zonal_pz_tz/AI/Yuan23/10013_1000013.nii.gz",
+            "pca": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/labelsTr/10013_1000013.nii.gz",
+            "case_pca": 1,
+            "prostate_pred": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/UmambaBot_prostate/preds/10013_1000013_pred.nii.gz",
+            "prostate_prob_map": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/UmambaBot_prostate/prob/10013_1000013_prob.nii.gz"
+        },
+        {
+            "image": [
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10014_1000014_0000.nii.gz",
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10014_1000014_0001.nii.gz",
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10014_1000014_0002.nii.gz"
+            ],
+            "prostate": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/picai_labels/anatomical_delineations/whole_gland/AI/Bosma22b/10014_1000014.nii.gz",
+            "zones": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/picai_labels/anatomical_delineations/zonal_pz_tz/AI/Yuan23/10014_1000014.nii.gz",
+            "pca": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/labelsTr/10014_1000014.nii.gz",
+            "case_pca": 0,
+            "prostate_pred": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/UmambaBot_prostate/preds/10014_1000014_pred.nii.gz",
+            "prostate_prob_map": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/UmambaBot_prostate/prob/10014_1000014_prob.nii.gz"
+        },
+        {
+            "image": [
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10015_1000015_0000.nii.gz",
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10015_1000015_0001.nii.gz",
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10015_1000015_0002.nii.gz"
+            ],
+            "prostate": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/picai_labels/anatomical_delineations/whole_gland/AI/Bosma22b/10015_1000015.nii.gz",
+            "zones": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/picai_labels/anatomical_delineations/zonal_pz_tz/AI/Yuan23/10015_1000015.nii.gz",
+            "pca": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/labelsTr/10015_1000015.nii.gz",
+            "case_pca": 0,
+            "prostate_pred": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/UmambaBot_prostate/preds/10015_1000015_pred.nii.gz",
+            "prostate_prob_map": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/UmambaBot_prostate/prob/10015_1000015_prob.nii.gz"
+        },
+        {
+            "image": [
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10016_1000016_0000.nii.gz",
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10016_1000016_0001.nii.gz",
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10016_1000016_0002.nii.gz"
+            ],
+            "prostate": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/picai_labels/anatomical_delineations/whole_gland/AI/Bosma22b/10016_1000016.nii.gz",
+            "zones": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/picai_labels/anatomical_delineations/zonal_pz_tz/AI/Yuan23/10016_1000016.nii.gz",
+            "pca": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/labelsTr/10016_1000016.nii.gz",
+            "case_pca": 0,
+            "prostate_pred": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/UmambaBot_prostate/preds/10016_1000016_pred.nii.gz",
+            "prostate_prob_map": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/UmambaBot_prostate/prob/10016_1000016_prob.nii.gz"
+        },
+        {
+            "image": [
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10018_1000018_0000.nii.gz",
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10018_1000018_0001.nii.gz",
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10018_1000018_0002.nii.gz"
+            ],
+            "prostate": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/picai_labels/anatomical_delineations/whole_gland/AI/Bosma22b/10018_1000018.nii.gz",
+            "zones": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/picai_labels/anatomical_delineations/zonal_pz_tz/AI/Yuan23/10018_1000018.nii.gz",
+            "pca": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/labelsTr/10018_1000018.nii.gz",
+            "case_pca": 0,
+            "prostate_pred": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/UmambaBot_prostate/preds/10018_1000018_pred.nii.gz",
+            "prostate_prob_map": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/UmambaBot_prostate/prob/10018_1000018_prob.nii.gz"
+        },
+        {
+            "image": [
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10019_1000019_0000.nii.gz",
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10019_1000019_0001.nii.gz",
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10019_1000019_0002.nii.gz"
+            ],
+            "prostate": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/picai_labels/anatomical_delineations/whole_gland/AI/Bosma22b/10019_1000019.nii.gz",
+            "zones": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/picai_labels/anatomical_delineations/zonal_pz_tz/AI/Yuan23/10019_1000019.nii.gz",
+            "pca": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/labelsTr/10019_1000019.nii.gz",
+            "case_pca": 1,
+            "prostate_pred": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/UmambaBot_prostate/preds/10019_1000019_pred.nii.gz",
+            "prostate_prob_map": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/UmambaBot_prostate/prob/10019_1000019_prob.nii.gz"
+        },
+        {
+            "image": [
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10021_1000021_0000.nii.gz",
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10021_1000021_0001.nii.gz",
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10021_1000021_0002.nii.gz"
+            ],
+            "prostate": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/picai_labels/anatomical_delineations/whole_gland/AI/Bosma22b/10021_1000021.nii.gz",
+            "zones": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/picai_labels/anatomical_delineations/zonal_pz_tz/AI/Yuan23/10021_1000021.nii.gz",
+            "pca": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/labelsTr/10021_1000021.nii.gz",
+            "case_pca": 1,
+            "prostate_pred": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/UmambaBot_prostate/preds/10021_1000021_pred.nii.gz",
+            "prostate_prob_map": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/UmambaBot_prostate/prob/10021_1000021_prob.nii.gz"
+        },
+        {
+            "image": [
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10024_1000024_0000.nii.gz",
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10024_1000024_0001.nii.gz",
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10024_1000024_0002.nii.gz"
+            ],
+            "prostate": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/picai_labels/anatomical_delineations/whole_gland/AI/Bosma22b/10024_1000024.nii.gz",
+            "zones": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/picai_labels/anatomical_delineations/zonal_pz_tz/AI/Yuan23/10024_1000024.nii.gz",
+            "pca": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/labelsTr/10024_1000024.nii.gz",
+            "case_pca": 0,
+            "prostate_pred": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/UmambaBot_prostate/preds/10024_1000024_pred.nii.gz",
+            "prostate_prob_map": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/UmambaBot_prostate/prob/10024_1000024_prob.nii.gz"
+        },
+        {
+            "image": [
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10025_1000025_0000.nii.gz",
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10025_1000025_0001.nii.gz",
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10025_1000025_0002.nii.gz"
+            ],
+            "prostate": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/picai_labels/anatomical_delineations/whole_gland/AI/Bosma22b/10025_1000025.nii.gz",
+            "zones": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/picai_labels/anatomical_delineations/zonal_pz_tz/AI/Yuan23/10025_1000025.nii.gz",
+            "pca": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/labelsTr/10025_1000025.nii.gz",
+            "case_pca": 0,
+            "prostate_pred": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/UmambaBot_prostate/preds/10025_1000025_pred.nii.gz",
+            "prostate_prob_map": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/UmambaBot_prostate/prob/10025_1000025_prob.nii.gz"
+        },
+        {
+            "image": [
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10026_1000026_0000.nii.gz",
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10026_1000026_0001.nii.gz",
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10026_1000026_0002.nii.gz"
+            ],
+            "prostate": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/picai_labels/anatomical_delineations/whole_gland/AI/Bosma22b/10026_1000026.nii.gz",
+            "zones": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/picai_labels/anatomical_delineations/zonal_pz_tz/AI/Yuan23/10026_1000026.nii.gz",
+            "pca": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/labelsTr/10026_1000026.nii.gz",
+            "case_pca": 0,
+            "prostate_pred": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/UmambaBot_prostate/preds/10026_1000026_pred.nii.gz",
+            "prostate_prob_map": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/UmambaBot_prostate/prob/10026_1000026_prob.nii.gz"
+        },
+        {
+            "image": [
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10028_1000028_0000.nii.gz",
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10028_1000028_0001.nii.gz",
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10028_1000028_0002.nii.gz"
+            ],
+            "prostate": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/picai_labels/anatomical_delineations/whole_gland/AI/Bosma22b/10028_1000028.nii.gz",
+            "zones": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/picai_labels/anatomical_delineations/zonal_pz_tz/AI/Yuan23/10028_1000028.nii.gz",
+            "pca": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/labelsTr/10028_1000028.nii.gz",
+            "case_pca": 0,
+            "prostate_pred": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/UmambaBot_prostate/preds/10028_1000028_pred.nii.gz",
+            "prostate_prob_map": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/UmambaBot_prostate/prob/10028_1000028_prob.nii.gz"
+        },
+        {
+            "image": [
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10030_1000030_0000.nii.gz",
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10030_1000030_0001.nii.gz",
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10030_1000030_0002.nii.gz"
+            ],
+            "prostate": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/picai_labels/anatomical_delineations/whole_gland/AI/Bosma22b/10030_1000030.nii.gz",
+            "zones": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/picai_labels/anatomical_delineations/zonal_pz_tz/AI/Yuan23/10030_1000030.nii.gz",
+            "pca": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/labelsTr/10030_1000030.nii.gz",
+            "case_pca": 0,
+            "prostate_pred": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/UmambaBot_prostate/preds/10030_1000030_pred.nii.gz",
+            "prostate_prob_map": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/UmambaBot_prostate/prob/10030_1000030_prob.nii.gz"
+        },
+        {
+            "image": [
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10031_1000031_0000.nii.gz",
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10031_1000031_0001.nii.gz",
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10031_1000031_0002.nii.gz"
+            ],
+            "prostate": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/picai_labels/anatomical_delineations/whole_gland/AI/Bosma22b/10031_1000031.nii.gz",
+            "zones": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/picai_labels/anatomical_delineations/zonal_pz_tz/AI/Yuan23/10031_1000031.nii.gz",
+            "pca": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/labelsTr/10031_1000031.nii.gz",
+            "case_pca": 0,
+            "prostate_pred": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/UmambaBot_prostate/preds/10031_1000031_pred.nii.gz",
+            "prostate_prob_map": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/UmambaBot_prostate/prob/10031_1000031_prob.nii.gz"
+        },
+        {
+            "image": [
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10034_1000034_0000.nii.gz",
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10034_1000034_0001.nii.gz",
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10034_1000034_0002.nii.gz"
+            ],
+            "prostate": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/picai_labels/anatomical_delineations/whole_gland/AI/Bosma22b/10034_1000034.nii.gz",
+            "zones": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/picai_labels/anatomical_delineations/zonal_pz_tz/AI/Yuan23/10034_1000034.nii.gz",
+            "pca": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/labelsTr/10034_1000034.nii.gz",
+            "case_pca": 0,
+            "prostate_pred": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/UmambaBot_prostate/preds/10034_1000034_pred.nii.gz",
+            "prostate_prob_map": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/UmambaBot_prostate/prob/10034_1000034_prob.nii.gz"
+        },
+        {
+            "image": [
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10036_1000036_0000.nii.gz",
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10036_1000036_0001.nii.gz",
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10036_1000036_0002.nii.gz"
+            ],
+            "prostate": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/picai_labels/anatomical_delineations/whole_gland/AI/Bosma22b/10036_1000036.nii.gz",
+            "zones": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/picai_labels/anatomical_delineations/zonal_pz_tz/AI/Yuan23/10036_1000036.nii.gz",
+            "pca": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/labelsTr/10036_1000036.nii.gz",
+            "case_pca": 1,
+            "prostate_pred": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/UmambaBot_prostate/preds/10036_1000036_pred.nii.gz",
+            "prostate_prob_map": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/UmambaBot_prostate/prob/10036_1000036_prob.nii.gz"
+        },
+        {
+            "image": [
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10037_1000037_0000.nii.gz",
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10037_1000037_0001.nii.gz",
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10037_1000037_0002.nii.gz"
+            ],
+            "prostate": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/picai_labels/anatomical_delineations/whole_gland/AI/Bosma22b/10037_1000037.nii.gz",
+            "zones": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/picai_labels/anatomical_delineations/zonal_pz_tz/AI/Yuan23/10037_1000037.nii.gz",
+            "pca": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/labelsTr/10037_1000037.nii.gz",
+            "case_pca": 0,
+            "prostate_pred": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/UmambaBot_prostate/preds/10037_1000037_pred.nii.gz",
+            "prostate_prob_map": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/UmambaBot_prostate/prob/10037_1000037_prob.nii.gz"
+        },
+        {
+            "image": [
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10039_1000039_0000.nii.gz",
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10039_1000039_0001.nii.gz",
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10039_1000039_0002.nii.gz"
+            ],
+            "prostate": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/picai_labels/anatomical_delineations/whole_gland/AI/Bosma22b/10039_1000039.nii.gz",
+            "zones": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/picai_labels/anatomical_delineations/zonal_pz_tz/AI/Yuan23/10039_1000039.nii.gz",
+            "pca": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/labelsTr/10039_1000039.nii.gz",
+            "case_pca": 0,
+            "prostate_pred": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/UmambaBot_prostate/preds/10039_1000039_pred.nii.gz",
+            "prostate_prob_map": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/UmambaBot_prostate/prob/10039_1000039_prob.nii.gz"
+        },
+        {
+            "image": [
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10042_1000042_0000.nii.gz",
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10042_1000042_0001.nii.gz",
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10042_1000042_0002.nii.gz"
+            ],
+            "prostate": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/picai_labels/anatomical_delineations/whole_gland/AI/Bosma22b/10042_1000042.nii.gz",
+            "zones": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/picai_labels/anatomical_delineations/zonal_pz_tz/AI/Yuan23/10042_1000042.nii.gz",
+            "pca": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/labelsTr/10042_1000042.nii.gz",
+            "case_pca": 0,
+            "prostate_pred": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/UmambaBot_prostate/preds/10042_1000042_pred.nii.gz",
+            "prostate_prob_map": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/UmambaBot_prostate/prob/10042_1000042_prob.nii.gz"
+        },
+        {
+            "image": [
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10043_1000043_0000.nii.gz",
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10043_1000043_0001.nii.gz",
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10043_1000043_0002.nii.gz"
+            ],
+            "prostate": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/picai_labels/anatomical_delineations/whole_gland/AI/Bosma22b/10043_1000043.nii.gz",
+            "zones": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/picai_labels/anatomical_delineations/zonal_pz_tz/AI/Yuan23/10043_1000043.nii.gz",
+            "pca": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/labelsTr/10043_1000043.nii.gz",
+            "case_pca": 1,
+            "prostate_pred": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/UmambaBot_prostate/preds/10043_1000043_pred.nii.gz",
+            "prostate_prob_map": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/UmambaBot_prostate/prob/10043_1000043_prob.nii.gz"
+        },
+        {
+            "image": [
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10044_1000044_0000.nii.gz",
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10044_1000044_0001.nii.gz",
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10044_1000044_0002.nii.gz"
+            ],
+            "prostate": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/picai_labels/anatomical_delineations/whole_gland/AI/Bosma22b/10044_1000044.nii.gz",
+            "zones": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/picai_labels/anatomical_delineations/zonal_pz_tz/AI/Yuan23/10044_1000044.nii.gz",
+            "pca": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/labelsTr/10044_1000044.nii.gz",
+            "case_pca": 1,
+            "prostate_pred": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/UmambaBot_prostate/preds/10044_1000044_pred.nii.gz",
+            "prostate_prob_map": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/UmambaBot_prostate/prob/10044_1000044_prob.nii.gz"
+        },
+        {
+            "image": [
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10046_1000046_0000.nii.gz",
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10046_1000046_0001.nii.gz",
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10046_1000046_0002.nii.gz"
+            ],
+            "prostate": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/picai_labels/anatomical_delineations/whole_gland/AI/Bosma22b/10046_1000046.nii.gz",
+            "zones": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/picai_labels/anatomical_delineations/zonal_pz_tz/AI/Yuan23/10046_1000046.nii.gz",
+            "pca": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/labelsTr/10046_1000046.nii.gz",
+            "case_pca": 0,
+            "prostate_pred": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/UmambaBot_prostate/preds/10046_1000046_pred.nii.gz",
+            "prostate_prob_map": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/UmambaBot_prostate/prob/10046_1000046_prob.nii.gz"
+        },
+        {
+            "image": [
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10047_1000047_0000.nii.gz",
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10047_1000047_0001.nii.gz",
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10047_1000047_0002.nii.gz"
+            ],
+            "prostate": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/picai_labels/anatomical_delineations/whole_gland/AI/Bosma22b/10047_1000047.nii.gz",
+            "zones": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/picai_labels/anatomical_delineations/zonal_pz_tz/AI/Yuan23/10047_1000047.nii.gz",
+            "pca": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/labelsTr/10047_1000047.nii.gz",
+            "case_pca": 0,
+            "prostate_pred": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/UmambaBot_prostate/preds/10047_1000047_pred.nii.gz",
+            "prostate_prob_map": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/UmambaBot_prostate/prob/10047_1000047_prob.nii.gz"
+        },
+        {
+            "image": [
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10048_1000048_0000.nii.gz",
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10048_1000048_0001.nii.gz",
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10048_1000048_0002.nii.gz"
+            ],
+            "prostate": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/picai_labels/anatomical_delineations/whole_gland/AI/Bosma22b/10048_1000048.nii.gz",
+            "zones": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/picai_labels/anatomical_delineations/zonal_pz_tz/AI/Yuan23/10048_1000048.nii.gz",
+            "pca": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/labelsTr/10048_1000048.nii.gz",
+            "case_pca": 1,
+            "prostate_pred": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/UmambaBot_prostate/preds/10048_1000048_pred.nii.gz",
+            "prostate_prob_map": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/UmambaBot_prostate/prob/10048_1000048_prob.nii.gz"
+        },
+        {
+            "image": [
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10049_1000049_0000.nii.gz",
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10049_1000049_0001.nii.gz",
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10049_1000049_0002.nii.gz"
+            ],
+            "prostate": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/picai_labels/anatomical_delineations/whole_gland/AI/Bosma22b/10049_1000049.nii.gz",
+            "zones": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/picai_labels/anatomical_delineations/zonal_pz_tz/AI/Yuan23/10049_1000049.nii.gz",
+            "pca": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/labelsTr/10049_1000049.nii.gz",
+            "case_pca": 0,
+            "prostate_pred": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/UmambaBot_prostate/preds/10049_1000049_pred.nii.gz",
+            "prostate_prob_map": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/UmambaBot_prostate/prob/10049_1000049_prob.nii.gz"
+        },
+        {
+            "image": [
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10050_1000050_0000.nii.gz",
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10050_1000050_0001.nii.gz",
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10050_1000050_0002.nii.gz"
+            ],
+            "prostate": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/picai_labels/anatomical_delineations/whole_gland/AI/Bosma22b/10050_1000050.nii.gz",
+            "zones": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/picai_labels/anatomical_delineations/zonal_pz_tz/AI/Yuan23/10050_1000050.nii.gz",
+            "pca": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/labelsTr/10050_1000050.nii.gz",
+            "case_pca": 1,
+            "prostate_pred": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/UmambaBot_prostate/preds/10050_1000050_pred.nii.gz",
+            "prostate_prob_map": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/UmambaBot_prostate/prob/10050_1000050_prob.nii.gz"
+        },
+        {
+            "image": [
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10051_1000051_0000.nii.gz",
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10051_1000051_0001.nii.gz",
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10051_1000051_0002.nii.gz"
+            ],
+            "prostate": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/picai_labels/anatomical_delineations/whole_gland/AI/Bosma22b/10051_1000051.nii.gz",
+            "zones": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/picai_labels/anatomical_delineations/zonal_pz_tz/AI/Yuan23/10051_1000051.nii.gz",
+            "pca": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/labelsTr/10051_1000051.nii.gz",
+            "case_pca": 0,
+            "prostate_pred": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/UmambaBot_prostate/preds/10051_1000051_pred.nii.gz",
+            "prostate_prob_map": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/UmambaBot_prostate/prob/10051_1000051_prob.nii.gz"
+        },
+        {
+            "image": [
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10052_1000052_0000.nii.gz",
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10052_1000052_0001.nii.gz",
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10052_1000052_0002.nii.gz"
+            ],
+            "prostate": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/picai_labels/anatomical_delineations/whole_gland/AI/Bosma22b/10052_1000052.nii.gz",
+            "zones": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/picai_labels/anatomical_delineations/zonal_pz_tz/AI/Yuan23/10052_1000052.nii.gz",
+            "pca": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/labelsTr/10052_1000052.nii.gz",
+            "case_pca": 0,
+            "prostate_pred": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/UmambaBot_prostate/preds/10052_1000052_pred.nii.gz",
+            "prostate_prob_map": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/UmambaBot_prostate/prob/10052_1000052_prob.nii.gz"
+        },
+        {
+            "image": [
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10053_1000053_0000.nii.gz",
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10053_1000053_0001.nii.gz",
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10053_1000053_0002.nii.gz"
+            ],
+            "prostate": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/picai_labels/anatomical_delineations/whole_gland/AI/Bosma22b/10053_1000053.nii.gz",
+            "zones": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/picai_labels/anatomical_delineations/zonal_pz_tz/AI/Yuan23/10053_1000053.nii.gz",
+            "pca": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/labelsTr/10053_1000053.nii.gz",
+            "case_pca": 1,
+            "prostate_pred": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/UmambaBot_prostate/preds/10053_1000053_pred.nii.gz",
+            "prostate_prob_map": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/UmambaBot_prostate/prob/10053_1000053_prob.nii.gz"
+        },
+        {
+            "image": [
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10054_1000054_0000.nii.gz",
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10054_1000054_0001.nii.gz",
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10054_1000054_0002.nii.gz"
+            ],
+            "prostate": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/picai_labels/anatomical_delineations/whole_gland/AI/Bosma22b/10054_1000054.nii.gz",
+            "zones": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/picai_labels/anatomical_delineations/zonal_pz_tz/AI/Yuan23/10054_1000054.nii.gz",
+            "pca": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/labelsTr/10054_1000054.nii.gz",
+            "case_pca": 0,
+            "prostate_pred": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/UmambaBot_prostate/preds/10054_1000054_pred.nii.gz",
+            "prostate_prob_map": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/UmambaBot_prostate/prob/10054_1000054_prob.nii.gz"
+        },
+        {
+            "image": [
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10055_1000055_0000.nii.gz",
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10055_1000055_0001.nii.gz",
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10055_1000055_0002.nii.gz"
+            ],
+            "prostate": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/picai_labels/anatomical_delineations/whole_gland/AI/Bosma22b/10055_1000055.nii.gz",
+            "zones": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/picai_labels/anatomical_delineations/zonal_pz_tz/AI/Yuan23/10055_1000055.nii.gz",
+            "pca": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/labelsTr/10055_1000055.nii.gz",
+            "case_pca": 0,
+            "prostate_pred": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/UmambaBot_prostate/preds/10055_1000055_pred.nii.gz",
+            "prostate_prob_map": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/UmambaBot_prostate/prob/10055_1000055_prob.nii.gz"
+        },
+        {
+            "image": [
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10056_1000056_0000.nii.gz",
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10056_1000056_0001.nii.gz",
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10056_1000056_0002.nii.gz"
+            ],
+            "prostate": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/picai_labels/anatomical_delineations/whole_gland/AI/Bosma22b/10056_1000056.nii.gz",
+            "zones": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/picai_labels/anatomical_delineations/zonal_pz_tz/AI/Yuan23/10056_1000056.nii.gz",
+            "pca": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/labelsTr/10056_1000056.nii.gz",
+            "case_pca": 0,
+            "prostate_pred": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/UmambaBot_prostate/preds/10056_1000056_pred.nii.gz",
+            "prostate_prob_map": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/UmambaBot_prostate/prob/10056_1000056_prob.nii.gz"
+        },
+        {
+            "image": [
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10057_1000057_0000.nii.gz",
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10057_1000057_0001.nii.gz",
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10057_1000057_0002.nii.gz"
+            ],
+            "prostate": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/picai_labels/anatomical_delineations/whole_gland/AI/Bosma22b/10057_1000057.nii.gz",
+            "zones": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/picai_labels/anatomical_delineations/zonal_pz_tz/AI/Yuan23/10057_1000057.nii.gz",
+            "pca": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/labelsTr/10057_1000057.nii.gz",
+            "case_pca": 0,
+            "prostate_pred": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/UmambaBot_prostate/preds/10057_1000057_pred.nii.gz",
+            "prostate_prob_map": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/UmambaBot_prostate/prob/10057_1000057_prob.nii.gz"
+        },
+        {
+            "image": [
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10058_1000058_0000.nii.gz",
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10058_1000058_0001.nii.gz",
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10058_1000058_0002.nii.gz"
+            ],
+            "prostate": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/picai_labels/anatomical_delineations/whole_gland/AI/Bosma22b/10058_1000058.nii.gz",
+            "zones": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/picai_labels/anatomical_delineations/zonal_pz_tz/AI/Yuan23/10058_1000058.nii.gz",
+            "pca": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/labelsTr/10058_1000058.nii.gz",
+            "case_pca": 0,
+            "prostate_pred": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/UmambaBot_prostate/preds/10058_1000058_pred.nii.gz",
+            "prostate_prob_map": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/UmambaBot_prostate/prob/10058_1000058_prob.nii.gz"
+        },
+        {
+            "image": [
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10060_1000060_0000.nii.gz",
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10060_1000060_0001.nii.gz",
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10060_1000060_0002.nii.gz"
+            ],
+            "prostate": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/picai_labels/anatomical_delineations/whole_gland/AI/Bosma22b/10060_1000060.nii.gz",
+            "zones": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/picai_labels/anatomical_delineations/zonal_pz_tz/AI/Yuan23/10060_1000060.nii.gz",
+            "pca": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/labelsTr/10060_1000060.nii.gz",
+            "case_pca": 0,
+            "prostate_pred": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/UmambaBot_prostate/preds/10060_1000060_pred.nii.gz",
+            "prostate_prob_map": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/UmambaBot_prostate/prob/10060_1000060_prob.nii.gz"
+        },
+        {
+            "image": [
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10061_1000061_0000.nii.gz",
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10061_1000061_0001.nii.gz",
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10061_1000061_0002.nii.gz"
+            ],
+            "prostate": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/picai_labels/anatomical_delineations/whole_gland/AI/Bosma22b/10061_1000061.nii.gz",
+            "zones": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/picai_labels/anatomical_delineations/zonal_pz_tz/AI/Yuan23/10061_1000061.nii.gz",
+            "pca": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/labelsTr/10061_1000061.nii.gz",
+            "case_pca": 0,
+            "prostate_pred": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/UmambaBot_prostate/preds/10061_1000061_pred.nii.gz",
+            "prostate_prob_map": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/UmambaBot_prostate/prob/10061_1000061_prob.nii.gz"
+        },
+        {
+            "image": [
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10063_1000063_0000.nii.gz",
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10063_1000063_0001.nii.gz",
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10063_1000063_0002.nii.gz"
+            ],
+            "prostate": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/picai_labels/anatomical_delineations/whole_gland/AI/Bosma22b/10063_1000063.nii.gz",
+            "zones": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/picai_labels/anatomical_delineations/zonal_pz_tz/AI/Yuan23/10063_1000063.nii.gz",
+            "pca": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/labelsTr/10063_1000063.nii.gz",
+            "case_pca": 0,
+            "prostate_pred": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/UmambaBot_prostate/preds/10063_1000063_pred.nii.gz",
+            "prostate_prob_map": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/UmambaBot_prostate/prob/10063_1000063_prob.nii.gz"
+        },
+        {
+            "image": [
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10064_1000064_0000.nii.gz",
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10064_1000064_0001.nii.gz",
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10064_1000064_0002.nii.gz"
+            ],
+            "prostate": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/picai_labels/anatomical_delineations/whole_gland/AI/Bosma22b/10064_1000064.nii.gz",
+            "zones": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/picai_labels/anatomical_delineations/zonal_pz_tz/AI/Yuan23/10064_1000064.nii.gz",
+            "pca": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/labelsTr/10064_1000064.nii.gz",
+            "case_pca": 0,
+            "prostate_pred": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/UmambaBot_prostate/preds/10064_1000064_pred.nii.gz",
+            "prostate_prob_map": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/UmambaBot_prostate/prob/10064_1000064_prob.nii.gz"
+        },
+        {
+            "image": [
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10066_1000066_0000.nii.gz",
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10066_1000066_0001.nii.gz",
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10066_1000066_0002.nii.gz"
+            ],
+            "prostate": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/picai_labels/anatomical_delineations/whole_gland/AI/Bosma22b/10066_1000066.nii.gz",
+            "zones": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/picai_labels/anatomical_delineations/zonal_pz_tz/AI/Yuan23/10066_1000066.nii.gz",
+            "pca": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/labelsTr/10066_1000066.nii.gz",
+            "case_pca": 0,
+            "prostate_pred": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/UmambaBot_prostate/preds/10066_1000066_pred.nii.gz",
+            "prostate_prob_map": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/UmambaBot_prostate/prob/10066_1000066_prob.nii.gz"
+        },
+        {
+            "image": [
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10067_1000067_0000.nii.gz",
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10067_1000067_0001.nii.gz",
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10067_1000067_0002.nii.gz"
+            ],
+            "prostate": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/picai_labels/anatomical_delineations/whole_gland/AI/Bosma22b/10067_1000067.nii.gz",
+            "zones": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/picai_labels/anatomical_delineations/zonal_pz_tz/AI/Yuan23/10067_1000067.nii.gz",
+            "pca": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/labelsTr/10067_1000067.nii.gz",
+            "case_pca": 0,
+            "prostate_pred": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/UmambaBot_prostate/preds/10067_1000067_pred.nii.gz",
+            "prostate_prob_map": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/UmambaBot_prostate/prob/10067_1000067_prob.nii.gz"
+        },
+        {
+            "image": [
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10068_1000068_0000.nii.gz",
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10068_1000068_0001.nii.gz",
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10068_1000068_0002.nii.gz"
+            ],
+            "prostate": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/picai_labels/anatomical_delineations/whole_gland/AI/Bosma22b/10068_1000068.nii.gz",
+            "zones": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/picai_labels/anatomical_delineations/zonal_pz_tz/AI/Yuan23/10068_1000068.nii.gz",
+            "pca": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/labelsTr/10068_1000068.nii.gz",
+            "case_pca": 0,
+            "prostate_pred": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/UmambaBot_prostate/preds/10068_1000068_pred.nii.gz",
+            "prostate_prob_map": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/UmambaBot_prostate/prob/10068_1000068_prob.nii.gz"
+        },
+        {
+            "image": [
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10069_1000069_0000.nii.gz",
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10069_1000069_0001.nii.gz",
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10069_1000069_0002.nii.gz"
+            ],
+            "prostate": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/picai_labels/anatomical_delineations/whole_gland/AI/Bosma22b/10069_1000069.nii.gz",
+            "zones": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/picai_labels/anatomical_delineations/zonal_pz_tz/AI/Yuan23/10069_1000069.nii.gz",
+            "pca": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/labelsTr/10069_1000069.nii.gz",
+            "case_pca": 0,
+            "prostate_pred": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/UmambaBot_prostate/preds/10069_1000069_pred.nii.gz",
+            "prostate_prob_map": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/UmambaBot_prostate/prob/10069_1000069_prob.nii.gz"
+        },
+        {
+            "image": [
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10070_1000070_0000.nii.gz",
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10070_1000070_0001.nii.gz",
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10070_1000070_0002.nii.gz"
+            ],
+            "prostate": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/picai_labels/anatomical_delineations/whole_gland/AI/Bosma22b/10070_1000070.nii.gz",
+            "zones": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/picai_labels/anatomical_delineations/zonal_pz_tz/AI/Yuan23/10070_1000070.nii.gz",
+            "pca": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/labelsTr/10070_1000070.nii.gz",
+            "case_pca": 0,
+            "prostate_pred": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/UmambaBot_prostate/preds/10070_1000070_pred.nii.gz",
+            "prostate_prob_map": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/UmambaBot_prostate/prob/10070_1000070_prob.nii.gz"
+        },
+        {
+            "image": [
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10072_1000072_0000.nii.gz",
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10072_1000072_0001.nii.gz",
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10072_1000072_0002.nii.gz"
+            ],
+            "prostate": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/picai_labels/anatomical_delineations/whole_gland/AI/Bosma22b/10072_1000072.nii.gz",
+            "zones": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/picai_labels/anatomical_delineations/zonal_pz_tz/AI/Yuan23/10072_1000072.nii.gz",
+            "pca": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/labelsTr/10072_1000072.nii.gz",
+            "case_pca": 0,
+            "prostate_pred": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/UmambaBot_prostate/preds/10072_1000072_pred.nii.gz",
+            "prostate_prob_map": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/UmambaBot_prostate/prob/10072_1000072_prob.nii.gz"
+        },
+        {
+            "image": [
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10074_1000074_0000.nii.gz",
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10074_1000074_0001.nii.gz",
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10074_1000074_0002.nii.gz"
+            ],
+            "prostate": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/picai_labels/anatomical_delineations/whole_gland/AI/Bosma22b/10074_1000074.nii.gz",
+            "zones": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/picai_labels/anatomical_delineations/zonal_pz_tz/AI/Yuan23/10074_1000074.nii.gz",
+            "pca": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/labelsTr/10074_1000074.nii.gz",
+            "case_pca": 1,
+            "prostate_pred": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/UmambaBot_prostate/preds/10074_1000074_pred.nii.gz",
+            "prostate_prob_map": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/UmambaBot_prostate/prob/10074_1000074_prob.nii.gz"
+        },
+        {
+            "image": [
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10075_1000075_0000.nii.gz",
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10075_1000075_0001.nii.gz",
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10075_1000075_0002.nii.gz"
+            ],
+            "prostate": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/picai_labels/anatomical_delineations/whole_gland/AI/Bosma22b/10075_1000075.nii.gz",
+            "zones": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/picai_labels/anatomical_delineations/zonal_pz_tz/AI/Yuan23/10075_1000075.nii.gz",
+            "pca": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/labelsTr/10075_1000075.nii.gz",
+            "case_pca": 0,
+            "prostate_pred": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/UmambaBot_prostate/preds/10075_1000075_pred.nii.gz",
+            "prostate_prob_map": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/UmambaBot_prostate/prob/10075_1000075_prob.nii.gz"
+        },
+        {
+            "image": [
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10076_1000076_0000.nii.gz",
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10076_1000076_0001.nii.gz",
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10076_1000076_0002.nii.gz"
+            ],
+            "prostate": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/picai_labels/anatomical_delineations/whole_gland/AI/Bosma22b/10076_1000076.nii.gz",
+            "zones": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/picai_labels/anatomical_delineations/zonal_pz_tz/AI/Yuan23/10076_1000076.nii.gz",
+            "pca": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/labelsTr/10076_1000076.nii.gz",
+            "case_pca": 0,
+            "prostate_pred": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/UmambaBot_prostate/preds/10076_1000076_pred.nii.gz",
+            "prostate_prob_map": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/UmambaBot_prostate/prob/10076_1000076_prob.nii.gz"
+        },
+        {
+            "image": [
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10077_1000077_0000.nii.gz",
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10077_1000077_0001.nii.gz",
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10077_1000077_0002.nii.gz"
+            ],
+            "prostate": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/picai_labels/anatomical_delineations/whole_gland/AI/Bosma22b/10077_1000077.nii.gz",
+            "zones": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/picai_labels/anatomical_delineations/zonal_pz_tz/AI/Yuan23/10077_1000077.nii.gz",
+            "pca": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/labelsTr/10077_1000077.nii.gz",
+            "case_pca": 0,
+            "prostate_pred": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/UmambaBot_prostate/preds/10077_1000077_pred.nii.gz",
+            "prostate_prob_map": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/UmambaBot_prostate/prob/10077_1000077_prob.nii.gz"
+        },
+        {
+            "image": [
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10079_1000079_0000.nii.gz",
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10079_1000079_0001.nii.gz",
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10079_1000079_0002.nii.gz"
+            ],
+            "prostate": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/picai_labels/anatomical_delineations/whole_gland/AI/Bosma22b/10079_1000079.nii.gz",
+            "zones": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/picai_labels/anatomical_delineations/zonal_pz_tz/AI/Yuan23/10079_1000079.nii.gz",
+            "pca": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/labelsTr/10079_1000079.nii.gz",
+            "case_pca": 1,
+            "prostate_pred": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/UmambaBot_prostate/preds/10079_1000079_pred.nii.gz",
+            "prostate_prob_map": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/UmambaBot_prostate/prob/10079_1000079_prob.nii.gz"
+        },
+        {
+            "image": [
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10081_1000081_0000.nii.gz",
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10081_1000081_0001.nii.gz",
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10081_1000081_0002.nii.gz"
+            ],
+            "prostate": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/picai_labels/anatomical_delineations/whole_gland/AI/Bosma22b/10081_1000081.nii.gz",
+            "zones": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/picai_labels/anatomical_delineations/zonal_pz_tz/AI/Yuan23/10081_1000081.nii.gz",
+            "pca": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/labelsTr/10081_1000081.nii.gz",
+            "case_pca": 0,
+            "prostate_pred": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/UmambaBot_prostate/preds/10081_1000081_pred.nii.gz",
+            "prostate_prob_map": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/UmambaBot_prostate/prob/10081_1000081_prob.nii.gz"
+        },
+        {
+            "image": [
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10084_1000084_0000.nii.gz",
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10084_1000084_0001.nii.gz",
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10084_1000084_0002.nii.gz"
+            ],
+            "prostate": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/picai_labels/anatomical_delineations/whole_gland/AI/Bosma22b/10084_1000084.nii.gz",
+            "zones": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/picai_labels/anatomical_delineations/zonal_pz_tz/AI/Yuan23/10084_1000084.nii.gz",
+            "pca": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/labelsTr/10084_1000084.nii.gz",
+            "case_pca": 0,
+            "prostate_pred": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/UmambaBot_prostate/preds/10084_1000084_pred.nii.gz",
+            "prostate_prob_map": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/UmambaBot_prostate/prob/10084_1000084_prob.nii.gz"
+        },
+        {
+            "image": [
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10086_1000086_0000.nii.gz",
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10086_1000086_0001.nii.gz",
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10086_1000086_0002.nii.gz"
+            ],
+            "prostate": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/picai_labels/anatomical_delineations/whole_gland/AI/Bosma22b/10086_1000086.nii.gz",
+            "zones": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/picai_labels/anatomical_delineations/zonal_pz_tz/AI/Yuan23/10086_1000086.nii.gz",
+            "pca": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/labelsTr/10086_1000086.nii.gz",
+            "case_pca": 0,
+            "prostate_pred": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/UmambaBot_prostate/preds/10086_1000086_pred.nii.gz",
+            "prostate_prob_map": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/UmambaBot_prostate/prob/10086_1000086_prob.nii.gz"
+        },
+        {
+            "image": [
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10087_1000087_0000.nii.gz",
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10087_1000087_0001.nii.gz",
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10087_1000087_0002.nii.gz"
+            ],
+            "prostate": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/picai_labels/anatomical_delineations/whole_gland/AI/Bosma22b/10087_1000087.nii.gz",
+            "zones": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/picai_labels/anatomical_delineations/zonal_pz_tz/AI/Yuan23/10087_1000087.nii.gz",
+            "pca": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/labelsTr/10087_1000087.nii.gz",
+            "case_pca": 0,
+            "prostate_pred": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/UmambaBot_prostate/preds/10087_1000087_pred.nii.gz",
+            "prostate_prob_map": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/UmambaBot_prostate/prob/10087_1000087_prob.nii.gz"
+        },
+        {
+            "image": [
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10088_1000088_0000.nii.gz",
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10088_1000088_0001.nii.gz",
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10088_1000088_0002.nii.gz"
+            ],
+            "prostate": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/picai_labels/anatomical_delineations/whole_gland/AI/Bosma22b/10088_1000088.nii.gz",
+            "zones": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/picai_labels/anatomical_delineations/zonal_pz_tz/AI/Yuan23/10088_1000088.nii.gz",
+            "pca": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/labelsTr/10088_1000088.nii.gz",
+            "case_pca": 0,
+            "prostate_pred": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/UmambaBot_prostate/preds/10088_1000088_pred.nii.gz",
+            "prostate_prob_map": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/UmambaBot_prostate/prob/10088_1000088_prob.nii.gz"
+        },
+        {
+            "image": [
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10089_1000089_0000.nii.gz",
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10089_1000089_0001.nii.gz",
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10089_1000089_0002.nii.gz"
+            ],
+            "prostate": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/picai_labels/anatomical_delineations/whole_gland/AI/Bosma22b/10089_1000089.nii.gz",
+            "zones": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/picai_labels/anatomical_delineations/zonal_pz_tz/AI/Yuan23/10089_1000089.nii.gz",
+            "pca": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/labelsTr/10089_1000089.nii.gz",
+            "case_pca": 0,
+            "prostate_pred": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/UmambaBot_prostate/preds/10089_1000089_pred.nii.gz",
+            "prostate_prob_map": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/UmambaBot_prostate/prob/10089_1000089_prob.nii.gz"
+        },
+        {
+            "image": [
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10090_1000090_0000.nii.gz",
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10090_1000090_0001.nii.gz",
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10090_1000090_0002.nii.gz"
+            ],
+            "prostate": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/picai_labels/anatomical_delineations/whole_gland/AI/Bosma22b/10090_1000090.nii.gz",
+            "zones": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/picai_labels/anatomical_delineations/zonal_pz_tz/AI/Yuan23/10090_1000090.nii.gz",
+            "pca": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/labelsTr/10090_1000090.nii.gz",
+            "case_pca": 0,
+            "prostate_pred": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/UmambaBot_prostate/preds/10090_1000090_pred.nii.gz",
+            "prostate_prob_map": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/UmambaBot_prostate/prob/10090_1000090_prob.nii.gz"
+        },
+        {
+            "image": [
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10091_1000091_0000.nii.gz",
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10091_1000091_0001.nii.gz",
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10091_1000091_0002.nii.gz"
+            ],
+            "prostate": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/picai_labels/anatomical_delineations/whole_gland/AI/Bosma22b/10091_1000091.nii.gz",
+            "zones": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/picai_labels/anatomical_delineations/zonal_pz_tz/AI/Yuan23/10091_1000091.nii.gz",
+            "pca": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/labelsTr/10091_1000091.nii.gz",
+            "case_pca": 0,
+            "prostate_pred": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/UmambaBot_prostate/preds/10091_1000091_pred.nii.gz",
+            "prostate_prob_map": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/UmambaBot_prostate/prob/10091_1000091_prob.nii.gz"
+        },
+        {
+            "image": [
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10093_1000093_0000.nii.gz",
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10093_1000093_0001.nii.gz",
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10093_1000093_0002.nii.gz"
+            ],
+            "prostate": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/picai_labels/anatomical_delineations/whole_gland/AI/Bosma22b/10093_1000093.nii.gz",
+            "zones": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/picai_labels/anatomical_delineations/zonal_pz_tz/AI/Yuan23/10093_1000093.nii.gz",
+            "pca": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/labelsTr/10093_1000093.nii.gz",
+            "case_pca": 0,
+            "prostate_pred": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/UmambaBot_prostate/preds/10093_1000093_pred.nii.gz",
+            "prostate_prob_map": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/UmambaBot_prostate/prob/10093_1000093_prob.nii.gz"
+        },
+        {
+            "image": [
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10094_1000094_0000.nii.gz",
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10094_1000094_0001.nii.gz",
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10094_1000094_0002.nii.gz"
+            ],
+            "prostate": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/picai_labels/anatomical_delineations/whole_gland/AI/Bosma22b/10094_1000094.nii.gz",
+            "zones": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/picai_labels/anatomical_delineations/zonal_pz_tz/AI/Yuan23/10094_1000094.nii.gz",
+            "pca": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/labelsTr/10094_1000094.nii.gz",
+            "case_pca": 1,
+            "prostate_pred": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/UmambaBot_prostate/preds/10094_1000094_pred.nii.gz",
+            "prostate_prob_map": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/UmambaBot_prostate/prob/10094_1000094_prob.nii.gz"
+        },
+        {
+            "image": [
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10095_1000095_0000.nii.gz",
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10095_1000095_0001.nii.gz",
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10095_1000095_0002.nii.gz"
+            ],
+            "prostate": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/picai_labels/anatomical_delineations/whole_gland/AI/Bosma22b/10095_1000095.nii.gz",
+            "zones": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/picai_labels/anatomical_delineations/zonal_pz_tz/AI/Yuan23/10095_1000095.nii.gz",
+            "pca": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/labelsTr/10095_1000095.nii.gz",
+            "case_pca": 0,
+            "prostate_pred": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/UmambaBot_prostate/preds/10095_1000095_pred.nii.gz",
+            "prostate_prob_map": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/UmambaBot_prostate/prob/10095_1000095_prob.nii.gz"
+        },
+        {
+            "image": [
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10096_1000096_0000.nii.gz",
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10096_1000096_0001.nii.gz",
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10096_1000096_0002.nii.gz"
+            ],
+            "prostate": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/picai_labels/anatomical_delineations/whole_gland/AI/Bosma22b/10096_1000096.nii.gz",
+            "zones": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/picai_labels/anatomical_delineations/zonal_pz_tz/AI/Yuan23/10096_1000096.nii.gz",
+            "pca": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/labelsTr/10096_1000096.nii.gz",
+            "case_pca": 0,
+            "prostate_pred": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/UmambaBot_prostate/preds/10096_1000096_pred.nii.gz",
+            "prostate_prob_map": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/UmambaBot_prostate/prob/10096_1000096_prob.nii.gz"
+        },
+        {
+            "image": [
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10097_1000097_0000.nii.gz",
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10097_1000097_0001.nii.gz",
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10097_1000097_0002.nii.gz"
+            ],
+            "prostate": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/picai_labels/anatomical_delineations/whole_gland/AI/Bosma22b/10097_1000097.nii.gz",
+            "zones": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/picai_labels/anatomical_delineations/zonal_pz_tz/AI/Yuan23/10097_1000097.nii.gz",
+            "pca": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/labelsTr/10097_1000097.nii.gz",
+            "case_pca": 1,
+            "prostate_pred": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/UmambaBot_prostate/preds/10097_1000097_pred.nii.gz",
+            "prostate_prob_map": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/UmambaBot_prostate/prob/10097_1000097_prob.nii.gz"
+        },
+        {
+            "image": [
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10098_1000098_0000.nii.gz",
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10098_1000098_0001.nii.gz",
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10098_1000098_0002.nii.gz"
+            ],
+            "prostate": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/picai_labels/anatomical_delineations/whole_gland/AI/Bosma22b/10098_1000098.nii.gz",
+            "zones": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/picai_labels/anatomical_delineations/zonal_pz_tz/AI/Yuan23/10098_1000098.nii.gz",
+            "pca": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/labelsTr/10098_1000098.nii.gz",
+            "case_pca": 0,
+            "prostate_pred": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/UmambaBot_prostate/preds/10098_1000098_pred.nii.gz",
+            "prostate_prob_map": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/UmambaBot_prostate/prob/10098_1000098_prob.nii.gz"
+        },
+        {
+            "image": [
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10099_1000099_0000.nii.gz",
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10099_1000099_0001.nii.gz",
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10099_1000099_0002.nii.gz"
+            ],
+            "prostate": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/picai_labels/anatomical_delineations/whole_gland/AI/Bosma22b/10099_1000099.nii.gz",
+            "zones": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/picai_labels/anatomical_delineations/zonal_pz_tz/AI/Yuan23/10099_1000099.nii.gz",
+            "pca": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/labelsTr/10099_1000099.nii.gz",
+            "case_pca": 0,
+            "prostate_pred": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/UmambaBot_prostate/preds/10099_1000099_pred.nii.gz",
+            "prostate_prob_map": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/UmambaBot_prostate/prob/10099_1000099_prob.nii.gz"
+        },
+        {
+            "image": [
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10100_1000100_0000.nii.gz",
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10100_1000100_0001.nii.gz",
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10100_1000100_0002.nii.gz"
+            ],
+            "prostate": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/picai_labels/anatomical_delineations/whole_gland/AI/Bosma22b/10100_1000100.nii.gz",
+            "zones": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/picai_labels/anatomical_delineations/zonal_pz_tz/AI/Yuan23/10100_1000100.nii.gz",
+            "pca": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/labelsTr/10100_1000100.nii.gz",
+            "case_pca": 1,
+            "prostate_pred": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/UmambaBot_prostate/preds/10100_1000100_pred.nii.gz",
+            "prostate_prob_map": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/UmambaBot_prostate/prob/10100_1000100_prob.nii.gz"
+        },
+        {
+            "image": [
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10101_1000101_0000.nii.gz",
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10101_1000101_0001.nii.gz",
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10101_1000101_0002.nii.gz"
+            ],
+            "prostate": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/picai_labels/anatomical_delineations/whole_gland/AI/Bosma22b/10101_1000101.nii.gz",
+            "zones": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/picai_labels/anatomical_delineations/zonal_pz_tz/AI/Yuan23/10101_1000101.nii.gz",
+            "pca": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/labelsTr/10101_1000101.nii.gz",
+            "case_pca": 0,
+            "prostate_pred": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/UmambaBot_prostate/preds/10101_1000101_pred.nii.gz",
+            "prostate_prob_map": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/UmambaBot_prostate/prob/10101_1000101_prob.nii.gz"
+        },
+        {
+            "image": [
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10102_1000102_0000.nii.gz",
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10102_1000102_0001.nii.gz",
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10102_1000102_0002.nii.gz"
+            ],
+            "prostate": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/picai_labels/anatomical_delineations/whole_gland/AI/Bosma22b/10102_1000102.nii.gz",
+            "zones": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/picai_labels/anatomical_delineations/zonal_pz_tz/AI/Yuan23/10102_1000102.nii.gz",
+            "pca": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/labelsTr/10102_1000102.nii.gz",
+            "case_pca": 0,
+            "prostate_pred": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/UmambaBot_prostate/preds/10102_1000102_pred.nii.gz",
+            "prostate_prob_map": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/UmambaBot_prostate/prob/10102_1000102_prob.nii.gz"
+        },
+        {
+            "image": [
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10103_1000103_0000.nii.gz",
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10103_1000103_0001.nii.gz",
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10103_1000103_0002.nii.gz"
+            ],
+            "prostate": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/picai_labels/anatomical_delineations/whole_gland/AI/Bosma22b/10103_1000103.nii.gz",
+            "zones": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/picai_labels/anatomical_delineations/zonal_pz_tz/AI/Yuan23/10103_1000103.nii.gz",
+            "pca": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/labelsTr/10103_1000103.nii.gz",
+            "case_pca": 1,
+            "prostate_pred": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/UmambaBot_prostate/preds/10103_1000103_pred.nii.gz",
+            "prostate_prob_map": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/UmambaBot_prostate/prob/10103_1000103_prob.nii.gz"
+        },
+        {
+            "image": [
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10104_1000104_0000.nii.gz",
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10104_1000104_0001.nii.gz",
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10104_1000104_0002.nii.gz"
+            ],
+            "prostate": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/picai_labels/anatomical_delineations/whole_gland/AI/Bosma22b/10104_1000104.nii.gz",
+            "zones": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/picai_labels/anatomical_delineations/zonal_pz_tz/AI/Yuan23/10104_1000104.nii.gz",
+            "pca": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/labelsTr/10104_1000104.nii.gz",
+            "case_pca": 1,
+            "prostate_pred": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/UmambaBot_prostate/preds/10104_1000104_pred.nii.gz",
+            "prostate_prob_map": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/UmambaBot_prostate/prob/10104_1000104_prob.nii.gz"
+        },
+        {
+            "image": [
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10105_1000105_0000.nii.gz",
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10105_1000105_0001.nii.gz",
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10105_1000105_0002.nii.gz"
+            ],
+            "prostate": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/picai_labels/anatomical_delineations/whole_gland/AI/Bosma22b/10105_1000105.nii.gz",
+            "zones": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/picai_labels/anatomical_delineations/zonal_pz_tz/AI/Yuan23/10105_1000105.nii.gz",
+            "pca": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/labelsTr/10105_1000105.nii.gz",
+            "case_pca": 0,
+            "prostate_pred": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/UmambaBot_prostate/preds/10105_1000105_pred.nii.gz",
+            "prostate_prob_map": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/UmambaBot_prostate/prob/10105_1000105_prob.nii.gz"
+        },
+        {
+            "image": [
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10106_1000106_0000.nii.gz",
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10106_1000106_0001.nii.gz",
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10106_1000106_0002.nii.gz"
+            ],
+            "prostate": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/picai_labels/anatomical_delineations/whole_gland/AI/Bosma22b/10106_1000106.nii.gz",
+            "zones": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/picai_labels/anatomical_delineations/zonal_pz_tz/AI/Yuan23/10106_1000106.nii.gz",
+            "pca": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/labelsTr/10106_1000106.nii.gz",
+            "case_pca": 1,
+            "prostate_pred": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/UmambaBot_prostate/preds/10106_1000106_pred.nii.gz",
+            "prostate_prob_map": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/UmambaBot_prostate/prob/10106_1000106_prob.nii.gz"
+        },
+        {
+            "image": [
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10107_1000107_0000.nii.gz",
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10107_1000107_0001.nii.gz",
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10107_1000107_0002.nii.gz"
+            ],
+            "prostate": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/picai_labels/anatomical_delineations/whole_gland/AI/Bosma22b/10107_1000107.nii.gz",
+            "zones": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/picai_labels/anatomical_delineations/zonal_pz_tz/AI/Yuan23/10107_1000107.nii.gz",
+            "pca": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/labelsTr/10107_1000107.nii.gz",
+            "case_pca": 1,
+            "prostate_pred": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/UmambaBot_prostate/preds/10107_1000107_pred.nii.gz",
+            "prostate_prob_map": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/UmambaBot_prostate/prob/10107_1000107_prob.nii.gz"
+        }
+    ],
+    "validation": [
+        {
+            "image": [
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10001_1000001_0000.nii.gz",
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10001_1000001_0001.nii.gz",
+                "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/imagesTr/10001_1000001_0002.nii.gz"
+            ],
+            "prostate": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/picai_labels/anatomical_delineations/whole_gland/AI/Bosma22b/10001_1000001.nii.gz",
+            "zones": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/picai_labels/anatomical_delineations/zonal_pz_tz/AI/Yuan23/10001_1000001.nii.gz",
+            "pca": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/workdir/nnUNet_raw_data/Task2203_picai_baseline/labelsTr/10001_1000001.nii.gz",
+            "case_pca": 0,
+            "prostate_pred": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/UmambaBot_prostate/preds/10001_1000001_pred.nii.gz",
+            "prostate_prob_map": "/cluster/projects/vc/data/mic/open/Prostate/PI-CAI-V2.0/UmambaBot_prostate/prob/10001_1000001_prob.nii.gz"
+        }
+    ],
+    "test": []
+}

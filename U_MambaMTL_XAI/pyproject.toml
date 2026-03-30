@@ -1,0 +1,65 @@
+[project]
+name = "umamba"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "causal-conv1d>=1.5.2; sys_platform == 'linux'",
+    "mamba-ssm[causal-conv1d]>=2.2.5; sys_platform == 'linux'",
+    "codecarbon>=3.0.5",
+    "gdown>=5.2.0",
+    "ipykernel>=7.0.1",
+    "ipywidgets>=8.1.7",
+    "lightning>=2.5.5",
+    "matplotlib>=3.10.6",
+    "monai-weekly>=1.6.dev2538",
+    "monai[all]>=1.5.1",
+    "munch>=4.0.0",
+    "nibabel>=5.3.2",
+    "nnunetv2>=2.6.2",
+    "pandas>=2.3.3",
+    "picai-baseline>=0.8.5",
+    "picai-eval>=1.4.13",
+    "picai-prep>=2.1.13",
+    "python-dotenv>=1.1.1",
+    "scipy>=1.16.2",
+    "seaborn>=0.13.2",
+    "torch>=2.8.0",
+    "torchmetrics>=1.8.2",
+    "torchvision>=0.21.0",
+    "tqdm>=4.67.1",
+    "wandb>=0.22.0",
+    "focal-loss-torch>=0.1.2",
+    "numpy>=2.0.0",
+    "captum",
+    "grad-cam>=1.5.5",
+    "interpret-segmentation>=1.0.0",
+]
+
+[tool.uv]
+environments = [
+    "sys_platform == 'linux'",
+    "sys_platform == 'darwin'"
+]
+
+[tool.uv.sources]
+torch = [
+    { index = "pytorch-cu129", marker = "sys_platform == 'linux'" },
+    { index = "pytorch-cpu", marker = "sys_platform == 'darwin'" }
+]
+torchvision = [
+    { index = "pytorch-cu129", marker = "sys_platform == 'linux'" },
+    { index = "pytorch-cpu", marker = "sys_platform == 'darwin'" }
+]
+captum = { git = "https://github.com/pytorch/captum.git" }
+
+[[tool.uv.index]]
+name = "pytorch-cu129"
+url = "https://download.pytorch.org/whl/cu129"
+explicit = true
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true

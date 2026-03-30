@@ -1,0 +1,11 @@
+.venv
+.vscode/
+.claude
+.DS_Store
+nnunet_base/
+nnunet_work/
+output/
+results/
+test/
+logs/
+__pycache__/

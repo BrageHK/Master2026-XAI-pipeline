@@ -339,6 +339,7 @@ let panels = {};
 let cachedImages = {};
 let nSlices = 0;
 let currentAlpha = 0.6;
+let occByStrat = {};
 let showZoneContours = false;
 let cachedContours = {};
 
@@ -690,6 +691,14 @@ function buildModelSwitcher() {
   updateModelSwitcher();
 }
 
+function updateOccStats() {
+  const strat = document.getElementById("occ-strategy-select")?.value;
+  const o = (strat && occByStrat[strat]) ? occByStrat[strat]
+            : modelDataCache[activeModel]?.stats?.occlusion;
+  plotPie("plot-occ-pie", o?.ch_fraction ?? null);
+  plotBar("plot-occ-bar", o?.ch_mean ?? null);
+}
+
 function updateModelSwitcher() {
   for (const m of ALL_MODELS) {
     const btn = document.getElementById(`btn-model-${m}`);
@@ -760,12 +769,12 @@ async function switchModel(model) {
 // ── Update sidebar for current model ─────────────────────────────────────────
 function updateModelSidebar(mData) {
   const s = mData.stats;
+  occByStrat = s.occlusion_by_strategy ?? {};
   plotConfidence(s.confidence ?? null);
   plotInputAblation(s.input_ablation);
   plotPie("plot-sal-pie", s.saliency?.ch_fraction ?? null);
-  plotPie("plot-occ-pie", s.occlusion?.ch_fraction ?? null);
   plotBar("plot-sal-bar", s.saliency?.ch_mean ?? null);
-  plotBar("plot-occ-bar", s.occlusion?.ch_mean ?? null);
+  updateOccStats();
   const confRow = document.getElementById("cls-confidence-row");
   const confEl  = document.getElementById("cls-confidence");
   if (confRow && confEl) {
@@ -952,7 +961,10 @@ function populateLegend(availablePanels) {
       occSelect.appendChild(opt);
     }
     occWrap.classList.toggle("d-none", occStrategies.length <= 1);
-    occSelect.addEventListener("change", () => showSlice(parseInt(document.getElementById("slice-slider").value)));
+    occSelect.addEventListener("change", () => {
+      showSlice(parseInt(document.getElementById("slice-slider").value));
+      updateOccStats();
+    });
 
     buildGrid(panels);
     setAblationVisible(false);
@@ -982,12 +994,12 @@ function populateLegend(availablePanels) {
     }
 
     const s = data.stats;
+    occByStrat = s.occlusion_by_strategy ?? {};
     plotConfidence(s.confidence ?? null);
     plotInputAblation(s.input_ablation);
     plotPie("plot-sal-pie", s.saliency?.ch_fraction ?? null);
-    plotPie("plot-occ-pie", s.occlusion?.ch_fraction ?? null);
     plotBar("plot-sal-bar", s.saliency?.ch_mean ?? null);
-    plotBar("plot-occ-bar", s.occlusion?.ch_mean ?? null);
+    updateOccStats();
 
     buildModelSwitcher();
   } catch (err) {

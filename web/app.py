@@ -85,7 +85,17 @@ def _scan_progress_records(model: str) -> List[dict]:
                 frac = entry.get(f"{key}_ch_fraction")
                 if not frac:
                     return None
-                return {"ch_fraction": frac, "dominant_ch": int(np.argmax(frac))}
+                result = {"ch_fraction": frac, "dominant_ch": int(np.argmax(frac))}
+                mean = entry.get(f"{key}_ch_mean")
+                if mean:
+                    result["ch_mean"] = mean
+                return result
+
+            occ_by_strat = {}
+            for _strat, _key in (("zero", "occlusion_zero"), ("zone_median", "occlusion_zm")):
+                _s = _ch_stat(_key)
+                if _s:
+                    occ_by_strat[_strat] = _s
 
             record: dict = {
                 "case_id":            case_id,
@@ -108,6 +118,7 @@ def _scan_progress_records(model: str) -> List[dict]:
                 "saliency":           _ch_stat("saliency"),
                 "occlusion":          _ch_stat("occlusion"),
                 "ablation":           _ch_stat("ablation"),
+                "occlusion_by_strategy": occ_by_strat,
             }
             records.append(record)
 
@@ -364,10 +375,11 @@ def _build_case_payload(model: str, case_id: str) -> dict:
     occlusion  = npz.get("occlusion",      np.zeros((0,), dtype=np.float32))
     occ_tz     = npz.get("occlusion_tz",   np.zeros((0,), dtype=np.float32))
     occ_pz     = npz.get("occlusion_pz",   np.zeros((0,), dtype=np.float32))
-    ablation   = npz.get("ablation",       np.zeros((0,), dtype=np.float32))
-    zones_npz  = _fix_zones(npz.get("zones", np.zeros((0,), dtype=np.int8)), model)
-    label      = npz.get("label",          np.zeros((0,), dtype=np.float32))
-    inp_abl    = npz.get("input_ablation", np.zeros((0,), dtype=np.float32))
+    ablation      = npz.get("ablation",            np.zeros((0,), dtype=np.float32))
+    zones_npz     = _fix_zones(npz.get("zones", np.zeros((0,), dtype=np.int8)), model)
+    label         = npz.get("label",               np.zeros((0,), dtype=np.float32))
+    inp_abl       = npz.get("input_ablation",      np.zeros((0,), dtype=np.float32))
+    zm_baseline   = npz.get("zone_median_baseline", np.zeros((0,), dtype=np.float32))
 
     # Zone display priority: umamba predictions > NPZ zones > error
     zones_error_msg: str | None = None
@@ -392,6 +404,13 @@ def _build_case_payload(model: str, case_id: str) -> dict:
         ch = image[i]  # (D, H, W)
         v0, v1 = float(ch.min()), float(ch.max())
         panels[name] = _render_all_slices(ch, "gray", v0, v1)
+
+    # Zone-median baseline image (tiled zone patches used as occlusion baseline)
+    if not _is_sentinel(zm_baseline) and zm_baseline.ndim == 4:
+        for i, name in enumerate(("t2w", "adc", "hbv")):
+            ch = zm_baseline[i]
+            v0, v1 = float(ch.min()), float(ch.max())
+            panels[f"zm_baseline_{name}"] = _render_all_slices(ch, "gray", v0, v1)
 
     # Cancer probability (transparent background for client-side compositing)
     prob = pred[0]  # (D, H, W)
@@ -472,6 +491,30 @@ def _build_case_payload(model: str, case_id: str) -> dict:
     occ_ch_mean = (np.abs(occ_for_stats).mean(axis=(1, 2, 3)).tolist()
                    if occ_for_stats is not None else None)
 
+    # Per-strategy occlusion stats computed from NPZ arrays
+    def _occ_stats(arr: np.ndarray) -> dict:
+        abs_arr = np.abs(arr)
+        ch_sum = abs_arr.sum(axis=(1, 2, 3))
+        total = float(ch_sum.sum())
+        return {
+            "ch_fraction": (ch_sum / total).tolist() if total > 0 else [0.0, 0.0, 0.0],
+            "ch_mean": abs_arr.mean(axis=(1, 2, 3)).tolist(),
+        }
+
+    occ_stats_by_strategy: dict = {}
+    if not _is_sentinel(occlusion) and occlusion.ndim == 4:
+        occ_stats_by_strategy["zero"] = _occ_stats(occlusion)
+    if occ_merged is not None:
+        occ_stats_by_strategy["zone_median"] = _occ_stats(occ_merged)
+    if "occlusion_tz_masked_0" in panels and not _is_sentinel(occ_tz) and occ_tz.ndim == 4 \
+            and not _is_sentinel(occ_pz) and occ_pz.ndim == 4 \
+            and not _is_sentinel(zones_for_occlusion) and zones_for_occlusion.ndim == 3:
+        occ_avg = (occ_tz + occ_pz) / 2.0
+        _tz_m = occ_avg.copy(); _tz_m[:, zones_for_occlusion == 2] = occ_tz[:, zones_for_occlusion == 2]
+        _pz_m = occ_avg.copy(); _pz_m[:, zones_for_occlusion == 1] = occ_pz[:, zones_for_occlusion == 1]
+        occ_stats_by_strategy["tz_masked"] = _occ_stats(_tz_m)
+        occ_stats_by_strategy["pz_masked"] = _occ_stats(_pz_m)
+
     # Detect which occlusion strategies are available for this case
     occlusion_strategies = []
     if not _is_sentinel(occlusion) and occlusion.ndim == 4:
@@ -493,17 +536,23 @@ def _build_case_payload(model: str, case_id: str) -> dict:
             return {**stat, "ch_mean": ch_mean}
         return {"ch_mean": ch_mean}
 
+    # Merge NPZ-computed per-strategy stats over the progress.json base
+    merged_occ_by_strat = {**record.get("occlusion_by_strategy", {})}
+    for _strat, _npz_stats in occ_stats_by_strategy.items():
+        merged_occ_by_strat[_strat] = {**merged_occ_by_strat.get(_strat, {}), **_npz_stats}
+
     stats = {
-        "input_ablation":      inp_abl.tolist() if (not _is_sentinel(inp_abl) and inp_abl.shape == (3,)) else None,
-        "saliency":            _enrich(record.get("saliency"), sal_ch_mean),
-        "occlusion":           _enrich(record.get("occlusion"), occ_ch_mean),
-        "pz_voxels":           record.get("pz_voxels"),
-        "tz_voxels":           record.get("tz_voxels"),
-        "pred_pz_voxels":      record.get("pred_pz_voxels"),
-        "pred_tz_voxels":      record.get("pred_tz_voxels"),
-        "confidence":          record.get("confidence"),
-        "pred_max_prob":       record.get("pred_max_prob"),
-        "ablation_ch_fraction": record.get("ablation_ch_fraction"),
+        "input_ablation":        inp_abl.tolist() if (not _is_sentinel(inp_abl) and inp_abl.shape == (3,)) else None,
+        "saliency":              _enrich(record.get("saliency"), sal_ch_mean),
+        "occlusion":             _enrich(record.get("occlusion"), occ_ch_mean),
+        "occlusion_by_strategy": merged_occ_by_strat,
+        "pz_voxels":             record.get("pz_voxels"),
+        "tz_voxels":             record.get("tz_voxels"),
+        "pred_pz_voxels":        record.get("pred_pz_voxels"),
+        "pred_tz_voxels":        record.get("pred_tz_voxels"),
+        "confidence":            record.get("confidence"),
+        "pred_max_prob":         record.get("pred_max_prob"),
+        "ablation_ch_fraction":  record.get("ablation_ch_fraction"),
     }
 
     return {"n_slices": n_slices, "panels": panels, "stats": stats, "record": record,

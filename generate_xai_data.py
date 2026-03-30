@@ -789,6 +789,29 @@ def _compute_zone_baseline_patches(
             anchors_w = ww[valid2].ravel()
 
         if len(anchors_d) == 0:
+            # Depth retry: iterate depth windows from most zone-dense to least,
+            # using a looser criterion (zone exists anywhere in the window at its
+            # H,W center position, rather than requiring zone at the 3-D center).
+            zone_all = (zones == z_val)
+            d_range = max(1, D - dW + 1)
+            depth_scores = np.array([int(zone_all[d:d + dW].sum()) for d in range(d_range)])
+            for d_try in np.argsort(depth_scores)[::-1]:
+                if depth_scores[d_try] == 0:
+                    break
+                zone_hw = zone_all[d_try:d_try + dW].any(axis=0)  # (H, W)
+                hh3, ww3 = np.meshgrid(
+                    np.arange(H - hW + 1), np.arange(W - wW + 1), indexing="ij"
+                )
+                valid3 = zone_hw[hh3 + hW // 2, ww3 + wW // 2]
+                if valid3.any():
+                    anchors_d = np.full(int(valid3.sum()), d_try, dtype=np.intp)
+                    anchors_h = hh3[valid3].ravel()
+                    anchors_w = ww3[valid3].ravel()
+                    print(f"    [zone_median] zone={z_val}: depth retry at d={d_try} "
+                          f"({depth_scores[d_try]} zone voxels), {len(anchors_d)} anchors")
+                    break
+
+        if len(anchors_d) == 0:
             results.append(np.zeros((3, dW, hW, wW), dtype=np.float32))
             continue
 
@@ -940,8 +963,10 @@ def _build_progress_record(
     lbl_crop: Optional[np.ndarray],
     zones_crop: Optional[np.ndarray],
     sal_np: Optional[np.ndarray],
-    occ_np: Optional[np.ndarray],
+    occ_np: Optional[np.ndarray] = None,
     abl_np: Optional[np.ndarray] = None,
+    occ_tz_np: Optional[np.ndarray] = None,
+    occ_pz_np: Optional[np.ndarray] = None,
     pred_crop: Optional[np.ndarray] = None,
     pred_cancer_voxels: int = 0,
     pred_max_prob: float = 0.0,
@@ -990,6 +1015,25 @@ def _build_progress_record(
     if occ_np is not None and occ_np.ndim == 4:
         occ_frac = _channel_stats(np.abs(occ_np))["ch_fraction"]
 
+    # Per-strategy occlusion stats (fraction + mean)
+    occ_zero_stats = None
+    if occ_np is not None and occ_np.ndim == 4:
+        s = _channel_stats(np.abs(occ_np))
+        occ_zero_stats = {"ch_fraction": s["ch_fraction"], "ch_mean": s["ch_mean"]}
+
+    occ_zm_stats = None
+    if (occ_tz_np is not None and occ_tz_np.ndim == 4
+            and occ_pz_np is not None and occ_pz_np.ndim == 4
+            and zones_crop is not None and zones_crop.ndim == 3):
+        _merged = np.zeros_like(occ_tz_np)
+        _merged[:, zones_crop == 2] = occ_tz_np[:, zones_crop == 2]
+        _merged[:, zones_crop == 1] = occ_pz_np[:, zones_crop == 1]
+        s = _channel_stats(np.abs(_merged))
+        occ_zm_stats = {"ch_fraction": s["ch_fraction"], "ch_mean": s["ch_mean"]}
+
+    # Use first available strategy for the legacy occlusion_ch_fraction field
+    occ_frac = (occ_zero_stats or occ_zm_stats or {}).get("ch_fraction", occ_frac)
+
     # AblationCAM produces a single-channel spatial map (1, D, H, W);
     # there is no per-input-channel breakdown, so we store None.
     abl_frac = None  # reserved for future per-channel ablation variants
@@ -1010,9 +1054,13 @@ def _build_progress_record(
         "tz_voxels":               pca_tz if has_pca else None,
         "pred_pz_voxels":          pred_pz if predicted_pos else None,
         "pred_tz_voxels":          pred_tz if predicted_pos else None,
-        "saliency_ch_fraction":    sal_frac,
-        "occlusion_ch_fraction":   occ_frac,
-        "ablation_ch_fraction":    abl_frac,
+        "saliency_ch_fraction":        sal_frac,
+        "occlusion_ch_fraction":       occ_frac,
+        "ablation_ch_fraction":        abl_frac,
+        "occlusion_zero_ch_fraction":  occ_zero_stats["ch_fraction"] if occ_zero_stats else None,
+        "occlusion_zero_ch_mean":      occ_zero_stats["ch_mean"]     if occ_zero_stats else None,
+        "occlusion_zm_ch_fraction":    occ_zm_stats["ch_fraction"]   if occ_zm_stats else None,
+        "occlusion_zm_ch_mean":        occ_zm_stats["ch_mean"]       if occ_zm_stats else None,
     }
 
 
@@ -1211,6 +1259,7 @@ def process_fold_monai(
 
             # ---- XAI: only when predicted positive -------------------------
             sal_np = occ_np = occ_tz_np = occ_pz_np = occ_ch_np = abl_np = inp_abl = None
+            zone_median_baseline_np = None
 
             if predicted_pos:
                 forward_func = _make_forward_func_sigmoid(network, fixed_mask.as_tensor())
@@ -1238,6 +1287,17 @@ def process_fold_monai(
                             image_crop, zones_crop, cancer_mask_dhw, occ_win_dhw, n_zone_patches
                         )
                         print(f"    [zone_median] TZ patch sum={tz_patch.sum():.3f}  PZ patch sum={pz_patch.sum():.3f}")
+                        # Build combined baseline image (DHW) by tiling patches over zones_crop
+                        _D, _H, _W = zones_crop.shape
+                        _rD = -(-_D // tz_patch.shape[1])
+                        _rH = -(-_H // tz_patch.shape[2])
+                        _rW = -(-_W // tz_patch.shape[3])
+                        _ttz = np.tile(tz_patch, (1, _rD, _rH, _rW))[:, :_D, :_H, :_W]
+                        _tpz = np.tile(pz_patch, (1, _rD, _rH, _rW))[:, :_D, :_H, :_W]
+                        zone_median_baseline_np = np.zeros((3, _D, _H, _W), dtype=np.float32)
+                        zone_median_baseline_np[:, zones_crop == 2] = _ttz[:, zones_crop == 2]
+                        zone_median_baseline_np[:, zones_crop == 1] = _tpz[:, zones_crop == 1]
+                        del _ttz, _tpz
                         # Reconstruct full-D zone map for baseline (prostate region at [d0:d1])
                         H_full, W_full, D_full = x.shape[2], x.shape[3], x.shape[4]
                         zones_full_Dhw = np.zeros((D_full, H_full, W_full), dtype=np.int8)
@@ -1388,6 +1448,7 @@ def process_fold_monai(
                     prediction     = pred_crop.transpose(0, 1, 3, 2).astype(np.float32),
                     label          = _sentinel(lbl_crop.transpose(0, 1, 3, 2)).astype(np.float32) if lbl_crop is not None else _sentinel(None),
                     zones          = zones_crop.transpose(0, 2, 1).astype(np.int8) if zones_crop is not None else _sentinel(None),
+                    zone_median_baseline = _sentinel(_sw(zone_median_baseline_np, 4)).astype(np.float32) if zone_median_baseline_np is not None else _sentinel(None),
                     channels           = np.array(CHANNEL_NAMES),
                     case_id            = case_id,
                     fold               = fold,
@@ -1399,9 +1460,10 @@ def process_fold_monai(
                 del forward_func
 
             # ---- Record progress ------------------------------------------
-            occ_for_progress = occ_np if occ_np is not None else occ_tz_np
             progress[case_id] = _build_progress_record(
-                predicted_pos, lbl_crop, zones_crop, sal_np, occ_for_progress, abl_np,
+                predicted_pos, lbl_crop, zones_crop, sal_np,
+                occ_np=occ_np, abl_np=abl_np,
+                occ_tz_np=occ_tz_np, occ_pz_np=occ_pz_np,
                 pred_crop=pred_crop,
                 pred_cancer_voxels=cancer_voxels, pred_max_prob=pred_max_prob,
                 confidence=pred_max_prob,  # MONAI uses sigmoid — identical to pred_max_prob
@@ -1580,6 +1642,7 @@ def process_fold_nnunet(
 
             # ---- XAI: only when predicted positive ------------------------
             sal_np = occ_np = occ_tz_np = occ_pz_np = occ_ch_np = abl_np = inp_abl = None
+            zone_median_baseline_np = None
 
             if predicted_pos:
                 if occ_crop_hw is not None:
@@ -1631,6 +1694,18 @@ def process_fold_nnunet(
                             n_zone_patches,
                         )
                         print(f"    [zone_median] TZ patch sum={tz_patch.sum():.3f}  PZ patch sum={pz_patch.sum():.3f}")
+                        # Build combined baseline image (DHW) by tiling patches over zones_crop
+                        if zones_crop is not None:
+                            _D, _H, _W = zones_crop.shape
+                            _rD = -(-_D // tz_patch.shape[1])
+                            _rH = -(-_H // tz_patch.shape[2])
+                            _rW = -(-_W // tz_patch.shape[3])
+                            _ttz = np.tile(tz_patch, (1, _rD, _rH, _rW))[:, :_D, :_H, :_W]
+                            _tpz = np.tile(pz_patch, (1, _rD, _rH, _rW))[:, :_D, :_H, :_W]
+                            zone_median_baseline_np = np.zeros((3, _D, _H, _W), dtype=np.float32)
+                            zone_median_baseline_np[:, zones_crop == 2] = _ttz[:, zones_crop == 2]
+                            zone_median_baseline_np[:, zones_crop == 1] = _tpz[:, zones_crop == 1]
+                            del _ttz, _tpz
                         zero_patch = np.zeros_like(tz_patch)
                         occ_baseline_tz = _build_baseline_tensor(
                             zones_xcrop_padded, tz_patch, zero_patch, x_crop.shape, "dhw", device
@@ -1756,6 +1831,7 @@ def process_fold_nnunet(
                     prediction     = pred_crop.astype(np.float32),
                     label          = lbl_crop.astype(np.float32) if lbl_crop is not None else _sentinel(None),
                     zones          = zones_crop.astype(np.int8) if zones_crop is not None else _sentinel(None),
+                    zone_median_baseline = _sentinel(zone_median_baseline_np).astype(np.float32) if zone_median_baseline_np is not None else _sentinel(None),
                     channels           = np.array(CHANNEL_NAMES),
                     case_id            = case_id,
                     fold               = fold,
@@ -1766,9 +1842,10 @@ def process_fold_nnunet(
                 processed += 1
 
             # ---- Record progress ------------------------------------------
-            occ_for_progress = occ_np if occ_np is not None else occ_tz_np
             progress[case_id] = _build_progress_record(
-                predicted_pos, lbl_crop, zones_crop, sal_np, occ_for_progress, abl_np,
+                predicted_pos, lbl_crop, zones_crop, sal_np,
+                occ_np=occ_np, abl_np=abl_np,
+                occ_tz_np=occ_tz_np, occ_pz_np=occ_pz_np,
                 pred_crop=pred_crop,
                 pred_cancer_voxels=cancer_voxels, pred_max_prob=pred_max_prob,
                 confidence=confidence,

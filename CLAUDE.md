@@ -6,7 +6,7 @@ XAI attribution pipeline for prostate cancer detection on PI-CAI, with a Flask v
 
 | Model | Script | Activation | Output layout |
 |-------|--------|------------|---------------|
-| nnUNet | `process_fold_nnunet` | **Softmax baked into `forward()`** — `out[:, 1]` is already a probability, never apply softmax again | `(B, 2, D, H, W)` |
+| nnUNet | `process_fold_nnunet` | **Softmax applied manually** — `torch.softmax(out, dim=1)[:, 1]` (model returns raw logits) | `(B, 2, D, H, W)` |
 | U-MambaMTL | `process_fold_monai` | Sigmoid — `torch.sigmoid(out[:, 1])` | `(B, C, H, W, D)` |
 | SwinUNETR | `process_fold_monai` | Sigmoid — `torch.sigmoid(out[:, 1])` | `(B, C, H, W, D)` |
 

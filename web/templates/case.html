@@ -144,10 +144,19 @@
         <button class="btn btn-sm btn-outline-secondary active" id="cmp-tog-zones" onclick="toggleCmpCol('zones',this)">Zones</button>
         <button class="btn btn-sm btn-outline-secondary active" id="cmp-tog-pred"  onclick="toggleCmpCol('pred',this)">Pred</button>
         <button class="btn btn-sm btn-outline-secondary active" id="cmp-tog-label" onclick="toggleCmpCol('label',this)">Label</button>
+        <div id="cmp-pred-model-wrap" class="d-flex align-items-center gap-2">
+          <span class="vr mx-1"></span>
+          <label class="fw-semibold small text-nowrap" for="cmp-pred-model-select">Pred from:</label>
+          <select class="form-select form-select-sm" id="cmp-pred-model-select" style="width:auto"></select>
+        </div>
         <span class="vr mx-2"></span>
         <label class="fw-semibold small text-nowrap">Slice</label>
         <input type="range" id="cmp-slice-slider" class="form-range" style="width:120px" min="0" value="0" step="1">
         <span id="cmp-slice-label" class="text-muted text-nowrap small fw-semibold" style="min-width:60px">— / —</span>
+        <span class="vr mx-1"></span>
+        <span class="fw-semibold small text-nowrap">MONAI offset:</span>
+        <input type="range" id="cmp-monai-offset" class="form-range" style="width:80px" min="-5" max="5" value="0" step="1">
+        <span id="cmp-monai-offset-label" class="text-muted text-nowrap small fw-semibold" style="min-width:20px">0</span>
         <span class="vr mx-1"></span>
         <span class="fw-semibold small text-nowrap">α:</span>
         <input type="range" id="cmp-overlay-alpha" class="form-range" style="width:90px"
@@ -157,6 +166,11 @@
         <div class="form-check form-switch mb-0 d-flex align-items-center gap-2">
           <input class="form-check-input" type="checkbox" id="cmp-contour-toggle" role="switch">
           <label class="form-check-label small fw-semibold text-nowrap" for="cmp-contour-toggle">Zone contours</label>
+        </div>
+        <div id="cmp-occ-strategy-wrap" class="d-none d-flex align-items-center gap-2">
+          <span class="vr mx-1"></span>
+          <label class="fw-semibold small text-nowrap" for="cmp-occ-strategy-select">Strategy:</label>
+          <select class="form-select form-select-sm" id="cmp-occ-strategy-select" style="width:auto"></select>
         </div>
       </div>
     </div>
@@ -350,6 +364,8 @@ let cmpShowContours  = false;
 let cmpCachedContours = {};   // model → { sliceIdx: ImageData }
 let cmpColVisible    = { zones: true, pred: true, label: true };
 let refModel         = null;
+let cmpPredModel     = null;  // which model's prediction is shown in the Pred column
+let monaiSliceOffset = 0;     // slice offset applied to MONAI models in compare mode
 
 // Offscreen scratch canvas
 const _tmpCanvas = document.createElement("canvas");
@@ -394,7 +410,7 @@ function getContourFor(sl, imgCache, contourCache) {
 }
 
 // ── Composite helpers ─────────────────────────────────────────────────────────
-function compositeOnCanvas(canvas, bgImgEl, overlayImgEl, alpha, showContours, imgCache, contourCache, sl) {
+function compositeOnCanvas(canvas, bgImgEl, overlayImgEl, alpha, showContours, imgCache, contourCache, sl, rotateContour = false) {
   const ctx = canvas.getContext("2d");
   ctx.clearRect(0, 0, 200, 200);
   ctx.fillStyle = "#000"; ctx.fillRect(0, 0, 200, 200);
@@ -409,7 +425,20 @@ function compositeOnCanvas(canvas, bgImgEl, overlayImgEl, alpha, showContours, i
   }
   if (showContours) {
     const cd = getContourFor(sl, imgCache, contourCache);
-    if (cd) { _tmpCtx.clearRect(0,0,200,200); _tmpCtx.putImageData(cd,0,0); ctx.globalAlpha=1.0; ctx.drawImage(_tmpCanvas,0,0,200,200); }
+    if (cd) {
+      _tmpCtx.clearRect(0, 0, 200, 200);
+      _tmpCtx.putImageData(cd, 0, 0);
+      ctx.save();
+      ctx.globalAlpha = 1.0;
+      if (rotateContour) {
+        ctx.translate(100, 100);
+        ctx.rotate(-Math.PI / 2);
+        ctx.drawImage(_tmpCanvas, -100, -100, 200, 200);
+      } else {
+        ctx.drawImage(_tmpCanvas, 0, 0, 200, 200);
+      }
+      ctx.restore();
+    }
   }
 }
 
@@ -421,7 +450,7 @@ function compositeCell(row, col, sl) {
   if (!canvas) return;
   const overlayImg = (panels[overlayKey] && cachedImages[overlayKey]?.[sl]) ? cachedImages[overlayKey][sl] : null;
   const showC = showZoneContours && col.key !== "original" && col.key !== "zones";
-  compositeOnCanvas(canvas, cachedImages[row.key]?.[sl], overlayImg, currentAlpha, showC, cachedImages, cachedContours, sl);
+  compositeOnCanvas(canvas, cachedImages[row.key]?.[sl], overlayImg, currentAlpha, showC, cachedImages, cachedContours, sl, ROTATE_MODELS.has(activeModel));
 }
 
 function recompositeAll() {
@@ -495,7 +524,11 @@ function buildGrid(availablePanels) {
 
 // ── Compare Mode compositing ──────────────────────────────────────────────────
 function getCmpOccKey(m, rowIdx) {
-  const mp = modelDataCache[m]?.panels;
+  const mp   = modelDataCache[m]?.panels;
+  const strat = document.getElementById("cmp-occ-strategy-select")?.value;
+  if (strat === "zone_median")  { const k = `occlusion_zm_${rowIdx}`;          if (mp && k in mp) return k; }
+  if (strat === "tz_masked")    { const k = `occlusion_tz_masked_${rowIdx}`;   if (mp && k in mp) return k; }
+  if (strat === "pz_masked")    { const k = `occlusion_pz_masked_${rowIdx}`;   if (mp && k in mp) return k; }
   if (mp && `occlusion_${rowIdx}` in mp) return `occlusion_${rowIdx}`;
   if (mp && `occlusion_zm_${rowIdx}` in mp) return `occlusion_zm_${rowIdx}`;
   return `occlusion_${rowIdx}`;
@@ -511,19 +544,20 @@ function cmpCompositeCell(m, row, sl, method) {
     : `saliency_${row.idx}`;
   const contourCache = cmpCachedContours[m] ?? (cmpCachedContours[m] = {});
   compositeOnCanvas(canvas, mImgs[row.key]?.[sl], mImgs[overlayKey]?.[sl] ?? null,
-    cmpCurrentAlpha, cmpShowContours, mImgs, contourCache, sl);
+    cmpCurrentAlpha, cmpShowContours, mImgs, contourCache, sl, ROTATE_MODELS.has(m));
 }
 
 function cmpCompositeShared(colKey, row, sl) {
   const canvas = document.getElementById(`cmp-shared-${colKey}-${row.key}`);
   if (!canvas || !refModel) return;
-  const refImgs = cmpCachedImages[refModel];
-  if (!refImgs) return;
+  const srcModel = colKey === 'pred' ? (cmpPredModel ?? refModel) : refModel;
+  const srcImgs = cmpCachedImages[srcModel];
+  if (!srcImgs) return;
   const overlayKey = colKey === 'zones' ? 'zones' : colKey === 'pred' ? 'prediction' : 'label';
   const showC = cmpShowContours && colKey !== 'zones';
-  const contourCache = cmpCachedContours[refModel] ?? (cmpCachedContours[refModel] = {});
-  compositeOnCanvas(canvas, refImgs[row.key]?.[sl], refImgs[overlayKey]?.[sl] ?? null,
-    cmpCurrentAlpha, showC, refImgs, contourCache, sl);
+  const contourCache = cmpCachedContours[srcModel] ?? (cmpCachedContours[srcModel] = {});
+  compositeOnCanvas(canvas, srcImgs[row.key]?.[sl], srcImgs[overlayKey]?.[sl] ?? null,
+    cmpCurrentAlpha, showC, srcImgs, contourCache, sl, ROTATE_MODELS.has(srcModel));
 }
 
 function getCmpSlice() {
@@ -537,9 +571,14 @@ function recompositeCmpAll() {
       const origImg = document.getElementById(`cmp-orig-${row.key}`);
       if (origImg) origImg.src = cmpCachedImages[refModel][row.key][sl].src;
     }
-    for (const ck of ['zones','pred','label']) cmpCompositeShared(ck, row, sl);
+    for (const ck of ['zones','pred','label']) {
+      const ckSrcModel = ck === 'pred' ? (cmpPredModel ?? refModel) : refModel;
+      const ckSl = ROTATE_MODELS.has(ckSrcModel) ? Math.max(0, Math.min(nSlices - 1, sl + monaiSliceOffset)) : sl;
+      cmpCompositeShared(ck, row, ckSl);
+    }
     for (const m of ALL_MODELS) {
-      if (ALL_MODEL_RECORDS[m]?.predicted_positive) cmpCompositeCell(m, row, sl, compareMethod);
+      const mSl = ROTATE_MODELS.has(m) ? Math.max(0, Math.min(nSlices - 1, sl + monaiSliceOffset)) : sl;
+      if (ALL_MODEL_RECORDS[m]?.predicted_positive) cmpCompositeCell(m, row, mSl, compareMethod);
     }
   }
 }
@@ -588,11 +627,12 @@ function buildCompareGrid(method) {
     for (const ck of ['zones','pred','label']) {
       const wrapper = document.createElement("div"); wrapper.className = `cmp-shared-col-${ck}`;
       if (!cmpColVisible[ck]) wrapper.classList.add("col-hidden");
-      const refPanelKey = ck === 'zones' ? 'zones' : ck === 'pred' ? 'prediction' : 'label';
-      const refPanels = modelDataCache[refModel]?.panels;
-      if (refModel && refPanels && refPanelKey in refPanels) {
+      const sharedPanelKey = ck === 'zones' ? 'zones' : ck === 'pred' ? 'prediction' : 'label';
+      const sharedSrcModel = ck === 'pred' ? (cmpPredModel ?? refModel) : refModel;
+      const sharedPanels = modelDataCache[sharedSrcModel]?.panels;
+      if (sharedSrcModel && sharedPanels && sharedPanelKey in sharedPanels) {
         const box = document.createElement("div"); box.className = "panel-box";
-        if (refModel && ROTATE_MODELS.has(refModel)) box.classList.add("rotate-cell");
+        if (ROTATE_MODELS.has(sharedSrcModel)) box.classList.add("rotate-cell");
         const canvas = document.createElement("canvas");
         canvas.id = `cmp-shared-${ck}-${row.key}`; canvas.width = 200; canvas.height = 200;
         box.appendChild(canvas); wrapper.appendChild(box);
@@ -656,8 +696,14 @@ function buildCompareSidebar() {
       html += `<div class="small text-muted mb-1">Confidence: —</div>`;
     }
     if (hasPos && mData?.stats) {
-      const statKey = compareMethod === 'ablation' ? 'saliency' : compareMethod;
-      const fracs = mData.stats[statKey]?.ch_fraction;
+      const cmpOccStrat = document.getElementById("cmp-occ-strategy-select")?.value;
+      let fracs;
+      if (compareMethod === 'occlusion' && cmpOccStrat && mData.stats.occlusion_by_strategy?.[cmpOccStrat]) {
+        fracs = mData.stats.occlusion_by_strategy[cmpOccStrat].ch_fraction;
+      } else {
+        const statKey = compareMethod === 'ablation' ? 'saliency' : compareMethod;
+        fracs = mData.stats[statKey]?.ch_fraction;
+      }
       if (fracs) {
         const methodLabel = compareMethod === 'ablation' ? 'Saliency' : compareMethod.charAt(0).toUpperCase() + compareMethod.slice(1);
         html += `<div class="small text-muted mt-1 mb-1">${methodLabel} channels:</div>`;
@@ -804,6 +850,8 @@ async function switchMode(mode) {
     showSlice(parseInt(document.getElementById("slice-slider").value) || 0);
   } else {
     await fetchCompareData();
+    populateCmpPredDropdown();
+    populateCmpOccStrategyDropdown();
     buildCompareGrid(compareMethod);
     const sl = parseInt(document.getElementById("slice-slider").value) || 0;
     const cmpSlider = document.getElementById("cmp-slice-slider");
@@ -815,12 +863,48 @@ async function switchMode(mode) {
 }
 
 // ── Switch compare method ─────────────────────────────────────────────────────
+function populateCmpPredDropdown() {
+  const select = document.getElementById("cmp-pred-model-select");
+  const wrap   = document.getElementById("cmp-pred-model-wrap");
+  const positiveModels = ALL_MODELS.filter(m => ALL_MODEL_RECORDS[m]?.predicted_positive);
+  const prevVal = select.value;
+  select.innerHTML = "";
+  for (const m of positiveModels) {
+    const opt = document.createElement("option"); opt.value = m; opt.textContent = MODEL_LABELS[m];
+    select.appendChild(opt);
+  }
+  if (prevVal && positiveModels.includes(prevVal)) select.value = prevVal;
+  cmpPredModel = select.value || null;
+  wrap.classList.toggle("d-none", !cmpColVisible.pred || positiveModels.length <= 1);
+}
+
+function populateCmpOccStrategyDropdown() {
+  const occSelect = document.getElementById("cmp-occ-strategy-select");
+  const occWrap   = document.getElementById("cmp-occ-strategy-wrap");
+  // Collect strategies available across all loaded positive models
+  const stratSet = new Set();
+  for (const m of ALL_MODELS) {
+    const strats = modelDataCache[m]?.occlusion_strategies ?? [];
+    strats.forEach(s => stratSet.add(s));
+  }
+  const stratLabels = { zero: "Zero baseline", zone_median: "Zone median", tz_masked: "TZ masked", pz_masked: "PZ masked" };
+  const prevVal = occSelect.value;
+  occSelect.innerHTML = "";
+  for (const s of stratSet) {
+    const opt = document.createElement("option"); opt.value = s; opt.textContent = stratLabels[s] ?? s;
+    occSelect.appendChild(opt);
+  }
+  if (prevVal && stratSet.has(prevVal)) occSelect.value = prevVal;
+  occWrap.classList.toggle("d-none", compareMethod !== 'occlusion' || stratSet.size <= 1);
+}
+
 function switchCompareMethod(method) {
   compareMethod = method;
   for (const m of ['saliency','occlusion','ablation']) {
     const btn = document.getElementById(`btn-method-${m}`);
     if (btn) btn.className = m === method ? "btn btn-sm btn-primary" : "btn btn-sm btn-outline-secondary";
   }
+  populateCmpOccStrategyDropdown();
   buildCompareGrid(method);
   recompositeCmpAll();
   buildCompareSidebar();
@@ -836,6 +920,10 @@ function toggleCmpCol(colKey, btn) {
   const nCols = 1 + visibleShared + ALL_MODELS.length;
   document.getElementById("viewer-grid").style.gridTemplateColumns =
     `80px repeat(${nCols}, minmax(0, 1fr))`;
+  if (colKey === 'pred') {
+    const positiveModels = ALL_MODELS.filter(m => ALL_MODEL_RECORDS[m]?.predicted_positive);
+    document.getElementById("cmp-pred-model-wrap").classList.toggle("d-none", !cmpColVisible.pred || positiveModels.length <= 1);
+  }
 }
 
 // ── Fetch all positive-model data for compare mode ───────────────────────────
@@ -875,6 +963,20 @@ document.getElementById("cmp-contour-toggle").addEventListener("change", e => {
 document.getElementById("cmp-slice-slider").addEventListener("input", e => {
   const sl = parseInt(e.target.value);
   document.getElementById("cmp-slice-label").textContent = `${sl+1} / ${nSlices}`;
+  recompositeCmpAll();
+});
+document.getElementById("cmp-monai-offset").addEventListener("input", e => {
+  monaiSliceOffset = parseInt(e.target.value);
+  document.getElementById("cmp-monai-offset-label").textContent = monaiSliceOffset > 0 ? `+${monaiSliceOffset}` : `${monaiSliceOffset}`;
+  if (currentMode === 'compare') recompositeCmpAll();
+});
+document.getElementById("cmp-occ-strategy-select").addEventListener("change", () => {
+  recompositeCmpAll();
+  buildCompareSidebar();
+});
+document.getElementById("cmp-pred-model-select").addEventListener("change", e => {
+  cmpPredModel = e.target.value;
+  buildCompareGrid(compareMethod);
   recompositeCmpAll();
 });
 

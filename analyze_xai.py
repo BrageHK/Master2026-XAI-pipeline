@@ -37,13 +37,16 @@ METHODS       = ["saliency", "occlusion"]
 CHANNEL_NAMES = ["T2W", "ADC", "HBV"]
 CHANNEL_COLORS = ["#e74c3c", "#2ecc71", "#3498db"]
 
-# Filters for pie charts: (label, filter_fn)
-PIE_FILTERS = [
-    ("overall", lambda r: True),
-    ("tp",      lambda r: r.get("classification") == "tp"),
-    ("fp",      lambda r: r.get("classification") == "fp"),
-    ("pz",      lambda r: r.get("primary_zone") == "pz"),
-    ("tz",      lambda r: r.get("primary_zone") == "tz"),
+CLS_FILTERS = [
+    ("tp_fp", "FP + TP", lambda r: r.get("classification") in ("tp", "fp")),
+    ("tp",    "TP",      lambda r: r.get("classification") == "tp"),
+    ("fp",    "FP",      lambda r: r.get("classification") == "fp"),
+]
+
+ZONE_FILTERS = [
+    ("all", "All zones", lambda r: True),
+    ("pz",  "PZ",        lambda r: r.get("primary_zone") == "pz"),
+    ("tz",  "TZ",        lambda r: r.get("primary_zone") == "tz"),
 ]
 
 
@@ -216,6 +219,42 @@ def plot_zone_distribution_chart(dist: Dict[str, Dict[str, int]], out_path: Path
     print(f"  Saved: {out_path}")
 
 
+def plot_channel_distribution(subset: List[dict], method: str, title: str, out_path: Path) -> None:
+    """Box plots of channel attribution fractions (T2W / ADC / HBV) for a given subset."""
+    frac_key = f"{method}_ch_fraction"
+    data = [r for r in subset if r.get(frac_key)]
+    n = len(data)
+
+    fig, ax = plt.subplots(figsize=(5, 5))
+    for ch_idx, (ch_name, color) in enumerate(zip(CHANNEL_NAMES, CHANNEL_COLORS)):
+        values = [r[frac_key][ch_idx] for r in data]
+        ax.boxplot(
+            values,
+            positions=[ch_idx],
+            widths=0.5,
+            patch_artist=True,
+            manage_ticks=False,
+            boxprops=dict(facecolor=color, alpha=0.7),
+            medianprops=dict(color="black", linewidth=2),
+            whiskerprops=dict(color="#555"),
+            capprops=dict(color="#555"),
+            flierprops=dict(marker=".", color=color, alpha=0.4, markersize=4),
+        )
+
+    ax.set_xticks(range(len(CHANNEL_NAMES)))
+    ax.set_xticklabels(CHANNEL_NAMES, fontsize=11)
+    ax.set_ylabel("Attribution fraction")
+    ax.set_ylim(0, 1)
+    ax.set_title(f"{title}\n(n={n})", fontsize=11, fontweight="bold")
+    ax.grid(axis="y", alpha=0.3)
+
+    fig.tight_layout()
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    fig.savefig(out_path, dpi=150, bbox_inches="tight")
+    plt.close(fig)
+    print(f"  Saved: {out_path}")
+
+
 def plot_channel_pie(fracs: List[float], title: str, n: int, out_path: Path) -> None:
     fracs_arr = np.array(fracs)
     fracs_arr = np.clip(fracs_arr, 0, None)
@@ -271,15 +310,6 @@ def analyze_model(model_name: str, output_dir: Path) -> None:
     # ---- Zone distribution ------------------------------------------------
     dist = zone_distribution(records)
 
-    # ---- Channel fractions per filter per method --------------------------
-    ch_stats: Dict[str, Dict[str, Optional[List[float]]]] = {}
-    for method in METHODS:
-        frac_key = f"{method}_ch_fraction"
-        ch_stats[method] = {}
-        for filter_name, filter_fn in PIE_FILTERS:
-            subset = [r for r in records if filter_fn(r)]
-            ch_stats[method][filter_name] = mean_ch_fraction(subset, frac_key)
-
     # ---- summary.json -----------------------------------------------------
     summary = {
         "model":        model_name,
@@ -289,11 +319,6 @@ def analyze_model(model_name: str, output_dir: Path) -> None:
         **metrics,
         "zone_distribution": dist,
     }
-    for method in METHODS:
-        for filter_name, _ in PIE_FILTERS:
-            fracs = ch_stats[method].get(filter_name)
-            summary[f"{method}_ch_fraction_{filter_name}"] = fracs
-
     with open(out_dir / "summary.json", "w") as f:
         json.dump(summary, f, indent=2)
     print(f"  Saved: {out_dir / 'summary.json'}")
@@ -304,18 +329,18 @@ def analyze_model(model_name: str, output_dir: Path) -> None:
 
     for method in METHODS:
         frac_key = f"{method}_ch_fraction"
-        for filter_name, filter_fn in PIE_FILTERS:
-            subset = [r for r in records if filter_fn(r)]
-            fracs  = mean_ch_fraction(subset, frac_key)
-            if fracs is None:
-                continue
-            out_path = out_dir / "channel_activation" / method / filter_name / "pie.png"
-            plot_channel_pie(
-                fracs,
-                title=f"{model_name} — {method} — {filter_name}",
-                n=len(subset),
-                out_path=out_path,
-            )
+        for cls_key, cls_label, cls_fn in CLS_FILTERS:
+            for zone_key, zone_label, zone_fn in ZONE_FILTERS:
+                subset = [r for r in records if cls_fn(r) and zone_fn(r)]
+                title = f"{cls_label} / {zone_label}"
+                out_base = out_dir / "channel_activation" / method / cls_key / zone_key
+
+                plot_channel_distribution(subset, method, title, out_base / "distribution.png")
+
+                fracs = mean_ch_fraction(subset, frac_key)
+                if fracs is not None:
+                    plot_channel_pie(fracs, title=title, n=len(subset),
+                                     out_path=out_base / "pie.png")
 
 
 # ---------------------------------------------------------------------------

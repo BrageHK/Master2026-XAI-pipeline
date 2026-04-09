@@ -161,13 +161,14 @@ def _model_stats(model: str) -> dict:
     if path.exists():
         with open(path) as f:
             s = json.load(f)
+        def _r(v): return round(v, 3) if v is not None else 0.0
         return dict(
             tp=s["tp"], fp=s["fp"], fn=s["fn"], tn=s["tn"],
             total=s["total_cases"],
-            precision=round(s["precision"], 3),
-            sensitivity=round(s["sensitivity"], 3),
-            specificity=round(s.get("specificity", 0.0), 3),
-            f1=round(s["f1"], 3),
+            precision=_r(s["precision"]),
+            sensitivity=_r(s["sensitivity"]),
+            specificity=_r(s.get("specificity")),
+            f1=_r(s["f1"]),
             has_data=s["total_cases"] > 0,
         )
     # Fallback: compute from loaded records
@@ -189,14 +190,29 @@ def _model_stats(model: str) -> dict:
 def _available_charts(model: str) -> dict:
     """
     Returns a nested dict describing which chart PNGs are available.
-    Structure: {summary: [fname], saliency: {class: {zone: [fname]}}, occlusion: ..., ablation: ...}
+    Structure: {channel_activation: {method: [filter]}, saliency: {class: {zone: [fname]}}, occlusion: ..., ablation: ...}
     """
     base = METRICS_DIR / model
-    out: dict = {"summary": [], "saliency": {}, "occlusion": {}, "ablation": {}}
+    out: dict = {"channel_activation": {}, "saliency": {}, "occlusion": {}, "ablation": {}}
 
-    for fname in ("zone_distribution.png", "overall_channel_activation.png"):
-        if (base / "summary" / fname).exists():
-            out["summary"].append(fname)
+    # Channel activation charts from ANALYSIS_DIR — 3x3 grid (cls x zone)
+    ca_base   = ANALYSIS_DIR / model / "channel_activation"
+    cls_keys  = ("tp_fp", "tp", "fp")
+    zone_keys = ("all", "pz", "tz")
+    for method in ("saliency", "occlusion"):
+        method_dir = ca_base / method
+        if not method_dir.exists():
+            continue
+        grid: dict = {}
+        for cls_key in cls_keys:
+            for zone_key in zone_keys:
+                cell_dir = method_dir / cls_key / zone_key
+                pie  = (cell_dir / "pie.png").exists()
+                dist = (cell_dir / "distribution.png").exists()
+                if pie or dist:
+                    grid.setdefault(cls_key, {})[zone_key] = {"pie": pie, "distribution": dist}
+        if grid:
+            out["channel_activation"][method] = grid
 
     for method in ("saliency", "occlusion", "ablation"):
         method_dir = base / method
@@ -283,35 +299,25 @@ def _arr_to_b64(arr2d: np.ndarray, cmap: str, vmin: float, vmax: float,
     "how much signal is here" — background/zero pixels are fully transparent so
     the client can composite the overlay on top of the MRI without any black bleed.
     """
-    if transparent:
-        if is_zone:
-            # Discrete zone colormap; alpha = 255 for PZ/TZ, 0 for background
-            rgba = _ZONE_CMAP(_ZONE_NORM(arr2d))           # (H, W, 4) float64 [0,1]
-            rgba_arr = (rgba * 255).astype(np.uint8)
-            rgba_arr[:, :, 3] = ((arr2d > 0.5) * 255).astype(np.uint8)
-        else:
-            # Continuous colormap: alpha ∝ normalised value so near-zero → transparent
-            norm = np.clip((arr2d - vmin) / max(float(vmax - vmin), 1e-9), 0.0, 1.0)
-            rgba = plt.cm.get_cmap(cmap)(norm)             # (H, W, 4) float64 [0,1]
-            rgba_arr = (rgba * 255).astype(np.uint8)
-            rgba_arr[:, :, 3] = (norm * 255).astype(np.uint8)
-        img = Image.fromarray(rgba_arr, "RGBA").resize((200, 200), Image.LANCZOS)
-        buf = io.BytesIO()
-        img.save(buf, format="PNG")
-        buf.seek(0)
-        return "data:image/png;base64," + base64.b64encode(buf.read()).decode()
-
-    # Opaque render via matplotlib (used for MRI channels)
-    fig, ax = plt.subplots(figsize=(2, 2), dpi=100)
-    ax.axis("off")
-    fig.patch.set_facecolor("black")
+    arr2d = np.ascontiguousarray(arr2d)
     if is_zone:
-        ax.imshow(arr2d, cmap=_ZONE_CMAP, norm=_ZONE_NORM, interpolation="nearest")
+        rgba = _ZONE_CMAP(_ZONE_NORM(arr2d))
+        rgba_arr = (rgba * 255).astype(np.uint8)
+        if transparent:
+            rgba_arr[:, :, 3] = ((arr2d > 0.5) * 255).astype(np.uint8)
     else:
-        ax.imshow(arr2d, cmap=cmap, vmin=vmin, vmax=vmax, interpolation="nearest")
+        norm = np.clip((arr2d - vmin) / max(float(vmax - vmin), 1e-9), 0.0, 1.0)
+        rgba = matplotlib.colormaps.get_cmap(cmap)(norm)
+        rgba_arr = (rgba * 255).astype(np.uint8)
+        if transparent:
+            rgba_arr[:, :, 3] = (norm * 255).astype(np.uint8)
+    if transparent:
+        img = Image.fromarray(rgba_arr, "RGBA")
+    else:
+        img = Image.fromarray(rgba_arr[:, :, :3], "RGB")
+    img = img.resize((200, 200), Image.LANCZOS)
     buf = io.BytesIO()
-    plt.savefig(buf, format="png", bbox_inches="tight", pad_inches=0, facecolor="black")
-    plt.close(fig)
+    img.save(buf, format="PNG")
     buf.seek(0)
     return "data:image/png;base64," + base64.b64encode(buf.read()).decode()
 
@@ -320,31 +326,23 @@ def _arr_to_pil_frame(arr2d: np.ndarray, cmap: str, vmin: float, vmax: float,
                       is_zone: bool = False, transparent: bool = False,
                       bg_arr2d: np.ndarray = None, overlay_alpha: float = 0.6) -> Image.Image:
     """Render a (H, W) array as a PIL RGB Image (200×200 px) for GIF assembly."""
-    fig, ax = plt.subplots(figsize=(2, 2), dpi=100)
-    ax.axis("off")
-    fig.patch.set_facecolor("black")
+    arr2d = np.ascontiguousarray(arr2d)
     if is_zone:
-        ax.imshow(arr2d, cmap=_ZONE_CMAP, norm=_ZONE_NORM, interpolation="nearest")
+        rgba = _ZONE_CMAP(_ZONE_NORM(arr2d))
+        rgba_arr = (rgba * 255).astype(np.uint8)
     else:
-        ax.imshow(arr2d, cmap=cmap, vmin=vmin, vmax=vmax, interpolation="nearest")
-    buf = io.BytesIO()
-    plt.savefig(buf, format="png", bbox_inches="tight", pad_inches=0,
-                facecolor="black", transparent=False)
-    plt.close(fig)
-    buf.seek(0)
-    overlay_img = Image.open(buf).convert("RGBA")
+        norm = np.clip((arr2d - vmin) / max(float(vmax - vmin), 1e-9), 0.0, 1.0)
+        rgba = matplotlib.colormaps.get_cmap(cmap)(norm)
+        rgba_arr = (rgba * 255).astype(np.uint8)
+    overlay_img = Image.fromarray(rgba_arr, "RGBA").resize((200, 200), Image.LANCZOS)
 
     if transparent and bg_arr2d is not None:
-        fig2, ax2 = plt.subplots(figsize=(2, 2), dpi=100)
-        ax2.axis("off")
-        fig2.patch.set_facecolor("black")
+        bg_arr2d = np.ascontiguousarray(bg_arr2d)
         bv, bx = float(bg_arr2d.min()), float(bg_arr2d.max())
-        ax2.imshow(bg_arr2d, cmap="gray", vmin=bv, vmax=bx, interpolation="nearest")
-        buf2 = io.BytesIO()
-        plt.savefig(buf2, format="png", bbox_inches="tight", pad_inches=0, facecolor="black")
-        plt.close(fig2)
-        buf2.seek(0)
-        bg_img = Image.open(buf2).convert("RGBA")
+        bg_norm = np.clip((bg_arr2d - bv) / max(float(bx - bv), 1e-9), 0.0, 1.0)
+        bg_rgba = matplotlib.colormaps.get_cmap("gray")(bg_norm)
+        bg_rgb = (bg_rgba[:, :, :3] * 255).astype(np.uint8)
+        bg_img = Image.fromarray(bg_rgb, "RGB").resize((200, 200), Image.LANCZOS).convert("RGBA")
         r, g, b, a = overlay_img.split()
         overlay_img.putalpha(Image.fromarray((np.array(a) * overlay_alpha).astype(np.uint8)))
         composite = bg_img.copy()
@@ -381,9 +379,28 @@ def _build_case_payload(model: str, case_id: str) -> dict:
     inp_abl       = npz.get("input_ablation",      np.zeros((0,), dtype=np.float32))
     zm_baseline   = npz.get("zone_median_baseline", np.zeros((0,), dtype=np.float32))
 
+    # Apply 90° CCW (left) rotation for MONAI models (swin_unetr, umamba_mtl)
+    if model != "nnunet":
+        def _rot_spatial(arr):
+            if _is_sentinel(arr) or arr.ndim < 3:
+                return arr
+            return np.rot90(arr, k=1, axes=(arr.ndim - 2, arr.ndim - 1))
+        image       = _rot_spatial(image)
+        pred        = _rot_spatial(pred)
+        saliency    = _rot_spatial(saliency)
+        occlusion   = _rot_spatial(occlusion)
+        occ_tz      = _rot_spatial(occ_tz)
+        occ_pz      = _rot_spatial(occ_pz)
+        ablation    = _rot_spatial(ablation)
+        zones_npz   = _rot_spatial(zones_npz)
+        label       = _rot_spatial(label)
+        zm_baseline = _rot_spatial(zm_baseline)
+
     # Zone display priority: umamba predictions > NPZ zones > error
     zones_error_msg: str | None = None
     zones_pred = _load_zones_pred(case_id, fold_found)
+    if model != "nnunet" and zones_pred is not None and zones_pred.ndim == 3:
+        zones_pred = np.rot90(zones_pred, k=1, axes=(1, 2))
     if zones_pred is not None and zones_pred.ndim == 3:
         zones = zones_pred    # (D_crop, W, H) orientation-corrected
     elif not _is_sentinel(zones_npz) and zones_npz.ndim == 3:
@@ -849,6 +866,17 @@ def api_gif_table(model: str, case_id: str):
                    loop=0, duration=duration_ms, optimize=False)
     out.seek(0)
     return send_file(out, mimetype="image/gif", download_name=f"{case_id}_table.gif")
+
+
+@app.route("/api/analysis/<model>/<path:relpath>")
+def api_analysis_chart(model: str, relpath: str):
+    """Serve a pre-generated analysis PNG chart from ANALYSIS_DIR."""
+    if model not in MODELS:
+        abort(404)
+    path = ANALYSIS_DIR / model / relpath
+    if not path.exists() or path.suffix != ".png":
+        abort(404)
+    return send_file(path, mimetype="image/png")
 
 
 @app.route("/api/chart/<model>/<path:relpath>")

@@ -97,7 +97,7 @@ sys.path.insert(0, str(UMAMBA_ROOT))
 # Metrics/charts constants
 # ---------------------------------------------------------------------------
 METHODS       = ["saliency", "occlusion"]
-CLASS_FILTERS = ["tp", "fn", "both"]
+CLASS_FILTERS = ["tp", "fp", "both"]
 ZONE_FILTERS  = ["pz", "tz", "pz_dominated", "combined"]
 
 CHANNEL_COLORS = ["#e74c3c", "#2ecc71", "#3498db"]
@@ -110,8 +110,8 @@ ZONE_LABELS = {
 }
 CLASS_LABELS = {
     "tp":   "True Positives",
-    "fn":   "False Negatives",
-    "both": "TP + FN",
+    "fp":   "False Positives",
+    "both": "TP + FP",
 }
 
 
@@ -710,12 +710,12 @@ def _make_forward_func_sigmoid(network: torch.nn.Module, fixed_mask: torch.Tenso
 
 
 def _make_forward_func_softmax(network: torch.nn.Module, fixed_mask: torch.Tensor):
-    """For nnUNet — channel 1 is already softmaxed by the network's final_nonlin."""
+    """For nnUNet — apply softmax over channels then take channel 1 as cancer probability."""
     def _forward(inp: torch.Tensor) -> torch.Tensor:
         out = network(inp)
         if isinstance(out, (list, tuple)):
             out = out[0]
-        cancer_prob = out[:, 1]
+        cancer_prob = torch.softmax(out, dim=1)[:, 1]
         return (cancer_prob * fixed_mask).flatten(1).sum(dim=1)
     return _forward
 
@@ -1585,7 +1585,7 @@ def process_fold_nnunet(
                 out = network(x)
                 if isinstance(out, (list, tuple)):
                     out = out[0]
-                cancer_prob   = out[:, 1]  # (1, D_pad, H_pad, W_pad) — already softmaxed by network
+                cancer_prob   = torch.softmax(out, dim=1)[:, 1]  # (1, D_pad, H_pad, W_pad)
                 fixed_mask    = (cancer_prob > 0.5)
                 cancer_voxels = int(fixed_mask.sum().item())
                 pred_max_prob = float(cancer_prob.max().item())
@@ -2058,10 +2058,10 @@ def compute_metrics(xai_dir: Path, model_name: str, metrics_dir: Path) -> List[d
 def filter_samples(records: list, method: str, class_filter: str, zone_filter: str) -> list:
     if class_filter == "tp":
         filtered = [r for r in records if r["classification"] == "tp"]
-    elif class_filter == "fn":
-        filtered = [r for r in records if r["classification"] == "fn"]
+    elif class_filter == "fp":
+        filtered = [r for r in records if r["classification"] == "fp"]
     else:
-        filtered = [r for r in records if r["classification"] in ("tp", "fn")]
+        filtered = [r for r in records if r["classification"] in ("tp", "fp")]
 
     if zone_filter == "pz":
         filtered = [r for r in filtered if r.get("primary_zone") == "pz"]
@@ -2280,13 +2280,10 @@ def generate_charts(records: list, model_name: str, metrics_dir: Path) -> None:
                 plot_channel_pie(subset, method,
                                  f"{title_base}\nChannel Attribution Share",
                                  out_dir / "pie.png")
-                plot_detection_bar(records, zone_filter,
-                                   f"{title_base}\nDetection Rate by Zone",
-                                   out_dir / "detection.png")
                 plot_distribution(subset, method,
                                   f"{title_base}\nChannel Attribution Distribution",
                                   out_dir / "distribution.png")
-                n_charts += 3
+                n_charts += 2
 
     print(f"  Generated {n_charts} combination charts → {model_dir}")
 

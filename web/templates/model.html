@@ -4,11 +4,27 @@
 {% block head %}
 <link rel="stylesheet" href="https://cdn.datatables.net/1.13.8/css/dataTables.bootstrap5.min.css">
 <style>
-  .chart-img { border-radius: .5rem; box-shadow: 0 1px 4px rgba(0,0,0,.1); }
-  #tab-summary .chart-img { height: 480px; width: 100%; object-fit: contain; background: #f8fafc; }
-  .chart-label { font-size: .95rem; font-weight: 600; color: #334155; text-align: center; margin-bottom: .4rem; }
   tr.clickable-row { cursor: pointer; }
+  #caseTable thead th { border-right: 2px solid #c8d0da; }
+  #caseTable thead th:last-child { border-right: none; }
   tr.clickable-row:hover { background: #f0f9ff; }
+
+  /* Two 3×3 grids side by side */
+  .ca-pair {
+    display: flex;
+    gap: 16px;
+    align-items: start;
+    margin-bottom: 2rem;
+  }
+  .ca-panel { flex: 1 1 0; min-width: 0; }
+  .ca-grid {
+    display: grid;
+    grid-template-columns: 50px repeat(3, 1fr);
+    gap: 3px;
+  }
+  .ca-cell { min-width: 0; }
+  .ca-header { background: #f1f5f9; border-radius: 4px; padding: 3px 2px; font-size: .75rem; }
+  .ca-row-label { background: #f1f5f9; border-radius: 4px; padding: 3px 2px; text-align: center; font-size: .75rem; }
 </style>
 {% endblock %}
 
@@ -26,105 +42,8 @@
   {% endif %}
 </div>
 
-{# ── Chart tabs ───────────────────────────────────────────────────────────── #}
-<ul class="nav nav-tabs mb-3" id="chartTabs" role="tablist">
-  <li class="nav-item"><a class="nav-link active" data-bs-toggle="tab" href="#tab-summary">Summary</a></li>
-  <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tab-saliency">Saliency</a></li>
-  <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tab-occlusion">Occlusion</a></li>
-  <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tab-ablation">AblationCAM</a></li>
-</ul>
-
-<div class="tab-content mb-5">
-
-  {# Summary tab #}
-  <div class="tab-pane fade show active" id="tab-summary">
-    <div class="row g-3">
-      <div class="col-lg-4 col-md-6">
-        <div class="chart-label">Confusion Matrix</div>
-        <img src="/api/confusion_matrix/{{ model }}" class="img-fluid chart-img" alt="Confusion matrix">
-      </div>
-      {% for fname in charts.summary %}
-      <div class="col-lg-4 col-md-6">
-        <div class="chart-label">{{ fname | replace('.png','') | replace('_',' ') | title }}</div>
-        <img src="/api/chart/{{ model }}/summary/{{ fname }}" class="img-fluid chart-img w-100" alt="{{ fname }}">
-      </div>
-      {% endfor %}
-    </div>
-  </div>
-
-  {# Saliency tab #}
-  <div class="tab-pane fade" id="tab-saliency">
-    {% if charts.saliency %}
-      {% for cls, zones in charts.saliency.items() %}
-      <h6 class="fw-semibold text-uppercase text-muted mt-3 mb-2">{{ cls | replace('_',' ') | title }}</h6>
-      {% for zone, fnames in zones.items() %}
-      <p class="text-muted small mb-1">{{ zone }}</p>
-      <div class="row g-2 mb-3">
-        {% for fname in fnames %}
-        <div class="col-lg-3 col-md-4 col-6">
-          <img src="/api/chart/{{ model }}/saliency/{{ cls }}/{{ zone }}/{{ fname }}"
-               class="img-fluid chart-img w-100" alt="{{ fname }}">
-          <div class="chart-label">{{ fname | replace('.png','') | title }}</div>
-        </div>
-        {% endfor %}
-      </div>
-      {% endfor %}
-      {% endfor %}
-    {% else %}
-    <p class="text-muted">No saliency charts available yet.</p>
-    {% endif %}
-  </div>
-
-  {# Occlusion tab #}
-  <div class="tab-pane fade" id="tab-occlusion">
-    {% if charts.occlusion %}
-      {% for cls, zones in charts.occlusion.items() %}
-      <h6 class="fw-semibold text-uppercase text-muted mt-3 mb-2">{{ cls | replace('_',' ') | title }}</h6>
-      {% for zone, fnames in zones.items() %}
-      <p class="text-muted small mb-1">{{ zone }}</p>
-      <div class="row g-2 mb-3">
-        {% for fname in fnames %}
-        <div class="col-lg-3 col-md-4 col-6">
-          <img src="/api/chart/{{ model }}/occlusion/{{ cls }}/{{ zone }}/{{ fname }}"
-               class="img-fluid chart-img w-100" alt="{{ fname }}">
-          <div class="chart-label">{{ fname | replace('.png','') | title }}</div>
-        </div>
-        {% endfor %}
-      </div>
-      {% endfor %}
-      {% endfor %}
-    {% else %}
-    <p class="text-muted">No occlusion charts available yet.</p>
-    {% endif %}
-  </div>
-
-  {# AblationCAM tab #}
-  <div class="tab-pane fade" id="tab-ablation">
-    {% if charts.ablation %}
-      {% for cls, zones in charts.ablation.items() %}
-      <h6 class="fw-semibold text-uppercase text-muted mt-3 mb-2">{{ cls | replace('_',' ') | title }}</h6>
-      {% for zone, fnames in zones.items() %}
-      <p class="text-muted small mb-1">{{ zone }}</p>
-      <div class="row g-2 mb-3">
-        {% for fname in fnames %}
-        <div class="col-lg-3 col-md-4 col-6">
-          <img src="/api/chart/{{ model }}/ablation/{{ cls }}/{{ zone }}/{{ fname }}"
-               class="img-fluid chart-img w-100" alt="{{ fname }}">
-          <div class="chart-label">{{ fname | replace('.png','') | title }}</div>
-        </div>
-        {% endfor %}
-      </div>
-      {% endfor %}
-      {% endfor %}
-    {% else %}
-    <p class="text-muted">No AblationCAM charts available yet.</p>
-    {% endif %}
-  </div>
-
-</div>{# /tab-content #}
-
 {# ── Case table ───────────────────────────────────────────────────────────── #}
-<div class="card shadow-sm">
+<div class="card shadow-sm mb-5">
   <div class="card-header bg-white d-flex align-items-center gap-3">
     <span class="fw-semibold">Cases</span>
     <div class="ms-auto d-flex gap-2 flex-wrap align-items-center">
@@ -214,7 +133,7 @@
               {% elif r.pred_tz_voxels is not none and r.pred_tz_voxels > 0 %}<span class="badge badge-tz text-white rounded-pill px-2">TZ</span>
               {% else %}<span class="text-muted">—</span>{% endif %}
             </td>
-            <td>
+            <td data-order="{{ r.confidence if r.confidence is not none else -1 }}">
               {% if r.confidence is defined and r.confidence is not none %}
                 <span class="badge rounded-pill px-2
                   {% if r.confidence >= 0.8 %}bg-danger
@@ -224,11 +143,11 @@
                 </span>
               {% else %}—{% endif %}
             </td>
-            <td>{{ r.pz_voxels if r.pz_voxels is not none else '—' }}</td>
-            <td>{{ r.tz_voxels if r.tz_voxels is not none else '—' }}</td>
-            <td>{{ r.pred_pz_voxels if r.pred_pz_voxels is not none else '—' }}</td>
-            <td>{{ r.pred_tz_voxels if r.pred_tz_voxels is not none else '—' }}</td>
-            <td>{{ r.pred_cancer_voxels if r.pred_cancer_voxels is not none else '—' }}</td>
+            <td data-order="{{ r.pz_voxels if r.pz_voxels is not none else -1 }}">{{ r.pz_voxels if r.pz_voxels is not none else '—' }}</td>
+            <td data-order="{{ r.tz_voxels if r.tz_voxels is not none else -1 }}">{{ r.tz_voxels if r.tz_voxels is not none else '—' }}</td>
+            <td data-order="{{ r.pred_pz_voxels if r.pred_pz_voxels is not none else -1 }}">{{ r.pred_pz_voxels if r.pred_pz_voxels is not none else '—' }}</td>
+            <td data-order="{{ r.pred_tz_voxels if r.pred_tz_voxels is not none else -1 }}">{{ r.pred_tz_voxels if r.pred_tz_voxels is not none else '—' }}</td>
+            <td data-order="{{ r.pred_cancer_voxels if r.pred_cancer_voxels is not none else -1 }}">{{ r.pred_cancer_voxels if r.pred_cancer_voxels is not none else '—' }}</td>
             <td>
               {% if r.saliency %}
                 {{ ['T2W','ADC','HBV'][r.saliency.dominant_ch] }}
@@ -249,6 +168,54 @@
     {% endif %}
   </div>
 </div>
+
+{# ── Channel activation charts ─────────────────────────────────────────────
+    Layout: one section per method (saliency / occlusion), each showing two
+    3×3 grids (distribution box plots + mean pies).
+    Rows = classification filter (FP+TP / TP / FP)
+    Cols = zone filter          (All zones / PZ / TZ)
+#}
+{% set cls_keys   = [("tp_fp","FP + TP"), ("tp","TP"), ("fp","FP")] %}
+{% set zone_keys  = [("all","All zones"), ("pz","PZ"), ("tz","TZ")] %}
+{% set chart_types = [("distribution","Distribution (box plots)"), ("pie","Mean attribution (pie)")] %}
+
+{% for method, grid in charts.channel_activation.items() %}
+<h5 class="fw-semibold mt-5 mb-3 border-bottom pb-2">
+  {{ method | title }} — Channel Activation
+</h5>
+
+<div class="ca-pair">
+  {% for chart_type, chart_label in chart_types %}
+  <div class="ca-panel">
+    <h6 class="text-muted fw-semibold mb-2">{{ chart_label }}</h6>
+    <div class="ca-grid">
+      {# Header row #}
+      <div class="ca-cell ca-header"></div>
+      {% for zone_key, zone_label in zone_keys %}
+      <div class="ca-cell ca-header text-center fw-semibold">{{ zone_label }}</div>
+      {% endfor %}
+      {# Data rows #}
+      {% for cls_key, cls_label in cls_keys %}
+      <div class="ca-cell ca-row-label fw-semibold d-flex align-items-center justify-content-center">
+        {{ cls_label }}
+      </div>
+      {% for zone_key, zone_label in zone_keys %}
+      <div class="ca-cell">
+        {% set cell = grid.get(cls_key, {}).get(zone_key, {}) %}
+        {% if cell.get(chart_type) %}
+        <img src="/api/analysis/{{ model }}/channel_activation/{{ method }}/{{ cls_key }}/{{ zone_key }}/{{ chart_type }}.png"
+             class="img-fluid w-100" alt="{{ method }} {{ cls_key }} {{ zone_key }} {{ chart_type }}">
+        {% else %}
+        <div class="text-muted small text-center p-3">—</div>
+        {% endif %}
+      </div>
+      {% endfor %}
+      {% endfor %}
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% endfor %}
 
 {% endblock %}
 

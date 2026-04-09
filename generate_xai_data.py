@@ -374,9 +374,10 @@ def _zones_from_monai_batch(
     if "zones" not in batch:
         return None
     z = batch["zones"][0].cpu().numpy()  # (3, H, W, D)
-    pz = z[1]; tz = z[2]                # each (H, W, D)
-    zones_hwD = (pz > 0.5).astype(np.int8) + 2 * (tz > 0.5).astype(np.int8)
-    zones_Dhw = zones_hwD.transpose(2, 0, 1)  # (D, H, W)
+    # argmax over channels: 0=bg, 1=PZ, 2=TZ — avoids boundary voxels being
+    # lost to background when one-hot values are interpolated below 0.5.
+    zones_hwD = np.argmax(z, axis=0).astype(np.int8)  # (H, W, D)
+    zones_Dhw = zones_hwD.transpose(2, 0, 1)          # (D, H, W)
     return zones_Dhw[d0:d1]
 
 
@@ -467,7 +468,7 @@ def _gt_depth_crop(batch: dict, D: int) -> Tuple[int, int]:
     """Compute depth crop [d0, d1] from GT zones in a MONAI batch (existing behaviour)."""
     if "zones" in batch:
         z = batch["zones"][0].cpu().numpy()   # (3, H, W, D)
-        zone_mask = (z[1] + z[2]) > 0.5       # (H, W, D)
+        zone_mask = np.argmax(z, axis=0) > 0  # (H, W, D) — True where any zone
         if zone_mask.any():
             coords = np.argwhere(zone_mask)    # (N, 3): (h, w, d)
             d_min  = int(coords[:, 2].min())

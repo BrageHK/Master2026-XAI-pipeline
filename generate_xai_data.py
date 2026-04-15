@@ -680,44 +680,43 @@ def _zones_from_umamba_npz(
 # Captum forward wrappers
 # ===========================================================================
 
-def _make_forward_func_sigmoid(network: torch.nn.Module, fixed_mask: torch.Tensor):
-    """For MONAI models — sigmoid on logit channel 1, sum over masked voxels → (B,).
+def _make_forward_func_sigmoid(network: torch.nn.Module, fixed_mask: torch.Tensor,
+                               aggregation: str = "sum"):
+    """For MONAI models — raw logit channel 1 aggregated over masked voxels → (B,).
 
-    Strips MetaTensor from both fixed_mask (once, at construction) and model output
-    (on each call) to prevent MetaTensor metadata accumulation across occlusion steps.
+    aggregation: one of 'sum', 'mean', 'abs_sum', 'abs_avg'.
+    Uses raw logits (before sigmoid) so abs variants are meaningful.
     """
-    # Convert once so the closure holds a plain tensor, not a MetaTensor
-    #if hasattr(fixed_mask, "as_tensor"):
-        #fixed_mask = fixed_mask.as_tensor()
-
-    def _forward(inp: torch.Tensor) -> torch.Tensor:
-        out = network(inp)
-        #if isinstance(out, (list, tuple)):
-            #out = out[0]
-        #if hasattr(out, "as_tensor"):
-            #out = out.as_tensor()
-        cancer_prob = torch.sigmoid(out[:, 1])
-        return (cancer_prob * fixed_mask).flatten(1).sum(dim=1)
-
     def agg_segmentation_wrapper(inp):
         out = network(inp)[:, 0:2, ...]  # (B, 2, H, W, D)
         if isinstance(out, (list, tuple)):
             out = out[0]
         if hasattr(out, "as_tensor"):
             out = out.as_tensor()
-        aggregated_logits = (out[:, 1, ...] * fixed_mask).sum(dim=(1, 2, 3))  # (B,)
-        return aggregated_logits
-    return  agg_segmentation_wrapper # _forward
+        flat = (out[:, 1, ...] * fixed_mask).flatten(1)  # (B, N)
+        if aggregation == "mean":    return flat.mean(dim=1)
+        if aggregation == "abs_sum": return flat.abs().sum(dim=1)
+        if aggregation == "abs_avg": return flat.abs().mean(dim=1)
+        return flat.sum(dim=1)  # default: sum
+    return agg_segmentation_wrapper
 
 
-def _make_forward_func_softmax(network: torch.nn.Module, fixed_mask: torch.Tensor):
-    """For nnUNet — apply softmax over channels then take channel 1 as cancer probability."""
+def _make_forward_func_softmax(network: torch.nn.Module, fixed_mask: torch.Tensor,
+                               aggregation: str = "sum"):
+    """For nnUNet — softmax channel 1 aggregated over masked voxels → (B,).
+
+    aggregation: one of 'sum', 'mean', 'abs_sum', 'abs_avg'.
+    """
     def _forward(inp: torch.Tensor) -> torch.Tensor:
         out = network(inp)
         if isinstance(out, (list, tuple)):
             out = out[0]
         cancer_prob = torch.softmax(out, dim=1)[:, 1]
-        return (cancer_prob * fixed_mask).flatten(1).sum(dim=1)
+        flat = (cancer_prob * fixed_mask).flatten(1)
+        if aggregation == "mean":    return flat.mean(dim=1)
+        if aggregation == "abs_sum": return flat.abs().sum(dim=1)
+        if aggregation == "abs_avg": return flat.abs().mean(dim=1)
+        return flat.sum(dim=1)  # default: sum
     return _forward
 
 
@@ -727,6 +726,24 @@ def _make_forward_func_softmax(network: torch.nn.Module, fixed_mask: torch.Tenso
 
 def _sentinel(arr: Optional[np.ndarray]) -> np.ndarray:
     return arr if arr is not None else np.zeros((0,), dtype=np.float32)
+
+
+# Suffix appended to NPZ field names for each aggregation method.
+# 'sum' uses no suffix (backward-compatible with existing files).
+_AGG_FIELD_SUFFIX: dict = {
+    "sum":     "",
+    "mean":    "_mean",
+    "abs_sum": "_abs_sum",
+    "abs_avg": "_abs_avg",
+}
+
+
+def _load_npz_fields(path: Path) -> dict:
+    """Load all fields from an .npz file into a plain dict. Returns {} if missing."""
+    if not path.exists():
+        return {}
+    raw = np.load(path, allow_pickle=True)
+    return {k: raw[k] for k in raw.files}
 
 
 def _compute_zone_baseline_patches(
@@ -1092,6 +1109,8 @@ def process_fold_monai(
     n_zone_patches: int = 10,
     zone_source: str = "umamba_pred",
     zones_only: bool = False,
+    aggregation: str = "sum",
+    max_cases: Optional[int] = None,
 ) -> None:
     from shared_modules.data_module import DataModule   # noqa: E402
     from shared_modules.utils import load_config        # noqa: E402
@@ -1137,11 +1156,23 @@ def process_fold_monai(
         case_id = fname.split("_0000")[0]
         out_file = fold_dir / f"{case_id}.npz"
 
-        if skip_existing and progress.get(case_id, {}).get("done"):
+        agg_sfx = _AGG_FIELD_SUFFIX[aggregation]
+        # For non-sum: require existing .npz (base sum data must exist first).
+        if aggregation != "sum":
+            if not out_file.exists():
+                print(f"  [{i + 1}/{len(dl)}] {case_id}: base .npz missing — skipping (run sum first)")
+                skipped += 1
+                continue
+            if skip_existing:
+                existing = _load_npz_fields(out_file)
+                if f"saliency{agg_sfx}" in existing or f"occlusion{agg_sfx}" in existing:
+                    skipped += 1
+                    continue
+        elif skip_existing and progress.get(case_id, {}).get("done"):
             skipped += 1
             continue
 
-        print(f"\n  [{i + 1}/{len(dl)}] {case_id}  shape={batch['image'].shape}")
+        print(f"\n  [{i + 1}/{len(dl)}] {case_id}  shape={batch['image'].shape}  agg={aggregation}")
 
         try:
             x = batch["image"].to(device)  # (1, 3, H, W, D)
@@ -1263,7 +1294,8 @@ def process_fold_monai(
             zone_median_baseline_np = None
 
             if predicted_pos:
-                forward_func = _make_forward_func_sigmoid(network, fixed_mask.as_tensor())
+                forward_func = _make_forward_func_sigmoid(network, fixed_mask.as_tensor(),
+                                                          aggregation=aggregation)
 
                 if run_saliency:
                     x_sal = x.detach().clone().requires_grad_(True)
@@ -1407,7 +1439,8 @@ def process_fold_monai(
 
                 if run_input_ablation:
                     print("    Running Input Ablation…")
-                    forward_func_abl = _make_forward_func_sigmoid(network, fixed_mask)
+                    forward_func_abl = _make_forward_func_sigmoid(network, fixed_mask,
+                                                                  aggregation=aggregation)
                     with torch.no_grad():
                         orig_score = forward_func_abl(x).item()
                     weights = []
@@ -1436,27 +1469,40 @@ def process_fold_monai(
                 return a.transpose(0, 1, 3, 2) if ndim == 4 else a.transpose(0, 2, 1)
 
             if predicted_pos:
-                np.savez_compressed(
-                    out_file,
-                    saliency       = _sentinel(_sw(sal_np, 4)).astype(np.float32) if sal_np is not None else _sentinel(None),
-                    occlusion              = _sentinel(_sw(occ_np, 4)).astype(np.float32) if occ_np is not None else _sentinel(None),
-                    occlusion_tz           = _sentinel(_sw(occ_tz_np, 4)).astype(np.float32) if occ_tz_np is not None else _sentinel(None),
-                    occlusion_pz           = _sentinel(_sw(occ_pz_np, 4)).astype(np.float32) if occ_pz_np is not None else _sentinel(None),
-                    occlusion_ch_baseline  = _sentinel(_sw(occ_ch_np, 4)).astype(np.float32) if occ_ch_np is not None else _sentinel(None),
-                    ablation       = _sentinel(_sw(abl_np, 4)).astype(np.float32) if abl_np is not None else _sentinel(None),
-                    input_ablation = _sentinel(inp_abl),
-                    image          = image_crop.transpose(0, 1, 3, 2).astype(np.float32),
-                    prediction     = pred_crop.transpose(0, 1, 3, 2).astype(np.float32),
-                    label          = _sentinel(lbl_crop.transpose(0, 1, 3, 2)).astype(np.float32) if lbl_crop is not None else _sentinel(None),
-                    zones          = zones_crop.transpose(0, 2, 1).astype(np.int8) if zones_crop is not None else _sentinel(None),
-                    zone_median_baseline = _sentinel(_sw(zone_median_baseline_np, 4)).astype(np.float32) if zone_median_baseline_np is not None else _sentinel(None),
-                    channels           = np.array(CHANNEL_NAMES),
-                    case_id            = case_id,
-                    fold               = fold,
-                    model              = model_name,
-                    occlusion_strategy = np.array(occ_strategy),
-                )
-                print(f"    Saved: {out_file}")
+                if aggregation == "sum":
+                    np.savez_compressed(
+                        out_file,
+                        saliency       = _sentinel(_sw(sal_np, 4)).astype(np.float32) if sal_np is not None else _sentinel(None),
+                        occlusion              = _sentinel(_sw(occ_np, 4)).astype(np.float32) if occ_np is not None else _sentinel(None),
+                        occlusion_tz           = _sentinel(_sw(occ_tz_np, 4)).astype(np.float32) if occ_tz_np is not None else _sentinel(None),
+                        occlusion_pz           = _sentinel(_sw(occ_pz_np, 4)).astype(np.float32) if occ_pz_np is not None else _sentinel(None),
+                        occlusion_ch_baseline  = _sentinel(_sw(occ_ch_np, 4)).astype(np.float32) if occ_ch_np is not None else _sentinel(None),
+                        ablation       = _sentinel(_sw(abl_np, 4)).astype(np.float32) if abl_np is not None else _sentinel(None),
+                        input_ablation = _sentinel(inp_abl),
+                        image          = image_crop.transpose(0, 1, 3, 2).astype(np.float32),
+                        prediction     = pred_crop.transpose(0, 1, 3, 2).astype(np.float32),
+                        label          = _sentinel(lbl_crop.transpose(0, 1, 3, 2)).astype(np.float32) if lbl_crop is not None else _sentinel(None),
+                        zones          = zones_crop.transpose(0, 2, 1).astype(np.int8) if zones_crop is not None else _sentinel(None),
+                        zone_median_baseline = _sentinel(_sw(zone_median_baseline_np, 4)).astype(np.float32) if zone_median_baseline_np is not None else _sentinel(None),
+                        channels           = np.array(CHANNEL_NAMES),
+                        case_id            = case_id,
+                        fold               = fold,
+                        model              = model_name,
+                        occlusion_strategy = np.array(occ_strategy),
+                    )
+                else:
+                    # Non-sum: append new fields to existing .npz (non-destructive)
+                    existing = _load_npz_fields(out_file)
+                    new_fields = {
+                        f"saliency{agg_sfx}":              _sentinel(_sw(sal_np, 4)).astype(np.float32) if sal_np is not None else _sentinel(None),
+                        f"occlusion{agg_sfx}":             _sentinel(_sw(occ_np, 4)).astype(np.float32) if occ_np is not None else _sentinel(None),
+                        f"occlusion_tz{agg_sfx}":          _sentinel(_sw(occ_tz_np, 4)).astype(np.float32) if occ_tz_np is not None else _sentinel(None),
+                        f"occlusion_pz{agg_sfx}":          _sentinel(_sw(occ_pz_np, 4)).astype(np.float32) if occ_pz_np is not None else _sentinel(None),
+                        f"occlusion_ch_baseline{agg_sfx}": _sentinel(_sw(occ_ch_np, 4)).astype(np.float32) if occ_ch_np is not None else _sentinel(None),
+                        f"ablation{agg_sfx}":              _sentinel(_sw(abl_np, 4)).astype(np.float32) if abl_np is not None else _sentinel(None),
+                    }
+                    np.savez_compressed(out_file, **{**existing, **new_fields})
+                print(f"    Saved: {out_file}  (agg={aggregation})")
                 processed += 1
                 del forward_func
 
@@ -1470,6 +1516,10 @@ def process_fold_monai(
                 confidence=pred_max_prob,  # MONAI uses sigmoid — identical to pred_max_prob
             )
             _save_progress(progress, progress_file)
+
+            if max_cases is not None and processed >= max_cases:
+                print(f"  Reached max_cases={max_cases} — stopping early.")
+                break
 
             # Free large tensors/arrays to prevent RAM accumulation across cases
             # forward_func must be deleted first — its closure holds fixed_mask
@@ -1523,6 +1573,8 @@ def process_fold_nnunet(
     occ_strategy: str = "zero",
     n_zone_patches: int = 10,
     zone_source: str = "umamba_pred",
+    aggregation: str = "sum",
+    max_cases: Optional[int] = None,
 ) -> None:
     fold_dir = output_dir / f"fold_{fold}"
     fold_dir.mkdir(parents=True, exist_ok=True)
@@ -1559,12 +1611,24 @@ def process_fold_nnunet(
 
     for i, case_id in enumerate(val_cases):
         out_file = fold_dir / f"{case_id}.npz"
+        agg_sfx = _AGG_FIELD_SUFFIX[aggregation]
 
-        if skip_existing and progress.get(case_id, {}).get("done"):
+        # For non-sum: require existing .npz (base sum data must exist first).
+        if aggregation != "sum":
+            if not out_file.exists():
+                print(f"  [{i + 1}/{len(val_cases)}] {case_id}: base .npz missing — skipping (run sum first)")
+                skipped += 1
+                continue
+            if skip_existing:
+                existing = _load_npz_fields(out_file)
+                if f"saliency{agg_sfx}" in existing or f"occlusion{agg_sfx}" in existing:
+                    skipped += 1
+                    continue
+        elif skip_existing and progress.get(case_id, {}).get("done"):
             skipped += 1
             continue
 
-        print(f"\n  [{i + 1}/{len(val_cases)}] {case_id}")
+        print(f"\n  [{i + 1}/{len(val_cases)}] {case_id}  agg={aggregation}")
 
         try:
             # ---- Preprocess -----------------------------------------------
@@ -1653,8 +1717,8 @@ def process_fold_nnunet(
                     fixed_mask_crop = fixed_mask
                     x_crop = x.detach().clone()
 
-                fwd_sal = _make_forward_func_softmax(network, fixed_mask)
-                fwd_occ = _make_forward_func_softmax(network, fixed_mask_crop)
+                fwd_sal = _make_forward_func_softmax(network, fixed_mask, aggregation=aggregation)
+                fwd_occ = _make_forward_func_softmax(network, fixed_mask_crop, aggregation=aggregation)
 
                 if run_saliency:
                     x_sal = x.detach().clone().requires_grad_(True)
@@ -1819,27 +1883,40 @@ def process_fold_nnunet(
 
             # ---- Save .npz only when model predicts positive ---------------
             if predicted_pos:
-                np.savez_compressed(
-                    out_file,
-                    saliency       = _sentinel(sal_np).astype(np.float32) if sal_np is not None else _sentinel(None),
-                    occlusion              = _sentinel(occ_np).astype(np.float32) if occ_np is not None else _sentinel(None),
-                    occlusion_tz           = _sentinel(occ_tz_np).astype(np.float32) if occ_tz_np is not None else _sentinel(None),
-                    occlusion_pz           = _sentinel(occ_pz_np).astype(np.float32) if occ_pz_np is not None else _sentinel(None),
-                    occlusion_ch_baseline  = _sentinel(occ_ch_np).astype(np.float32) if occ_ch_np is not None else _sentinel(None),
-                    ablation       = _sentinel(abl_np).astype(np.float32) if abl_np is not None else _sentinel(None),
-                    input_ablation = _sentinel(inp_abl),
-                    image          = image_crop.astype(np.float32),
-                    prediction     = pred_crop.astype(np.float32),
-                    label          = lbl_crop.astype(np.float32) if lbl_crop is not None else _sentinel(None),
-                    zones          = zones_crop.astype(np.int8) if zones_crop is not None else _sentinel(None),
-                    zone_median_baseline = _sentinel(zone_median_baseline_np).astype(np.float32) if zone_median_baseline_np is not None else _sentinel(None),
-                    channels           = np.array(CHANNEL_NAMES),
-                    case_id            = case_id,
-                    fold               = fold,
-                    model              = "nnunet",
-                    occlusion_strategy = np.array(occ_strategy),
-                )
-                print(f"    Saved: {out_file}")
+                if aggregation == "sum":
+                    np.savez_compressed(
+                        out_file,
+                        saliency       = _sentinel(sal_np).astype(np.float32) if sal_np is not None else _sentinel(None),
+                        occlusion              = _sentinel(occ_np).astype(np.float32) if occ_np is not None else _sentinel(None),
+                        occlusion_tz           = _sentinel(occ_tz_np).astype(np.float32) if occ_tz_np is not None else _sentinel(None),
+                        occlusion_pz           = _sentinel(occ_pz_np).astype(np.float32) if occ_pz_np is not None else _sentinel(None),
+                        occlusion_ch_baseline  = _sentinel(occ_ch_np).astype(np.float32) if occ_ch_np is not None else _sentinel(None),
+                        ablation       = _sentinel(abl_np).astype(np.float32) if abl_np is not None else _sentinel(None),
+                        input_ablation = _sentinel(inp_abl),
+                        image          = image_crop.astype(np.float32),
+                        prediction     = pred_crop.astype(np.float32),
+                        label          = lbl_crop.astype(np.float32) if lbl_crop is not None else _sentinel(None),
+                        zones          = zones_crop.astype(np.int8) if zones_crop is not None else _sentinel(None),
+                        zone_median_baseline = _sentinel(zone_median_baseline_np).astype(np.float32) if zone_median_baseline_np is not None else _sentinel(None),
+                        channels           = np.array(CHANNEL_NAMES),
+                        case_id            = case_id,
+                        fold               = fold,
+                        model              = "nnunet",
+                        occlusion_strategy = np.array(occ_strategy),
+                    )
+                else:
+                    # Non-sum: append new fields to existing .npz (non-destructive)
+                    existing = _load_npz_fields(out_file)
+                    new_fields = {
+                        f"saliency{agg_sfx}":              _sentinel(sal_np).astype(np.float32) if sal_np is not None else _sentinel(None),
+                        f"occlusion{agg_sfx}":             _sentinel(occ_np).astype(np.float32) if occ_np is not None else _sentinel(None),
+                        f"occlusion_tz{agg_sfx}":          _sentinel(occ_tz_np).astype(np.float32) if occ_tz_np is not None else _sentinel(None),
+                        f"occlusion_pz{agg_sfx}":          _sentinel(occ_pz_np).astype(np.float32) if occ_pz_np is not None else _sentinel(None),
+                        f"occlusion_ch_baseline{agg_sfx}": _sentinel(occ_ch_np).astype(np.float32) if occ_ch_np is not None else _sentinel(None),
+                        f"ablation{agg_sfx}":              _sentinel(abl_np).astype(np.float32) if abl_np is not None else _sentinel(None),
+                    }
+                    np.savez_compressed(out_file, **{**existing, **new_fields})
+                print(f"    Saved: {out_file}  (agg={aggregation})")
                 processed += 1
 
             # ---- Record progress ------------------------------------------
@@ -1852,6 +1929,11 @@ def process_fold_nnunet(
                 confidence=confidence,
             )
             _save_progress(progress, progress_file)
+
+            if max_cases is not None and processed >= max_cases:
+                print(f"  Reached max_cases={max_cases} — stopping early.")
+                del x, out, cancer_prob, fixed_mask
+                break
 
             # Free large tensors to prevent RAM accumulation across cases
             del x, out, cancer_prob, fixed_mask
@@ -1895,6 +1977,8 @@ def process_fold(
     occ_strategy: str = "zero",
     n_zone_patches: int = 10,
     zone_source: str = "umamba_pred",
+    aggregation: str = "sum",
+    max_cases: Optional[int] = None,
 ) -> None:
     model_output_dir = output_dir / model_name
     model_output_dir.mkdir(parents=True, exist_ok=True)
@@ -1907,14 +1991,15 @@ def process_fold(
             _ensure_umamba_zones(fold, device)
         process_fold_nnunet(
             fold, model_output_dir, methods, skip_existing, occ_window, occ_stride, ppe,
-            occ_crop_hw, device, occ_strategy, n_zone_patches, zone_source,
+            occ_crop_hw, device, occ_strategy, n_zone_patches, zone_source, aggregation, max_cases,
         )
     else:
         if model_name == "swin_unetr" and zone_source == "umamba_pred":
             _ensure_umamba_zones(fold, device)
         process_fold_monai(
             fold, model_name, model_output_dir, methods, skip_existing, occ_window, occ_stride, ppe,
-            device, occ_strategy, n_zone_patches, zone_source,
+            device, occ_strategy, n_zone_patches, zone_source, aggregation=aggregation,
+            max_cases=max_cases,
         )
 
 
@@ -2417,6 +2502,27 @@ def main() -> None:
             "'gt': use per-model ground-truth zone NIfTI files (original behaviour)."
         ),
     )
+    parser.add_argument(
+        "--max-cases",
+        type=int,
+        default=None,
+        metavar="N",
+        help="Stop each fold after N predicted-positive cases are saved. Useful for quick tests.",
+    )
+    parser.add_argument(
+        "--aggregation",
+        nargs="+",
+        default=["sum"],
+        choices=["sum", "mean", "abs_sum", "abs_avg"],
+        metavar="AGG",
+        help=(
+            "Forward-function aggregation method(s) for XAI gradient computation. "
+            "'sum' is the existing default (backward-compatible). "
+            "Non-sum methods append new fields (e.g. saliency_mean) to existing .npz files "
+            "without overwriting any data. Requires the base sum .npz to exist first. "
+            "Multiple values accepted: --aggregation sum mean abs_sum abs_avg"
+        ),
+    )
 
     args = parser.parse_args()
 
@@ -2452,9 +2558,12 @@ def main() -> None:
     output_dir  = Path(args.output_dir)
     metrics_dir = Path(args.metrics_dir)
 
+    aggregations: List[str] = list(dict.fromkeys(args.aggregation))  # deduplicate, preserve order
+
     print(f"Models:            {models}")
     print(f"Folds:             {folds}")
     print(f"Methods:           {', '.join(sorted(methods))}")
+    print(f"Aggregation(s):    {aggregations}")
     print(f"Output XAI dir:    {output_dir}")
     print(f"Output metrics:    {metrics_dir}")
     print(f"Occlusion window:  {occ_window}  stride: {occ_stride}")
@@ -2464,22 +2573,25 @@ def main() -> None:
 
     for model_name in models:
         if not args.compute_metrics_only:
-            for fold in folds:
-                process_fold(
-                    fold=fold,
-                    model_name=model_name,
-                    output_dir=output_dir,
-                    methods=methods,
-                    skip_existing=not args.no_skip,
-                    occ_window=occ_window,
-                    occ_stride=occ_stride,
-                    ppe=args.perturbations_per_eval,
-                    occ_crop_hw=occ_crop_hw,
-                    device=device,
-                    occ_strategy=args.occlusion_strategy,
-                    n_zone_patches=args.occlusion_zone_patches,
-                    zone_source=args.zone_source,
-                )
+            for agg in aggregations:
+                for fold in folds:
+                    process_fold(
+                        fold=fold,
+                        model_name=model_name,
+                        output_dir=output_dir,
+                        methods=methods,
+                        skip_existing=not args.no_skip,
+                        occ_window=occ_window,
+                        occ_stride=occ_stride,
+                        ppe=args.perturbations_per_eval,
+                        occ_crop_hw=occ_crop_hw,
+                        device=device,
+                        occ_strategy=args.occlusion_strategy,
+                        n_zone_patches=args.occlusion_zone_patches,
+                        zone_source=args.zone_source,
+                        aggregation=agg,
+                        max_cases=args.max_cases,
+                    )
 
         # Compute metrics and charts from saved .npz files
         records = compute_metrics(output_dir, model_name, metrics_dir)

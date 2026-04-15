@@ -275,6 +275,11 @@ def _is_sentinel(arr) -> bool:
     return arr is None or (isinstance(arr, np.ndarray) and arr.ndim == 1 and arr.size == 0)
 
 
+# Non-sum aggregation methods: (name, npz_field_suffix).
+# 'sum' uses no suffix (backward-compatible); rendered separately in the existing code path.
+_AGG_NON_SUM = [("mean", "_mean"), ("abs_sum", "_abs_sum"), ("abs_avg", "_abs_avg")]
+
+
 def _fix_zones(zones: np.ndarray, model: str) -> np.ndarray:
     """Swap zone labels 1↔2 for nnunet NPZ files that were saved with raw NIfTI
     encoding (1=TZ, 2=PZ) before the remapping fix in generate_xai_data.py."""
@@ -500,6 +505,77 @@ def _build_case_payload(model: str, case_id: str) -> dict:
         panels["zones"] = _render_all_slices(zones.astype(np.float32), "", 0, 2,
                                               is_zone=True, transparent=True)
 
+    # Render panels for non-sum aggregation methods (appended to existing .npz files).
+    # For MONAI models the same 90° CCW rotation must be applied.
+    def _rot_maybe(arr):
+        if model == "nnunet" or _is_sentinel(arr) or arr.ndim < 3:
+            return arr
+        return np.rot90(arr, k=1, axes=(arr.ndim - 2, arr.ndim - 1))
+
+    available_aggregations = []
+    # sum is available if any of its panels were already rendered
+    if any(f"saliency_{i}" in panels for i in range(3)) or "ablation" in panels or \
+            any(f"occlusion_{i}" in panels for i in range(3)):
+        available_aggregations.append("sum")
+
+    for agg_name, sfx in _AGG_NON_SUM:
+        sal_agg   = _rot_maybe(npz.get(f"saliency{sfx}",      np.zeros((0,), dtype=np.float32)))
+        occ_agg   = _rot_maybe(npz.get(f"occlusion{sfx}",     np.zeros((0,), dtype=np.float32)))
+        occ_tz_agg = _rot_maybe(npz.get(f"occlusion_tz{sfx}", np.zeros((0,), dtype=np.float32)))
+        occ_pz_agg = _rot_maybe(npz.get(f"occlusion_pz{sfx}", np.zeros((0,), dtype=np.float32)))
+        abl_agg   = _rot_maybe(npz.get(f"ablation{sfx}",      np.zeros((0,), dtype=np.float32)))
+
+        has_any = ((not _is_sentinel(sal_agg) and sal_agg.ndim == 4) or
+                   (not _is_sentinel(occ_agg) and occ_agg.ndim == 4) or
+                   (not _is_sentinel(abl_agg) and abl_agg.ndim == 4))
+        if not has_any:
+            continue
+        available_aggregations.append(agg_name)
+
+        if not _is_sentinel(sal_agg) and sal_agg.ndim == 4:
+            sal_abs = np.abs(sal_agg)
+            sal_vmax = float(np.percentile(sal_abs, 99)) or 1e-6
+            for i in range(3):
+                panels[f"saliency{sfx}_{i}"] = _render_all_slices(sal_abs[i], "turbo", 0.0, sal_vmax, transparent=True)
+
+        if not _is_sentinel(occ_agg) and occ_agg.ndim == 4:
+            occ_abs = np.abs(occ_agg)
+            occ_vmax = float(np.percentile(occ_abs, 99)) or 1e-6
+            for i in range(3):
+                panels[f"occlusion{sfx}_{i}"] = _render_all_slices(occ_abs[i], "turbo", 0.0, occ_vmax, transparent=True)
+
+        if (not _is_sentinel(occ_tz_agg) and occ_tz_agg.ndim == 4
+                and not _is_sentinel(occ_pz_agg) and occ_pz_agg.ndim == 4
+                and not _is_sentinel(zones_for_occlusion) and zones_for_occlusion.ndim == 3):
+            _occ_merged = np.zeros_like(occ_tz_agg)
+            _occ_merged[:, zones_for_occlusion == 2] = occ_tz_agg[:, zones_for_occlusion == 2]
+            _occ_merged[:, zones_for_occlusion == 1] = occ_pz_agg[:, zones_for_occlusion == 1]
+            _occ_merged_abs = np.abs(_occ_merged)
+            _zm_vmax = float(np.percentile(_occ_merged_abs, 99)) or 1e-6
+            for i in range(3):
+                panels[f"occlusion_zm{sfx}_{i}"] = _render_all_slices(_occ_merged_abs[i], "turbo", 0.0, _zm_vmax, transparent=True)
+
+            _occ_avg = (occ_tz_agg + occ_pz_agg) / 2.0
+
+            _tz_m = _occ_avg.copy()
+            _tz_m[:, zones_for_occlusion == 2] = occ_tz_agg[:, zones_for_occlusion == 2]
+            _tz_m_abs = np.abs(_tz_m)
+            _tz_vmax = float(np.percentile(_tz_m_abs, 99)) or 1e-6
+            for i in range(3):
+                panels[f"occlusion_tz_masked{sfx}_{i}"] = _render_all_slices(_tz_m_abs[i], "turbo", 0.0, _tz_vmax, transparent=True)
+
+            _pz_m = _occ_avg.copy()
+            _pz_m[:, zones_for_occlusion == 1] = occ_pz_agg[:, zones_for_occlusion == 1]
+            _pz_m_abs = np.abs(_pz_m)
+            _pz_vmax = float(np.percentile(_pz_m_abs, 99)) or 1e-6
+            for i in range(3):
+                panels[f"occlusion_pz_masked{sfx}_{i}"] = _render_all_slices(_pz_m_abs[i], "turbo", 0.0, _pz_vmax, transparent=True)
+
+        if not _is_sentinel(abl_agg) and abl_agg.ndim == 4:
+            abl_map = abl_agg[0]
+            v1 = float(np.percentile(abl_map, 99)) or 1e-6
+            panels[f"ablation{sfx}"] = _render_all_slices(abl_map, "turbo", 0.0, v1, transparent=True)
+
     # Compute per-channel means on-the-fly from NPZ (not stored in progress.json)
     sal_ch_mean = (np.abs(saliency).mean(axis=(1, 2, 3)).tolist()
                    if not _is_sentinel(saliency) and saliency.ndim == 4 else None)
@@ -573,7 +649,8 @@ def _build_case_payload(model: str, case_id: str) -> dict:
     }
 
     return {"n_slices": n_slices, "panels": panels, "stats": stats, "record": record,
-            "occlusion_strategies": occlusion_strategies, "zones_error_msg": zones_error_msg}
+            "occlusion_strategies": occlusion_strategies, "zones_error_msg": zones_error_msg,
+            "available_aggregations": available_aggregations}
 
 
 # ---------------------------------------------------------------------------

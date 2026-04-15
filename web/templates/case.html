@@ -48,6 +48,9 @@
     z-index: 9999; color: #e2e8f0;
   }
   #loading-overlay .spinner-border { width: 3rem; height: 3rem; }
+  #sidebar-col { transition: none; }
+  #sidebar-col.sidebar-hidden { display: none !important; }
+  #viewer-col.sidebar-hidden { flex: 0 0 100%; max-width: 100%; }
 </style>
 {% endblock %}
 
@@ -75,16 +78,19 @@
   {% endif %}
   <span class="text-muted small">Fold {{ fold }}</span>
   {% endif %}
-  <div class="ms-auto btn-group" role="group">
-    <button id="btn-mode-model"   class="btn btn-sm btn-primary"           onclick="switchMode('model')">Model Mode</button>
-    <button id="btn-mode-compare" class="btn btn-sm btn-outline-secondary" onclick="switchMode('compare')">Compare Mode</button>
+  <div class="ms-auto d-flex align-items-center gap-2">
+    <button id="btn-toggle-sidebar" class="btn btn-sm btn-outline-secondary" title="Toggle sidebar" onclick="toggleSidebar()">⊟ Panel</button>
+    <div class="btn-group" role="group">
+      <button id="btn-mode-model"   class="btn btn-sm btn-primary"           onclick="switchMode('model')">Model Mode</button>
+      <button id="btn-mode-compare" class="btn btn-sm btn-outline-secondary" onclick="switchMode('compare')">Compare Mode</button>
+    </div>
   </div>
 </div>
 
 <div class="row g-4">
 
   {# ── Viewer column ── #}
-  <div class="col-xl-9">
+  <div class="col-xl-9" id="viewer-col">
 
     {# Model Mode controls #}
     <div id="model-mode-controls">
@@ -112,12 +118,18 @@
           <option value="200">5 fps</option>
         </select>
         <button id="gif-btn" class="btn btn-sm btn-outline-primary" disabled>Export Table GIF</button>
+        <button id="screenshot-btn" class="btn btn-sm btn-outline-secondary" disabled onclick="screenshotTable()">Screenshot</button>
         <span class="vr mx-1"></span>
         <div id="occ-strategy-wrap" class="d-flex align-items-center gap-2 d-none">
           <span class="fw-semibold small text-nowrap">Occlusion:</span>
           <select id="occ-strategy-select" class="form-select form-select-sm" style="width:auto"></select>
         </div>
         <span class="vr mx-1"></span>
+        <div id="agg-selector-wrap" class="d-flex align-items-center gap-2 d-none">
+          <span class="fw-semibold small text-nowrap">Aggregation:</span>
+          <select id="agg-select" class="form-select form-select-sm" style="width:auto"></select>
+        </div>
+        <span class="vr mx-1" id="agg-vr" style="display:none"></span>
         <div class="form-check form-switch mb-0 d-flex align-items-center gap-2">
           <input class="form-check-input" type="checkbox" id="contour-toggle" role="switch">
           <label class="form-check-label small fw-semibold text-nowrap" for="contour-toggle">Zone contours</label>
@@ -144,6 +156,7 @@
         <button class="btn btn-sm btn-outline-secondary active" id="cmp-tog-zones" onclick="toggleCmpCol('zones',this)">Zones</button>
         <button class="btn btn-sm btn-outline-secondary active" id="cmp-tog-pred"  onclick="toggleCmpCol('pred',this)">Pred</button>
         <button class="btn btn-sm btn-outline-secondary active" id="cmp-tog-label" onclick="toggleCmpCol('label',this)">Label</button>
+        <button class="btn btn-sm btn-outline-secondary" id="cmp-tog-all-preds" onclick="toggleCmpAllPreds()" title="Show one prediction column per model">All Preds</button>
         <div id="cmp-pred-model-wrap" class="d-flex align-items-center gap-2">
           <span class="vr mx-1"></span>
           <label class="fw-semibold small text-nowrap" for="cmp-pred-model-select">Pred from:</label>
@@ -172,6 +185,8 @@
           <label class="fw-semibold small text-nowrap" for="cmp-occ-strategy-select">Strategy:</label>
           <select class="form-select form-select-sm" id="cmp-occ-strategy-select" style="width:auto"></select>
         </div>
+        <span class="vr mx-1"></span>
+        <button class="btn btn-sm btn-outline-secondary" onclick="screenshotTable()">Screenshot</button>
       </div>
     </div>
 
@@ -183,7 +198,7 @@
   </div>
 
   {# ── Sidebar ── #}
-  <div class="col-xl-3">
+  <div class="col-xl-3" id="sidebar-col">
 
     {# Model Mode sidebar #}
     <div id="model-sidebar">
@@ -307,6 +322,16 @@
 
 {% block scripts %}
 <script>
+// ── Sidebar toggle ────────────────────────────────────────────────────────────
+function toggleSidebar() {
+  const sidebar = document.getElementById('sidebar-col');
+  const viewer  = document.getElementById('viewer-col');
+  const btn     = document.getElementById('btn-toggle-sidebar');
+  const hidden  = sidebar.classList.toggle('sidebar-hidden');
+  viewer.classList.toggle('sidebar-hidden', hidden);
+  btn.textContent = hidden ? '⊞ Panel' : '⊟ Panel';
+}
+
 // ── Constants ─────────────────────────────────────────────────────────────────
 const MODEL   = "{{ model }}";
 const CASE_ID = "{{ case_id }}";
@@ -324,22 +349,38 @@ const ROWS = [
   { key: "hbv", label: "HBV", idx: 2 },
 ];
 
+// ── Aggregation state ─────────────────────────────────────────────────────────
+let currentAgg = "sum";
+
+function _aggSfx() {
+  return currentAgg === "sum" ? "" : `_${currentAgg}`;
+}
+
+function getSalPanelKey(row) {
+  return `saliency${_aggSfx()}_${row.idx}`;
+}
+
 function getOccPanelKey(row) {
+  const sfx = _aggSfx();
   const strat = document.getElementById("occ-strategy-select")?.value;
-  if (strat === "zone_median")  return `occlusion_zm_${row.idx}`;
-  if (strat === "tz_masked")    return `occlusion_tz_masked_${row.idx}`;
-  if (strat === "pz_masked")    return `occlusion_pz_masked_${row.idx}`;
-  return `occlusion_${row.idx}`;
+  if (strat === "zone_median")  return `occlusion_zm${sfx}_${row.idx}`;
+  if (strat === "tz_masked")    return `occlusion_tz_masked${sfx}_${row.idx}`;
+  if (strat === "pz_masked")    return `occlusion_pz_masked${sfx}_${row.idx}`;
+  return `occlusion${sfx}_${row.idx}`;
+}
+
+function getAblPanelKey() {
+  return `ablation${_aggSfx()}`;
 }
 
 const COLS = [
-  { key: "original",   label: "Original",   panelKey: null                        },
-  { key: "zones",      label: "Zones",       panelKey: () => "zones"               },
-  { key: "prediction", label: "Pred Mask",   panelKey: () => "prediction"          },
-  { key: "label",      label: "Label GT",    panelKey: () => "label"               },
-  { key: "saliency",   label: "Saliency",    panelKey: (r) => `saliency_${r.idx}`  },
-  { key: "occlusion",  label: "Occlusion",   panelKey: (r) => getOccPanelKey(r)    },
-  { key: "ablation",   label: "AblationCAM", panelKey: () => "ablation"            },
+  { key: "original",   label: "Original",   panelKey: null                          },
+  { key: "zones",      label: "Zones",       panelKey: () => "zones"                 },
+  { key: "prediction", label: "Pred Mask",   panelKey: () => "prediction"            },
+  { key: "label",      label: "Label GT",    panelKey: () => "label"                 },
+  { key: "saliency",   label: "Saliency",    panelKey: (r) => getSalPanelKey(r)      },
+  { key: "occlusion",  label: "Occlusion",   panelKey: (r) => getOccPanelKey(r)      },
+  { key: "ablation",   label: "AblationCAM", panelKey: () => getAblPanelKey()        },
 ];
 
 // ── State ─────────────────────────────────────────────────────────────────────
@@ -363,9 +404,11 @@ let cmpCurrentAlpha  = 0.6;
 let cmpShowContours  = false;
 let cmpCachedContours = {};   // model → { sliceIdx: ImageData }
 let cmpColVisible    = { zones: true, pred: true, label: true };
+let cmpColContourOffset = {};  // colKey → extra rotation degrees (added on top of ROTATE_MODELS base)
 let refModel         = null;
 let cmpPredModel     = null;  // which model's prediction is shown in the Pred column
 let monaiSliceOffset = 0;     // slice offset applied to MONAI models in compare mode
+let cmpAllPreds      = false; // show per-model prediction columns instead of single shared pred
 
 // Offscreen scratch canvas
 const _tmpCanvas = document.createElement("canvas");
@@ -410,7 +453,7 @@ function getContourFor(sl, imgCache, contourCache) {
 }
 
 // ── Composite helpers ─────────────────────────────────────────────────────────
-function compositeOnCanvas(canvas, bgImgEl, overlayImgEl, alpha, showContours, imgCache, contourCache, sl, rotateContour = false) {
+function compositeOnCanvas(canvas, bgImgEl, overlayImgEl, alpha, showContours, imgCache, contourCache, sl, contourRotationRad = 0) {
   const ctx = canvas.getContext("2d");
   ctx.clearRect(0, 0, 200, 200);
   ctx.fillStyle = "#000"; ctx.fillRect(0, 0, 200, 200);
@@ -430,9 +473,9 @@ function compositeOnCanvas(canvas, bgImgEl, overlayImgEl, alpha, showContours, i
       _tmpCtx.putImageData(cd, 0, 0);
       ctx.save();
       ctx.globalAlpha = 1.0;
-      if (rotateContour) {
+      if (contourRotationRad !== 0) {
         ctx.translate(100, 100);
-        ctx.rotate(-Math.PI / 2);
+        ctx.rotate(contourRotationRad);
         ctx.drawImage(_tmpCanvas, -100, -100, 200, 200);
       } else {
         ctx.drawImage(_tmpCanvas, 0, 0, 200, 200);
@@ -450,7 +493,7 @@ function compositeCell(row, col, sl) {
   if (!canvas) return;
   const overlayImg = (panels[overlayKey] && cachedImages[overlayKey]?.[sl]) ? cachedImages[overlayKey][sl] : null;
   const showC = showZoneContours && col.key !== "original" && col.key !== "zones";
-  compositeOnCanvas(canvas, cachedImages[row.key]?.[sl], overlayImg, currentAlpha, showC, cachedImages, cachedContours, sl, ROTATE_MODELS.has(activeModel));
+  compositeOnCanvas(canvas, cachedImages[row.key]?.[sl], overlayImg, currentAlpha, showC, cachedImages, cachedContours, sl, ROTATE_MODELS.has(activeModel) ? -Math.PI/2 : 0);
 }
 
 function recompositeAll() {
@@ -525,13 +568,14 @@ function buildGrid(availablePanels) {
 // ── Compare Mode compositing ──────────────────────────────────────────────────
 function getCmpOccKey(m, rowIdx) {
   const mp   = modelDataCache[m]?.panels;
+  const sfx  = _aggSfx();
   const strat = document.getElementById("cmp-occ-strategy-select")?.value;
-  if (strat === "zone_median")  { const k = `occlusion_zm_${rowIdx}`;          if (mp && k in mp) return k; }
-  if (strat === "tz_masked")    { const k = `occlusion_tz_masked_${rowIdx}`;   if (mp && k in mp) return k; }
-  if (strat === "pz_masked")    { const k = `occlusion_pz_masked_${rowIdx}`;   if (mp && k in mp) return k; }
-  if (mp && `occlusion_${rowIdx}` in mp) return `occlusion_${rowIdx}`;
-  if (mp && `occlusion_zm_${rowIdx}` in mp) return `occlusion_zm_${rowIdx}`;
-  return `occlusion_${rowIdx}`;
+  if (strat === "zone_median")  { const k = `occlusion_zm${sfx}_${rowIdx}`;          if (mp && k in mp) return k; }
+  if (strat === "tz_masked")    { const k = `occlusion_tz_masked${sfx}_${rowIdx}`;   if (mp && k in mp) return k; }
+  if (strat === "pz_masked")    { const k = `occlusion_pz_masked${sfx}_${rowIdx}`;   if (mp && k in mp) return k; }
+  if (mp && `occlusion${sfx}_${rowIdx}` in mp) return `occlusion${sfx}_${rowIdx}`;
+  if (mp && `occlusion_zm${sfx}_${rowIdx}` in mp) return `occlusion_zm${sfx}_${rowIdx}`;
+  return `occlusion${sfx}_${rowIdx}`;
 }
 
 function cmpCompositeCell(m, row, sl, method) {
@@ -539,12 +583,14 @@ function cmpCompositeCell(m, row, sl, method) {
   if (!canvas) return;
   const mImgs = cmpCachedImages[m];
   if (!mImgs) return;
-  const overlayKey = method === 'ablation' ? 'ablation'
+  const overlayKey = method === 'ablation' ? getAblPanelKey()
     : method === 'occlusion' ? getCmpOccKey(m, row.idx)
-    : `saliency_${row.idx}`;
+    : getSalPanelKey(row);
   const contourCache = cmpCachedContours[m] ?? (cmpCachedContours[m] = {});
+  const baseRad = ROTATE_MODELS.has(m) ? -Math.PI/2 : 0;
+  const extraRad = (cmpColContourOffset[m] ?? 0) * Math.PI / 180;
   compositeOnCanvas(canvas, mImgs[row.key]?.[sl], mImgs[overlayKey]?.[sl] ?? null,
-    cmpCurrentAlpha, cmpShowContours, mImgs, contourCache, sl, ROTATE_MODELS.has(m));
+    cmpCurrentAlpha, cmpShowContours, mImgs, contourCache, sl, baseRad + extraRad);
 }
 
 function cmpCompositeShared(colKey, row, sl) {
@@ -556,8 +602,10 @@ function cmpCompositeShared(colKey, row, sl) {
   const overlayKey = colKey === 'zones' ? 'zones' : colKey === 'pred' ? 'prediction' : 'label';
   const showC = cmpShowContours && colKey !== 'zones';
   const contourCache = cmpCachedContours[srcModel] ?? (cmpCachedContours[srcModel] = {});
+  const baseRad = ROTATE_MODELS.has(srcModel) ? -Math.PI/2 : 0;
+  const extraRad = (cmpColContourOffset[colKey] ?? 0) * Math.PI / 180;
   compositeOnCanvas(canvas, srcImgs[row.key]?.[sl], srcImgs[overlayKey]?.[sl] ?? null,
-    cmpCurrentAlpha, showC, srcImgs, contourCache, sl, ROTATE_MODELS.has(srcModel));
+    cmpCurrentAlpha, showC, srcImgs, contourCache, sl, baseRad + extraRad);
 }
 
 function getCmpSlice() {
@@ -572,6 +620,7 @@ function recompositeCmpAll() {
       if (origImg) origImg.src = cmpCachedImages[refModel][row.key][sl].src;
     }
     for (const ck of ['zones','pred','label']) {
+      if (ck === 'pred' && cmpAllPreds) continue;
       const ckSrcModel = ck === 'pred' ? (cmpPredModel ?? refModel) : refModel;
       const ckSl = ROTATE_MODELS.has(ckSrcModel) ? Math.max(0, Math.min(nSlices - 1, sl + monaiSliceOffset)) : sl;
       cmpCompositeShared(ck, row, ckSl);
@@ -579,6 +628,17 @@ function recompositeCmpAll() {
     for (const m of ALL_MODELS) {
       const mSl = ROTATE_MODELS.has(m) ? Math.max(0, Math.min(nSlices - 1, sl + monaiSliceOffset)) : sl;
       if (ALL_MODEL_RECORDS[m]?.predicted_positive) cmpCompositeCell(m, row, mSl, compareMethod);
+      if (cmpAllPreds && ALL_MODEL_RECORDS[m]?.predicted_positive) {
+        const mImgs = cmpCachedImages[m];
+        if (!mImgs) continue;
+        const predCanvas = document.getElementById(`cmp-pred-canvas-${m}-${row.key}`);
+        if (!predCanvas) continue;
+        const contourCache = cmpCachedContours[m] ?? (cmpCachedContours[m] = {});
+        const baseRad = ROTATE_MODELS.has(m) ? -Math.PI/2 : 0;
+        const extraRad = (cmpColContourOffset[`pred_${m}`] ?? 0) * Math.PI / 180;
+        compositeOnCanvas(predCanvas, mImgs[row.key]?.[mSl], mImgs['prediction']?.[mSl] ?? null,
+          cmpCurrentAlpha, cmpShowContours, mImgs, contourCache, mSl, baseRad + extraRad);
+      }
     }
   }
 }
@@ -588,27 +648,60 @@ function buildCompareGrid(method) {
   const grid = document.getElementById("viewer-grid");
   grid.innerHTML = ""; grid.className = "";
   const nModelCols = ALL_MODELS.length;
-  const visibleShared = Object.values(cmpColVisible).filter(Boolean).length;
-  grid.style.gridTemplateColumns = `80px repeat(${1 + visibleShared + nModelCols}, minmax(0, 1fr))`;
+  const visibleShared = cmpAllPreds
+    ? Object.entries(cmpColVisible).filter(([k,v]) => v && k !== 'pred').length
+    : Object.values(cmpColVisible).filter(Boolean).length;
+  const effectiveModelCols = nModelCols * (cmpAllPreds ? 2 : 1);
+  grid.style.gridTemplateColumns = `80px repeat(${1 + visibleShared + effectiveModelCols}, minmax(0, 1fr))`;
 
   // Header row
   grid.appendChild(document.createElement("div")); // corner
   const hdrOrig = document.createElement("div"); hdrOrig.className = "col-header"; hdrOrig.textContent = "Original";
   grid.appendChild(hdrOrig);
   for (const [ck, label] of [["zones","Zones"],["pred","Pred Mask"],["label","Label GT"]]) {
+    if (ck === 'pred' && cmpAllPreds) continue;
     const hdr = document.createElement("div");
     hdr.className = `col-header cmp-shared-col-${ck}`;
-    hdr.textContent = label;
     if (!cmpColVisible[ck]) hdr.classList.add("col-hidden");
+    if (ck !== 'zones') {
+      hdr.innerHTML = `<div class="mb-1 d-flex gap-1 justify-content-center">` +
+        `<button class="btn btn-sm p-0 px-1 btn-outline-secondary" onclick="rotateCmpContour('${ck}',-90)" title="Rotate contour −90°">↺</button>` +
+        `<button class="btn btn-sm p-0 px-1 btn-outline-secondary" onclick="rotateCmpContour('${ck}',90)" title="Rotate contour +90°">↻</button></div>${label}`;
+    } else {
+      hdr.textContent = label;
+    }
     grid.appendChild(hdr);
   }
   for (const m of ALL_MODELS) {
     const hasPos = ALL_MODEL_RECORDS[m]?.predicted_positive;
+    if (cmpAllPreds) {
+      // Per-model Pred header
+      const predHdr = document.createElement("div");
+      predHdr.className = `col-header cmp-model-pred-header-${m}`;
+      predHdr.style.cssText = hasPos
+        ? `background:${MODEL_COLORS_HEX[m]}11;color:${MODEL_COLORS_HEX[m]};border-bottom:2px dashed ${MODEL_COLORS_HEX[m]}`
+        : "background:#f1f5f9;color:#94a3b8;border-bottom:2px dashed #e2e8f0";
+      if (hasPos) {
+        predHdr.innerHTML = `<div class="mb-1 d-flex gap-1 justify-content-center">` +
+          `<button class="btn btn-sm p-0 px-1" onclick="rotateCmpContour('pred_${m}',-90)" title="Rotate contour −90°" style="color:inherit;border:1px solid currentColor">↺</button>` +
+          `<button class="btn btn-sm p-0 px-1" onclick="rotateCmpContour('pred_${m}',90)" title="Rotate contour +90°" style="color:inherit;border:1px solid currentColor">↻</button></div>` +
+          `<span style="font-size:.75rem">${MODEL_LABELS[m]}</span><br><span style="font-size:.65rem;opacity:.7">Pred</span>`;
+      } else {
+        predHdr.innerHTML = `<span style="font-size:.75rem">${MODEL_LABELS[m]}</span><br><span style="font-size:.65rem;opacity:.7">Pred</span>`;
+      }
+      grid.appendChild(predHdr);
+    }
     const hdr = document.createElement("div"); hdr.className = "cmp-model-header";
     hdr.style.cssText = hasPos
       ? `background:${MODEL_COLORS_HEX[m]}22;color:${MODEL_COLORS_HEX[m]};border-bottom:2px solid ${MODEL_COLORS_HEX[m]}`
       : "background:#f1f5f9;color:#94a3b8;border-bottom:2px solid #e2e8f0";
-    hdr.textContent = MODEL_LABELS[m];
+    if (hasPos) {
+      hdr.innerHTML = `<div class="mb-1 d-flex gap-1 justify-content-center">` +
+        `<button class="btn btn-sm p-0 px-1" onclick="rotateCmpContour('${m}',-90)" title="Rotate contour −90°" style="color:inherit;border:1px solid currentColor">↺</button>` +
+        `<button class="btn btn-sm p-0 px-1" onclick="rotateCmpContour('${m}',90)" title="Rotate contour +90°" style="color:inherit;border:1px solid currentColor">↻</button></div>${MODEL_LABELS[m]}`;
+    } else {
+      hdr.textContent = MODEL_LABELS[m];
+    }
     grid.appendChild(hdr);
   }
 
@@ -625,6 +718,7 @@ function buildCompareGrid(method) {
 
     // Shared overlay cols
     for (const ck of ['zones','pred','label']) {
+      if (ck === 'pred' && cmpAllPreds) continue;
       const wrapper = document.createElement("div"); wrapper.className = `cmp-shared-col-${ck}`;
       if (!cmpColVisible[ck]) wrapper.classList.add("col-hidden");
       const sharedPanelKey = ck === 'zones' ? 'zones' : ck === 'pred' ? 'prediction' : 'label';
@@ -643,13 +737,31 @@ function buildCompareGrid(method) {
       grid.appendChild(wrapper);
     }
 
-    // Per-model XAI cols
+    // Per-model cols
     for (const m of ALL_MODELS) {
       const hasPos = ALL_MODEL_RECORDS[m]?.predicted_positive;
       const mPanels = modelDataCache[m]?.panels;
-      const xaiKey = method === 'ablation' ? 'ablation'
+
+      if (cmpAllPreds) {
+        // Per-model prediction canvas
+        const predWrapper = document.createElement("div"); predWrapper.className = `cmp-model-pred-col-${m}`;
+        if (hasPos && mPanels && 'prediction' in mPanels) {
+          const box = document.createElement("div"); box.className = "panel-box";
+          if (ROTATE_MODELS.has(m)) box.classList.add("rotate-cell");
+          const canvas = document.createElement("canvas");
+          canvas.id = `cmp-pred-canvas-${m}-${row.key}`; canvas.width = 200; canvas.height = 200;
+          box.appendChild(canvas); predWrapper.appendChild(box);
+        } else {
+          const empty = document.createElement("div"); empty.className = "panel-empty";
+          empty.textContent = hasPos ? "—" : "No pred.";
+          predWrapper.appendChild(empty);
+        }
+        grid.appendChild(predWrapper);
+      }
+
+      const xaiKey = method === 'ablation' ? getAblPanelKey()
         : method === 'occlusion' ? getCmpOccKey(m, row.idx)
-        : `saliency_${row.idx}`;
+        : getSalPanelKey(row);
       const hasXai = hasPos && mPanels && (xaiKey in mPanels);
       const wrapper = document.createElement("div");
       if (hasXai) {
@@ -800,6 +912,29 @@ async function switchModel(model) {
   }
   occWrap.classList.toggle("d-none", occStrategies.length <= 1);
 
+  // Sync aggregation selector for the new model
+  const newAggAvail = mData.available_aggregations || ["sum"];
+  const aggWrap  = document.getElementById("agg-selector-wrap");
+  const aggVr    = document.getElementById("agg-vr");
+  const aggSel   = document.getElementById("agg-select");
+  if (aggWrap && aggSel) {
+    if (newAggAvail.length > 1) {
+      aggSel.innerHTML = "";
+      for (const agg of newAggAvail) {
+        const opt = document.createElement("option"); opt.value = agg; opt.textContent = AGG_LABELS[agg] ?? agg;
+        aggSel.appendChild(opt);
+      }
+      if (newAggAvail.includes(currentAgg)) aggSel.value = currentAgg;
+      else { currentAgg = newAggAvail[0]; aggSel.value = currentAgg; }
+      aggWrap.classList.remove("d-none");
+      if (aggVr) aggVr.style.display = "";
+    } else {
+      currentAgg = newAggAvail[0] || "sum";
+      aggWrap.classList.add("d-none");
+      if (aggVr) aggVr.style.display = "none";
+    }
+  }
+
   buildGrid(panels);
   setAblationVisible(document.getElementById("ablation-toggle").checked);
   const sl = parseInt(document.getElementById("slice-slider").value) || 0;
@@ -875,7 +1010,7 @@ function populateCmpPredDropdown() {
   }
   if (prevVal && positiveModels.includes(prevVal)) select.value = prevVal;
   cmpPredModel = select.value || null;
-  wrap.classList.toggle("d-none", !cmpColVisible.pred || positiveModels.length <= 1);
+  wrap.classList.toggle("d-none", !cmpColVisible.pred || positiveModels.length <= 1 || cmpAllPreds);
 }
 
 function populateCmpOccStrategyDropdown() {
@@ -910,19 +1045,70 @@ function switchCompareMethod(method) {
   buildCompareSidebar();
 }
 
+// ── Rotate zone contours per column in compare mode ──────────────────────────
+function rotateCmpContour(colKey, delta) {
+  cmpColContourOffset[colKey] = (cmpColContourOffset[colKey] ?? 0) + delta;
+  const sl = getCmpSlice();
+  if (['pred', 'label'].includes(colKey)) {
+    for (const row of ROWS) {
+      const srcModel = colKey === 'pred' ? (cmpPredModel ?? refModel) : refModel;
+      const ckSl = ROTATE_MODELS.has(srcModel) ? Math.max(0, Math.min(nSlices - 1, sl + monaiSliceOffset)) : sl;
+      cmpCompositeShared(colKey, row, ckSl);
+    }
+  } else if (colKey.startsWith('pred_')) {
+    const m = colKey.slice(5);
+    if (ALL_MODEL_RECORDS[m]?.predicted_positive) {
+      const mImgs = cmpCachedImages[m];
+      if (mImgs) for (const row of ROWS) {
+        const mSl = ROTATE_MODELS.has(m) ? Math.max(0, Math.min(nSlices - 1, sl + monaiSliceOffset)) : sl;
+        const predCanvas = document.getElementById(`cmp-pred-canvas-${m}-${row.key}`);
+        if (!predCanvas) continue;
+        const contourCache = cmpCachedContours[m] ?? (cmpCachedContours[m] = {});
+        const baseRad = ROTATE_MODELS.has(m) ? -Math.PI/2 : 0;
+        const extraRad = (cmpColContourOffset[colKey] ?? 0) * Math.PI / 180;
+        compositeOnCanvas(predCanvas, mImgs[row.key]?.[mSl], mImgs['prediction']?.[mSl] ?? null,
+          cmpCurrentAlpha, cmpShowContours, mImgs, contourCache, mSl, baseRad + extraRad);
+      }
+    }
+  } else {
+    const m = colKey;
+    if (ALL_MODEL_RECORDS[m]?.predicted_positive) {
+      for (const row of ROWS) {
+        const mSl = ROTATE_MODELS.has(m) ? Math.max(0, Math.min(nSlices - 1, sl + monaiSliceOffset)) : sl;
+        cmpCompositeCell(m, row, mSl, compareMethod);
+      }
+    }
+  }
+}
+
+// ── Toggle all-preds mode ─────────────────────────────────────────────────────
+function toggleCmpAllPreds() {
+  cmpAllPreds = !cmpAllPreds;
+  document.getElementById('cmp-tog-all-preds').classList.toggle('active', cmpAllPreds);
+  document.getElementById('cmp-tog-pred').classList.toggle('d-none', cmpAllPreds);
+  const positiveModels = ALL_MODELS.filter(m => ALL_MODEL_RECORDS[m]?.predicted_positive);
+  document.getElementById('cmp-pred-model-wrap').classList.toggle('d-none',
+    cmpAllPreds || !cmpColVisible.pred || positiveModels.length <= 1);
+  buildCompareGrid(compareMethod);
+  recompositeCmpAll();
+}
+
 // ── Toggle shared column in compare mode ──────────────────────────────────────
 function toggleCmpCol(colKey, btn) {
   cmpColVisible[colKey] = !cmpColVisible[colKey];
   btn.classList.toggle("active", cmpColVisible[colKey]);
   document.querySelectorAll(`.cmp-shared-col-${colKey}`)
     .forEach(el => el.classList.toggle("col-hidden", !cmpColVisible[colKey]));
-  const visibleShared = Object.values(cmpColVisible).filter(Boolean).length;
-  const nCols = 1 + visibleShared + ALL_MODELS.length;
+  const visibleShared = cmpAllPreds
+    ? Object.entries(cmpColVisible).filter(([k,v]) => v && k !== 'pred').length
+    : Object.values(cmpColVisible).filter(Boolean).length;
+  const effectiveModelCols = ALL_MODELS.length * (cmpAllPreds ? 2 : 1);
+  const nCols = 1 + visibleShared + effectiveModelCols;
   document.getElementById("viewer-grid").style.gridTemplateColumns =
     `80px repeat(${nCols}, minmax(0, 1fr))`;
   if (colKey === 'pred') {
     const positiveModels = ALL_MODELS.filter(m => ALL_MODEL_RECORDS[m]?.predicted_positive);
-    document.getElementById("cmp-pred-model-wrap").classList.toggle("d-none", !cmpColVisible.pred || positiveModels.length <= 1);
+    document.getElementById("cmp-pred-model-wrap").classList.toggle("d-none", !cmpColVisible.pred || positiveModels.length <= 1 || cmpAllPreds);
   }
 }
 
@@ -1023,6 +1209,30 @@ function plotBar(divId, means) {
     {...PLOTLY_LAYOUT_MINI,yaxis:{title:"mean attr."}},{displayModeBar:false});
 }
 
+// ── Aggregation selector ──────────────────────────────────────────────────────
+const AGG_LABELS = {sum: "Sum", mean: "Mean", abs_sum: "Abs Sum", abs_avg: "Abs Avg"};
+
+function populateAggSelector(available) {
+  const wrap   = document.getElementById("agg-selector-wrap");
+  const vr     = document.getElementById("agg-vr");
+  const select = document.getElementById("agg-select");
+  if (!wrap || !select) return;
+  if (available.length <= 1) return;  // only one method — no selector needed
+  select.innerHTML = "";
+  for (const agg of available) {
+    const opt = document.createElement("option");
+    opt.value = agg; opt.textContent = AGG_LABELS[agg] ?? agg;
+    select.appendChild(opt);
+  }
+  select.value = currentAgg;
+  wrap.classList.remove("d-none");
+  if (vr) vr.style.display = "";
+  select.addEventListener("change", e => {
+    currentAgg = e.target.value;
+    showSlice(parseInt(document.getElementById("slice-slider").value));
+  });
+}
+
 // ── Legend ────────────────────────────────────────────────────────────────────
 const COLORMAP_KEYS = ["prediction","saliency_0","occlusion_0","ablation"];
 const COLORMAP_GRAD = "linear-gradient(to right,#30123b,#4776ef,#1dbd9d,#b1f23c,#fb8a26,#7a0502)";
@@ -1068,6 +1278,8 @@ function populateLegend(availablePanels) {
       updateOccStats();
     });
 
+    populateAggSelector(data.available_aggregations || ["sum"]);
+
     buildGrid(panels);
     setAblationVisible(false);
     populateLegend(panels);
@@ -1083,6 +1295,7 @@ function populateLegend(availablePanels) {
     slider.addEventListener("input", e => showSlice(parseInt(e.target.value)));
     showSlice(parseInt(slider.value));
     document.getElementById("gif-btn").disabled = false;
+    document.getElementById("screenshot-btn").disabled = false;
 
     const hasXAI = ["saliency_0","occlusion_0","occlusion_zm_0","occlusion_tz_masked_0","ablation"].some(k => k in panels);
     if (!hasXAI) document.getElementById("no-xai-msg").style.display = "";
@@ -1109,6 +1322,97 @@ function populateLegend(availablePanels) {
   }
   document.getElementById("loading-overlay").style.display = "none";
 })();
+
+// ── Screenshot export ─────────────────────────────────────────────────────────
+function screenshotTable() {
+  const grid = document.getElementById('viewer-grid');
+  const gridRect = grid.getBoundingClientRect();
+  const gridRotateLeft = grid.classList.contains('rotate-left');
+
+  const dpr = 2;
+  const canvas = document.createElement('canvas');
+  canvas.width  = Math.round(gridRect.width  * dpr);
+  canvas.height = Math.round(gridRect.height * dpr);
+  const ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+
+  ctx.fillStyle = '#f1f5f9';
+  ctx.fillRect(0, 0, gridRect.width, gridRect.height);
+
+  for (const el of grid.children) {
+    if (getComputedStyle(el).display === 'none') continue;
+
+    const rect = el.getBoundingClientRect();
+    const x = rect.left - gridRect.left;
+    const y = rect.top  - gridRect.top;
+    const w = rect.width;
+    const h = rect.height;
+
+    if (el.classList.contains('col-header') || el.classList.contains('cmp-model-header')) {
+      const clone = el.cloneNode(true);
+      clone.querySelectorAll('button').forEach(b => b.remove());
+      const text = clone.textContent.trim().replace(/\s+/g, ' ');
+      ctx.fillStyle = '#475569';
+      ctx.font = 'bold 11px system-ui, -apple-system, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(text, x + w / 2, y + h / 2);
+    } else if (el.classList.contains('row-label')) {
+      ctx.fillStyle = '#475569';
+      ctx.font = 'bold 12px system-ui, -apple-system, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(el.textContent.trim(), x + w / 2, y + h / 2);
+    } else {
+      const panelCanvas = el.querySelector('canvas');
+      const panelImg    = el.querySelector('img');
+      if (panelCanvas || panelImg) {
+        ctx.fillStyle = '#000';
+        ctx.fillRect(x, y, w, h);
+      }
+      if (panelCanvas) {
+        // Respect CSS rotation applied via rotate-cell on the panel-box parent, or rotate-left grid
+        const box = panelCanvas.parentElement;
+        const shouldRotate = (box && box.classList.contains('rotate-cell')) || gridRotateLeft;
+        ctx.save();
+        if (shouldRotate) {
+          ctx.translate(x + w / 2, y + h / 2);
+          ctx.rotate(-Math.PI / 2);
+          try { ctx.drawImage(panelCanvas, -h / 2, -w / 2, h, w); } catch (_) {}
+        } else {
+          try { ctx.drawImage(panelCanvas, x, y, w, h); } catch (_) {}
+        }
+        ctx.restore();
+      } else if (panelImg && panelImg.complete && panelImg.naturalWidth > 0) {
+        // Respect CSS rotation applied via rotate-cell or rotate-left grid
+        const shouldRotate = el.classList.contains('rotate-cell') || gridRotateLeft;
+        if (shouldRotate) {
+          ctx.save();
+          ctx.translate(x + w / 2, y + h / 2);
+          ctx.rotate(-Math.PI / 2);
+          try { ctx.drawImage(panelImg, -h / 2, -w / 2, h, w); } catch (_) {}
+          ctx.restore();
+        } else {
+          try { ctx.drawImage(panelImg, x, y, w, h); } catch (_) {}
+        }
+      } else if (el.querySelector('.panel-empty')) {
+        ctx.fillStyle = '#111';
+        ctx.fillRect(x, y, w, h);
+        ctx.fillStyle = '#555';
+        ctx.font = '18px system-ui';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('—', x + w / 2, y + h / 2);
+      }
+    }
+  }
+
+  const modeStr = currentMode === 'compare' ? `compare_${compareMethod}` : activeModel;
+  const link = document.createElement('a');
+  link.download = `${CASE_ID}_${modeStr}_screenshot.png`;
+  link.href = canvas.toDataURL('image/png');
+  link.click();
+}
 
 // ── GIF export ────────────────────────────────────────────────────────────────
 document.getElementById("gif-btn").addEventListener("click", async () => {

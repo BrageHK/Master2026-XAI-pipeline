@@ -679,9 +679,23 @@ def model_view(model: str):
     ]
     all_models_pos: set = pos_sets[0].intersection(*pos_sets[1:]) if pos_sets else set()
 
+    # Case IDs classified as TP / FP by every model
+    tp_sets = [
+        {r["case_id"] for r in case_data.get(m, []) if r.get("classification") == "tp"}
+        for m in MODELS
+    ]
+    fp_sets = [
+        {r["case_id"] for r in case_data.get(m, []) if r.get("classification") == "fp"}
+        for m in MODELS
+    ]
+    all_models_tp: set = tp_sets[0].intersection(*tp_sets[1:]) if tp_sets else set()
+    all_models_fp: set = fp_sets[0].intersection(*fp_sets[1:]) if fp_sets else set()
+
     return render_template("model.html", model=model, records=records,
                            stats=stats, charts=charts,
-                           all_models_pos=all_models_pos)
+                           all_models_pos=all_models_pos,
+                           all_models_tp=all_models_tp,
+                           all_models_fp=all_models_fp)
 
 
 @app.route("/model/<model>/case/<case_id>")

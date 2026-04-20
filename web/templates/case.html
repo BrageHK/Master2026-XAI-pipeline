@@ -105,8 +105,8 @@
         <span class="vr mx-1"></span>
         <span class="fw-semibold small text-nowrap">Overlay α:</span>
         <input type="range" id="overlay-alpha" class="form-range" style="width:110px"
-               min="0" max="1" step="0.05" value="0.6">
-        <span id="alpha-label" class="small text-muted" style="min-width:32px">0.60</span>
+               min="0" max="1" step="0.05" value="0.95">
+        <span id="alpha-label" class="small text-muted" style="min-width:32px">0.95</span>
         <span class="vr mx-1"></span>
         <span class="fw-semibold small text-nowrap">GIF:</span>
         <select id="gif-fps" class="form-select form-select-sm" style="width:auto">
@@ -118,7 +118,14 @@
           <option value="200">5 fps</option>
         </select>
         <button id="gif-btn" class="btn btn-sm btn-outline-primary" disabled>Export Table GIF</button>
-        <button id="screenshot-btn" class="btn btn-sm btn-outline-secondary" disabled onclick="screenshotTable()">Screenshot</button>
+        <div class="btn-group" role="group">
+          <button id="screenshot-btn" class="btn btn-sm btn-outline-secondary" disabled onclick="screenshotTable()">Screenshot</button>
+          <button id="screenshot-split-drop-btn" type="button" class="btn btn-sm btn-outline-secondary dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" aria-expanded="false" disabled></button>
+          <ul class="dropdown-menu">
+            <li><a class="dropdown-item" href="#" onclick="screenshotTable();return false;">Full screenshot</a></li>
+            <li><a class="dropdown-item" href="#" onclick="screenshotSplit();return false;">Screenshot split</a></li>
+          </ul>
+        </div>
         <span class="vr mx-1"></span>
         <div id="occ-strategy-wrap" class="d-flex align-items-center gap-2 d-none">
           <span class="fw-semibold small text-nowrap">Occlusion:</span>
@@ -173,8 +180,8 @@
         <span class="vr mx-1"></span>
         <span class="fw-semibold small text-nowrap">α:</span>
         <input type="range" id="cmp-overlay-alpha" class="form-range" style="width:90px"
-               min="0" max="1" step="0.05" value="0.6">
-        <span id="cmp-alpha-label" class="small text-muted" style="min-width:32px">0.60</span>
+               min="0" max="1" step="0.05" value="0.95">
+        <span id="cmp-alpha-label" class="small text-muted" style="min-width:32px">0.95</span>
         <span class="vr mx-1"></span>
         <div class="form-check form-switch mb-0 d-flex align-items-center gap-2">
           <input class="form-check-input" type="checkbox" id="cmp-contour-toggle" role="switch">
@@ -186,7 +193,14 @@
           <select class="form-select form-select-sm" id="cmp-occ-strategy-select" style="width:auto"></select>
         </div>
         <span class="vr mx-1"></span>
-        <button class="btn btn-sm btn-outline-secondary" onclick="screenshotTable()">Screenshot</button>
+        <div class="btn-group" role="group">
+          <button class="btn btn-sm btn-outline-secondary" onclick="screenshotTable()">Screenshot</button>
+          <button type="button" class="btn btn-sm btn-outline-secondary dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" aria-expanded="false"></button>
+          <ul class="dropdown-menu">
+            <li><a class="dropdown-item" href="#" onclick="screenshotTable();return false;">Full screenshot</a></li>
+            <li><a class="dropdown-item" href="#" onclick="screenshotSplit();return false;">Screenshot split</a></li>
+          </ul>
+        </div>
       </div>
     </div>
 
@@ -393,14 +407,14 @@ let modelDataCache = {};   // model → { panels, n_slices, stats, record, cache
 let panels = {};
 let cachedImages = {};
 let nSlices = 0;
-let currentAlpha = 0.6;
+let currentAlpha = 0.95;
 let occByStrat = {};
 let showZoneContours = false;
 let cachedContours = {};
 
 // Compare Mode
 let cmpCachedImages  = {};    // model → cachedImages
-let cmpCurrentAlpha  = 0.6;
+let cmpCurrentAlpha  = 0.95;
 let cmpShowContours  = false;
 let cmpCachedContours = {};   // model → { sliceIdx: ImageData }
 let cmpColVisible    = { zones: true, pred: true, label: true };
@@ -1296,6 +1310,7 @@ function populateLegend(availablePanels) {
     showSlice(parseInt(slider.value));
     document.getElementById("gif-btn").disabled = false;
     document.getElementById("screenshot-btn").disabled = false;
+    document.getElementById("screenshot-split-drop-btn").disabled = false;
 
     const hasXAI = ["saliency_0","occlusion_0","occlusion_zm_0","occlusion_tz_masked_0","ablation"].some(k => k in panels);
     if (!hasXAI) document.getElementById("no-xai-msg").style.display = "";
@@ -1324,94 +1339,179 @@ function populateLegend(availablePanels) {
 })();
 
 // ── Screenshot export ─────────────────────────────────────────────────────────
-function screenshotTable() {
-  const grid = document.getElementById('viewer-grid');
+
+// Collect all visible grid items and per-row max heights
+function _screenshotCollect(grid) {
   const gridRect = grid.getBoundingClientRect();
-  const gridRotateLeft = grid.classList.contains('rotate-left');
-
-  const dpr = 2;
-  const canvas = document.createElement('canvas');
-  canvas.width  = Math.round(gridRect.width  * dpr);
-  canvas.height = Math.round(gridRect.height * dpr);
-  const ctx = canvas.getContext('2d');
-  ctx.scale(dpr, dpr);
-
-  ctx.fillStyle = '#f1f5f9';
-  ctx.fillRect(0, 0, gridRect.width, gridRect.height);
-
+  const items = [];
+  const rowMaxH = new Map();
   for (const el of grid.children) {
     if (getComputedStyle(el).display === 'none') continue;
-
     const rect = el.getBoundingClientRect();
     const x = rect.left - gridRect.left;
     const y = rect.top  - gridRect.top;
     const w = rect.width;
     const h = rect.height;
+    items.push({ el, x, y, w, h });
+    const yKey = Math.round(y);
+    rowMaxH.set(yKey, Math.max(rowMaxH.get(yKey) ?? 0, h));
+  }
+  return { items, rowMaxH };
+}
+
+// Draw a subset of items onto ctx with (dx, dy) offset applied to each item's position
+function _screenshotDraw(ctx, items, rowMaxH, gridRotateLeft, dx, dy) {
+  for (const { el, x, y, w, h } of items) {
+    const ox = x + dx, oy = y + dy;
+    const rowH = rowMaxH.get(Math.round(y)) ?? h;
 
     if (el.classList.contains('col-header') || el.classList.contains('cmp-model-header')) {
       const clone = el.cloneNode(true);
       clone.querySelectorAll('button').forEach(b => b.remove());
       const text = clone.textContent.trim().replace(/\s+/g, ' ');
       ctx.fillStyle = '#475569';
-      ctx.font = 'bold 11px system-ui, -apple-system, sans-serif';
+      ctx.font = 'bold 13px system-ui, -apple-system, sans-serif';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.fillText(text, x + w / 2, y + h / 2);
+      ctx.fillText(text, ox + w / 2, oy + rowH / 2);
     } else if (el.classList.contains('row-label')) {
       ctx.fillStyle = '#475569';
-      ctx.font = 'bold 12px system-ui, -apple-system, sans-serif';
+      ctx.font = 'bold 14px system-ui, -apple-system, sans-serif';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.fillText(el.textContent.trim(), x + w / 2, y + h / 2);
+      ctx.fillText(el.textContent.trim(), ox + w / 2, oy + rowH / 2);
     } else {
       const panelCanvas = el.querySelector('canvas');
       const panelImg    = el.querySelector('img');
       if (panelCanvas || panelImg) {
         ctx.fillStyle = '#000';
-        ctx.fillRect(x, y, w, h);
+        ctx.fillRect(ox, oy, w, h);
       }
       if (panelCanvas) {
-        // Respect CSS rotation applied via rotate-cell on the panel-box parent, or rotate-left grid
         const box = panelCanvas.parentElement;
         const shouldRotate = (box && box.classList.contains('rotate-cell')) || gridRotateLeft;
         ctx.save();
         if (shouldRotate) {
-          ctx.translate(x + w / 2, y + h / 2);
+          ctx.translate(ox + w / 2, oy + h / 2);
           ctx.rotate(-Math.PI / 2);
           try { ctx.drawImage(panelCanvas, -h / 2, -w / 2, h, w); } catch (_) {}
         } else {
-          try { ctx.drawImage(panelCanvas, x, y, w, h); } catch (_) {}
+          try { ctx.drawImage(panelCanvas, ox, oy, w, h); } catch (_) {}
         }
         ctx.restore();
       } else if (panelImg && panelImg.complete && panelImg.naturalWidth > 0) {
-        // Respect CSS rotation applied via rotate-cell or rotate-left grid
         const shouldRotate = el.classList.contains('rotate-cell') || gridRotateLeft;
         if (shouldRotate) {
           ctx.save();
-          ctx.translate(x + w / 2, y + h / 2);
+          ctx.translate(ox + w / 2, oy + h / 2);
           ctx.rotate(-Math.PI / 2);
           try { ctx.drawImage(panelImg, -h / 2, -w / 2, h, w); } catch (_) {}
           ctx.restore();
         } else {
-          try { ctx.drawImage(panelImg, x, y, w, h); } catch (_) {}
+          try { ctx.drawImage(panelImg, ox, oy, w, h); } catch (_) {}
         }
       } else if (el.querySelector('.panel-empty')) {
         ctx.fillStyle = '#111';
-        ctx.fillRect(x, y, w, h);
+        ctx.fillRect(ox, oy, w, h);
         ctx.fillStyle = '#555';
         ctx.font = '18px system-ui';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        ctx.fillText('—', x + w / 2, y + h / 2);
+        ctx.fillText('—', ox + w / 2, oy + h / 2);
       }
     }
   }
+}
+
+function screenshotTable() {
+  const grid = document.getElementById('viewer-grid');
+  const gridRect = grid.getBoundingClientRect();
+  const gridRotateLeft = grid.classList.contains('rotate-left');
+  const dpr = 2;
+
+  const { items, rowMaxH } = _screenshotCollect(grid);
+
+  const canvas = document.createElement('canvas');
+  canvas.width  = Math.round(gridRect.width  * dpr);
+  canvas.height = Math.round(gridRect.height * dpr);
+  const ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+  ctx.fillStyle = '#f1f5f9';
+  ctx.fillRect(0, 0, gridRect.width, gridRect.height);
+
+  _screenshotDraw(ctx, items, rowMaxH, gridRotateLeft, 0, 0);
 
   const modeStr = currentMode === 'compare' ? `compare_${compareMethod}` : activeModel;
   const link = document.createElement('a');
   link.download = `${CASE_ID}_${modeStr}_screenshot.png`;
   link.href = canvas.toDataURL('image/png');
   link.click();
+}
+
+function screenshotSplit() {
+  const grid = document.getElementById('viewer-grid');
+  const gridRotateLeft = grid.classList.contains('rotate-left');
+  const dpr = 2;
+  const modeStr = currentMode === 'compare' ? `compare_${compareMethod}` : activeModel;
+
+  const { items, rowMaxH } = _screenshotCollect(grid);
+  if (items.length === 0) return;
+
+  // Identify distinct x-positions (columns in the CSS grid)
+  // The leftmost column holds the row-label and corner spacer cells.
+  const xVals = [...new Set(items.map(it => Math.round(it.x)))].sort((a, b) => a - b);
+  const rowLabelX = xVals[0];
+  const dataXVals = xVals.slice(1); // columns that hold actual panel data / col-headers
+
+  if (dataXVals.length < 2) {
+    // Too few data columns to split — fall back to full screenshot
+    screenshotTable();
+    return;
+  }
+
+  const midIdx = Math.ceil(dataXVals.length / 2);
+  const halves = [
+    new Set(dataXVals.slice(0, midIdx)),
+    new Set(dataXVals.slice(midIdx)),
+  ];
+
+  halves.forEach((xSet, halfIdx) => {
+    // Separate row-label items from data items so we can pack them with no gap
+    const labelItems = items.filter(it => Math.round(it.x) === rowLabelX);
+    const dataItems  = items.filter(it => xSet.has(Math.round(it.x)));
+    if (labelItems.length === 0 && dataItems.length === 0) return;
+
+    const minY = Math.min(...[...labelItems, ...dataItems].map(it => it.y));
+    const maxY = Math.max(...[...labelItems, ...dataItems].map(it => it.y + it.h));
+
+    // Row label column: place at x=0
+    const labelW   = labelItems.length > 0 ? Math.max(...labelItems.map(it => it.w)) : 0;
+    const labelDx  = -rowLabelX;
+
+    // Data columns: place immediately after the label column (no gap)
+    const minDataX = dataItems.length > 0 ? Math.min(...dataItems.map(it => it.x)) : 0;
+    const maxDataX = dataItems.length > 0 ? Math.max(...dataItems.map(it => it.x + it.w)) : labelW;
+    const dataDx   = labelW - minDataX;
+
+    const W = labelW + (maxDataX - minDataX);
+    const H = maxY - minY;
+
+    const canvas = document.createElement('canvas');
+    canvas.width  = Math.round(W * dpr);
+    canvas.height = Math.round(H * dpr);
+    const ctx = canvas.getContext('2d');
+    ctx.scale(dpr, dpr);
+    ctx.fillStyle = '#f1f5f9';
+    ctx.fillRect(0, 0, W, H);
+
+    _screenshotDraw(ctx, labelItems, rowMaxH, gridRotateLeft, labelDx, -minY);
+    _screenshotDraw(ctx, dataItems,  rowMaxH, gridRotateLeft, dataDx,  -minY);
+
+    const link = document.createElement('a');
+    link.download = `${CASE_ID}_${modeStr}_screenshot_part${halfIdx + 1}.png`;
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+  });
 }
 
 // ── GIF export ────────────────────────────────────────────────────────────────

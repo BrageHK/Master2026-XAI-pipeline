@@ -99,6 +99,7 @@
             <th>Pred TZ&nbsp;vox</th>
             <th title="Total predicted cancer voxels (including background zone)">Pred vox&nbsp;total</th>
             <th>Sal dom.&nbsp;ch</th>
+            <th>IG dom.&nbsp;ch</th>
             <th>Occ dom.&nbsp;ch</th>
           </tr>
         </thead>
@@ -120,6 +121,7 @@
               data-gt-pz="{{ r.pz_voxels if r.pz_voxels is not none else '' }}"
               data-gt-tz="{{ r.tz_voxels if r.tz_voxels is not none else '' }}"
               data-sal="{{ ['T2W','ADC','HBV'][r.saliency.dominant_ch] if r.saliency else '' }}"
+              data-ig="{{ ['T2W','ADC','HBV'][r.integrated_gradients.dominant_ch] if r.integrated_gradients else '' }}"
               data-occ="{{ ['T2W','ADC','HBV'][r.occlusion.dominant_ch] if r.occlusion else '' }}"
               data-has-npz="{{ 'true' if has_npz else 'false' }}">
             <td class="font-monospace small">{{ r.case_id }}</td>
@@ -161,6 +163,11 @@
             <td>
               {% if r.saliency %}
                 {{ ['T2W','ADC','HBV'][r.saliency.dominant_ch] }}
+              {% else %}—{% endif %}
+            </td>
+            <td>
+              {% if r.integrated_gradients %}
+                {{ ['T2W','ADC','HBV'][r.integrated_gradients.dominant_ch] }}
               {% else %}—{% endif %}
             </td>
             <td>

@@ -154,9 +154,10 @@
       <div class="d-flex align-items-center gap-3 mb-2 p-3 bg-white rounded shadow-sm flex-wrap">
         <span class="fw-semibold small text-nowrap">Method:</span>
         <div class="btn-group" role="group">
-          <button class="btn btn-sm btn-primary"           id="btn-method-saliency"  onclick="switchCompareMethod('saliency')">Saliency</button>
-          <button class="btn btn-sm btn-outline-secondary" id="btn-method-occlusion" onclick="switchCompareMethod('occlusion')">Occlusion</button>
-          <button class="btn btn-sm btn-outline-secondary" id="btn-method-ablation"  onclick="switchCompareMethod('ablation')">AblationCAM</button>
+          <button class="btn btn-sm btn-primary"           id="btn-method-saliency"             onclick="switchCompareMethod('saliency')">Saliency</button>
+          <button class="btn btn-sm btn-outline-secondary" id="btn-method-integrated_gradients"  onclick="switchCompareMethod('integrated_gradients')">Int. Gradients</button>
+          <button class="btn btn-sm btn-outline-secondary" id="btn-method-occlusion"             onclick="switchCompareMethod('occlusion')">Occlusion</button>
+          <button class="btn btn-sm btn-outline-secondary" id="btn-method-ablation"              onclick="switchCompareMethod('ablation')">AblationCAM</button>
         </div>
         <span class="vr mx-2"></span>
         <span class="fw-semibold small text-nowrap">Columns:</span>
@@ -286,12 +287,20 @@
         <div id="plot-sal-pie" style="height:200px"></div>
       </div>
       <div class="stat-card">
+        <div class="stat-label mb-1">Int. Gradients — Channel Share</div>
+        <div id="plot-ig-pie" style="height:200px"></div>
+      </div>
+      <div class="stat-card">
         <div class="stat-label mb-1">Occlusion — Channel Share</div>
         <div id="plot-occ-pie" style="height:200px"></div>
       </div>
       <div class="stat-card">
         <div class="stat-label mb-1">Saliency — Mean per Channel</div>
         <div id="plot-sal-bar" style="height:160px"></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label mb-1">Int. Gradients — Mean per Channel</div>
+        <div id="plot-ig-bar" style="height:160px"></div>
       </div>
       <div class="stat-card">
         <div class="stat-label mb-1">Occlusion — Mean per Channel</div>
@@ -374,6 +383,10 @@ function getSalPanelKey(row) {
   return `saliency${_aggSfx()}_${row.idx}`;
 }
 
+function getIgPanelKey(row) {
+  return `integrated_gradients${_aggSfx()}_${row.idx}`;
+}
+
 function getOccPanelKey(row) {
   const sfx = _aggSfx();
   const strat = document.getElementById("occ-strategy-select")?.value;
@@ -388,13 +401,14 @@ function getAblPanelKey() {
 }
 
 const COLS = [
-  { key: "original",   label: "Original",   panelKey: null                          },
-  { key: "zones",      label: "Zones",       panelKey: () => "zones"                 },
-  { key: "prediction", label: "Pred Mask",   panelKey: () => "prediction"            },
-  { key: "label",      label: "Label GT",    panelKey: () => "label"                 },
-  { key: "saliency",   label: "Saliency",    panelKey: (r) => getSalPanelKey(r)      },
-  { key: "occlusion",  label: "Occlusion",   panelKey: (r) => getOccPanelKey(r)      },
-  { key: "ablation",   label: "AblationCAM", panelKey: () => getAblPanelKey()        },
+  { key: "original",              label: "Original",       panelKey: null                                  },
+  { key: "zones",                 label: "Zones",          panelKey: () => "zones"                         },
+  { key: "prediction",            label: "Pred Mask",      panelKey: () => "prediction"                    },
+  { key: "label",                 label: "Label GT",       panelKey: () => "label"                         },
+  { key: "saliency",              label: "Saliency",       panelKey: (r) => getSalPanelKey(r)              },
+  { key: "integrated_gradients",  label: "Int. Gradients", panelKey: (r) => getIgPanelKey(r)              },
+  { key: "occlusion",             label: "Occlusion",      panelKey: (r) => getOccPanelKey(r)             },
+  { key: "ablation",              label: "AblationCAM",    panelKey: () => getAblPanelKey()               },
 ];
 
 // ── State ─────────────────────────────────────────────────────────────────────
@@ -543,7 +557,9 @@ function buildGrid(availablePanels) {
   const grid = document.getElementById("viewer-grid");
   grid.innerHTML = "";
   grid.className = ROTATE_MODELS.has(activeModel) ? "rotate-left" : "";
-  grid.style.gridTemplateColumns = "80px repeat(7, minmax(0, 1fr))";
+  const ablVisible = document.getElementById("ablation-toggle")?.checked ?? false;
+  const nDataCols = COLS.filter(c => c.key !== "original" && (c.key !== "ablation" || ablVisible)).length;
+  grid.style.gridTemplateColumns = `80px repeat(${nDataCols}, minmax(0, 1fr))`;
 
   grid.appendChild(document.createElement("div"));
   for (const col of COLS) {
@@ -597,8 +613,9 @@ function cmpCompositeCell(m, row, sl, method) {
   if (!canvas) return;
   const mImgs = cmpCachedImages[m];
   if (!mImgs) return;
-  const overlayKey = method === 'ablation' ? getAblPanelKey()
-    : method === 'occlusion' ? getCmpOccKey(m, row.idx)
+  const overlayKey = method === 'ablation'              ? getAblPanelKey()
+    : method === 'occlusion'             ? getCmpOccKey(m, row.idx)
+    : method === 'integrated_gradients'  ? getIgPanelKey(row)
     : getSalPanelKey(row);
   const contourCache = cmpCachedContours[m] ?? (cmpCachedContours[m] = {});
   const baseRad = ROTATE_MODELS.has(m) ? -Math.PI/2 : 0;
@@ -773,8 +790,9 @@ function buildCompareGrid(method) {
         grid.appendChild(predWrapper);
       }
 
-      const xaiKey = method === 'ablation' ? getAblPanelKey()
-        : method === 'occlusion' ? getCmpOccKey(m, row.idx)
+      const xaiKey = method === 'ablation'             ? getAblPanelKey()
+        : method === 'occlusion'            ? getCmpOccKey(m, row.idx)
+        : method === 'integrated_gradients' ? getIgPanelKey(row)
         : getSalPanelKey(row);
       const hasXai = hasPos && mPanels && (xaiKey in mPanels);
       const wrapper = document.createElement("div");
@@ -969,6 +987,8 @@ function updateModelSidebar(mData) {
   plotInputAblation(s.input_ablation);
   plotPie("plot-sal-pie", s.saliency?.ch_fraction ?? null);
   plotBar("plot-sal-bar", s.saliency?.ch_mean ?? null);
+  plotPie("plot-ig-pie",  s.integrated_gradients?.ch_fraction ?? null);
+  plotBar("plot-ig-bar",  s.integrated_gradients?.ch_mean ?? null);
   updateOccStats();
   const confRow = document.getElementById("cls-confidence-row");
   const confEl  = document.getElementById("cls-confidence");
@@ -1049,7 +1069,7 @@ function populateCmpOccStrategyDropdown() {
 
 function switchCompareMethod(method) {
   compareMethod = method;
-  for (const m of ['saliency','occlusion','ablation']) {
+  for (const m of ['saliency','integrated_gradients','occlusion','ablation']) {
     const btn = document.getElementById(`btn-method-${m}`);
     if (btn) btn.className = m === method ? "btn btn-sm btn-primary" : "btn btn-sm btn-outline-secondary";
   }
@@ -1181,9 +1201,10 @@ document.getElementById("cmp-pred-model-select").addEventListener("change", e =>
 });
 
 function setAblationVisible(visible) {
+  const baseDataCols = COLS.filter(c => c.key !== "original" && c.key !== "ablation").length;
   document.getElementById("viewer-grid").style.gridTemplateColumns = visible
-    ? "80px repeat(7, minmax(0, 1fr))"
-    : "80px repeat(6, minmax(0, 1fr))";
+    ? `80px repeat(${baseDataCols + 1}, minmax(0, 1fr))`
+    : `80px repeat(${baseDataCols}, minmax(0, 1fr))`;
   document.querySelectorAll(".col-group-ablation").forEach(el => el.classList.toggle("col-hidden", !visible));
 }
 document.getElementById("ablation-toggle").addEventListener("change", e => setAblationVisible(e.target.checked));
@@ -1248,7 +1269,7 @@ function populateAggSelector(available) {
 }
 
 // ── Legend ────────────────────────────────────────────────────────────────────
-const COLORMAP_KEYS = ["prediction","saliency_0","occlusion_0","ablation"];
+const COLORMAP_KEYS = ["prediction","saliency_0","integrated_gradients_0","occlusion_0","ablation"];
 const COLORMAP_GRAD = "linear-gradient(to right,#30123b,#4776ef,#1dbd9d,#b1f23c,#fb8a26,#7a0502)";
 
 function populateLegend(availablePanels) {
@@ -1312,7 +1333,7 @@ function populateLegend(availablePanels) {
     document.getElementById("screenshot-btn").disabled = false;
     document.getElementById("screenshot-split-drop-btn").disabled = false;
 
-    const hasXAI = ["saliency_0","occlusion_0","occlusion_zm_0","occlusion_tz_masked_0","ablation"].some(k => k in panels);
+    const hasXAI = ["saliency_0","integrated_gradients_0","occlusion_0","occlusion_zm_0","occlusion_tz_masked_0","ablation"].some(k => k in panels);
     if (!hasXAI) document.getElementById("no-xai-msg").style.display = "";
 
     const zonesErrEl = document.getElementById("zones-error-msg");
@@ -1329,6 +1350,8 @@ function populateLegend(availablePanels) {
     plotInputAblation(s.input_ablation);
     plotPie("plot-sal-pie", s.saliency?.ch_fraction ?? null);
     plotBar("plot-sal-bar", s.saliency?.ch_mean ?? null);
+    plotPie("plot-ig-pie",  s.integrated_gradients?.ch_fraction ?? null);
+    plotBar("plot-ig-bar",  s.integrated_gradients?.ch_mean ?? null);
     updateOccStats();
 
     buildModelSwitcher();

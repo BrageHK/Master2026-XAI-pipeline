@@ -118,6 +118,7 @@ def _scan_progress_records(model: str) -> List[dict]:
                 "saliency":           _ch_stat("saliency"),
                 "occlusion":          _ch_stat("occlusion"),
                 "ablation":           _ch_stat("ablation"),
+                "integrated_gradients": _ch_stat("ig"),
                 "occlusion_by_strategy": occ_by_strat,
             }
             records.append(record)
@@ -374,10 +375,11 @@ def _build_case_payload(model: str, case_id: str) -> dict:
 
     image      = npz["image"]       # (3, D, H, W)
     pred       = npz["prediction"]  # (1, D, H, W)
-    saliency   = npz.get("saliency",       np.zeros((0,), dtype=np.float32))
-    occlusion  = npz.get("occlusion",      np.zeros((0,), dtype=np.float32))
-    occ_tz     = npz.get("occlusion_tz",   np.zeros((0,), dtype=np.float32))
-    occ_pz     = npz.get("occlusion_pz",   np.zeros((0,), dtype=np.float32))
+    saliency   = npz.get("saliency",               np.zeros((0,), dtype=np.float32))
+    ig         = npz.get("integrated_gradients",   np.zeros((0,), dtype=np.float32))
+    occlusion  = npz.get("occlusion",              np.zeros((0,), dtype=np.float32))
+    occ_tz     = npz.get("occlusion_tz",           np.zeros((0,), dtype=np.float32))
+    occ_pz     = npz.get("occlusion_pz",           np.zeros((0,), dtype=np.float32))
     ablation      = npz.get("ablation",            np.zeros((0,), dtype=np.float32))
     zones_npz     = _fix_zones(npz.get("zones", np.zeros((0,), dtype=np.int8)), model)
     label         = npz.get("label",               np.zeros((0,), dtype=np.float32))
@@ -393,6 +395,7 @@ def _build_case_payload(model: str, case_id: str) -> dict:
         image       = _rot_spatial(image)
         pred        = _rot_spatial(pred)
         saliency    = _rot_spatial(saliency)
+        ig          = _rot_spatial(ig)
         occlusion   = _rot_spatial(occlusion)
         occ_tz      = _rot_spatial(occ_tz)
         occ_pz      = _rot_spatial(occ_pz)
@@ -448,6 +451,13 @@ def _build_case_payload(model: str, case_id: str) -> dict:
         sal_vmax = float(np.percentile(sal_abs, 99)) or 1e-6
         for i in range(3):
             panels[f"saliency_{i}"] = _render_all_slices(sal_abs[i], "turbo", 0.0, sal_vmax, transparent=True)
+
+    # Integrated Gradients: same layout as saliency (3 channels, single global vmax)
+    if not _is_sentinel(ig) and ig.ndim == 4:
+        ig_abs = np.abs(ig)  # (3, D, H, W)
+        ig_vmax = float(np.percentile(ig_abs, 99)) or 1e-6
+        for i in range(3):
+            panels[f"integrated_gradients_{i}"] = _render_all_slices(ig_abs[i], "turbo", 0.0, ig_vmax, transparent=True)
 
     # Cross-channel occlusion: single global vmax across all 3 channels
     if not _is_sentinel(occlusion) and occlusion.ndim == 4:
@@ -514,18 +524,21 @@ def _build_case_payload(model: str, case_id: str) -> dict:
 
     available_aggregations = []
     # sum is available if any of its panels were already rendered
-    if any(f"saliency_{i}" in panels for i in range(3)) or "ablation" in panels or \
-            any(f"occlusion_{i}" in panels for i in range(3)):
+    if (any(f"saliency_{i}" in panels for i in range(3)) or "ablation" in panels or
+            any(f"occlusion_{i}" in panels for i in range(3)) or
+            any(f"integrated_gradients_{i}" in panels for i in range(3))):
         available_aggregations.append("sum")
 
     for agg_name, sfx in _AGG_NON_SUM:
-        sal_agg   = _rot_maybe(npz.get(f"saliency{sfx}",      np.zeros((0,), dtype=np.float32)))
-        occ_agg   = _rot_maybe(npz.get(f"occlusion{sfx}",     np.zeros((0,), dtype=np.float32)))
-        occ_tz_agg = _rot_maybe(npz.get(f"occlusion_tz{sfx}", np.zeros((0,), dtype=np.float32)))
-        occ_pz_agg = _rot_maybe(npz.get(f"occlusion_pz{sfx}", np.zeros((0,), dtype=np.float32)))
-        abl_agg   = _rot_maybe(npz.get(f"ablation{sfx}",      np.zeros((0,), dtype=np.float32)))
+        sal_agg   = _rot_maybe(npz.get(f"saliency{sfx}",              np.zeros((0,), dtype=np.float32)))
+        ig_agg    = _rot_maybe(npz.get(f"integrated_gradients{sfx}",  np.zeros((0,), dtype=np.float32)))
+        occ_agg   = _rot_maybe(npz.get(f"occlusion{sfx}",             np.zeros((0,), dtype=np.float32)))
+        occ_tz_agg = _rot_maybe(npz.get(f"occlusion_tz{sfx}",         np.zeros((0,), dtype=np.float32)))
+        occ_pz_agg = _rot_maybe(npz.get(f"occlusion_pz{sfx}",         np.zeros((0,), dtype=np.float32)))
+        abl_agg   = _rot_maybe(npz.get(f"ablation{sfx}",              np.zeros((0,), dtype=np.float32)))
 
         has_any = ((not _is_sentinel(sal_agg) and sal_agg.ndim == 4) or
+                   (not _is_sentinel(ig_agg)  and ig_agg.ndim == 4)  or
                    (not _is_sentinel(occ_agg) and occ_agg.ndim == 4) or
                    (not _is_sentinel(abl_agg) and abl_agg.ndim == 4))
         if not has_any:
@@ -537,6 +550,12 @@ def _build_case_payload(model: str, case_id: str) -> dict:
             sal_vmax = float(np.percentile(sal_abs, 99)) or 1e-6
             for i in range(3):
                 panels[f"saliency{sfx}_{i}"] = _render_all_slices(sal_abs[i], "turbo", 0.0, sal_vmax, transparent=True)
+
+        if not _is_sentinel(ig_agg) and ig_agg.ndim == 4:
+            ig_agg_abs = np.abs(ig_agg)
+            ig_agg_vmax = float(np.percentile(ig_agg_abs, 99)) or 1e-6
+            for i in range(3):
+                panels[f"integrated_gradients{sfx}_{i}"] = _render_all_slices(ig_agg_abs[i], "turbo", 0.0, ig_agg_vmax, transparent=True)
 
         if not _is_sentinel(occ_agg) and occ_agg.ndim == 4:
             occ_abs = np.abs(occ_agg)
@@ -579,6 +598,8 @@ def _build_case_payload(model: str, case_id: str) -> dict:
     # Compute per-channel means on-the-fly from NPZ (not stored in progress.json)
     sal_ch_mean = (np.abs(saliency).mean(axis=(1, 2, 3)).tolist()
                    if not _is_sentinel(saliency) and saliency.ndim == 4 else None)
+    ig_ch_mean  = (np.abs(ig).mean(axis=(1, 2, 3)).tolist()
+                   if not _is_sentinel(ig) and ig.ndim == 4 else None)
     occ_for_stats = (occlusion if not _is_sentinel(occlusion) and occlusion.ndim == 4
                      else occ_merged)
     occ_ch_mean = (np.abs(occ_for_stats).mean(axis=(1, 2, 3)).tolist()
@@ -635,17 +656,19 @@ def _build_case_payload(model: str, case_id: str) -> dict:
         merged_occ_by_strat[_strat] = {**merged_occ_by_strat.get(_strat, {}), **_npz_stats}
 
     stats = {
-        "input_ablation":        inp_abl.tolist() if (not _is_sentinel(inp_abl) and inp_abl.shape == (3,)) else None,
-        "saliency":              _enrich(record.get("saliency"), sal_ch_mean),
-        "occlusion":             _enrich(record.get("occlusion"), occ_ch_mean),
-        "occlusion_by_strategy": merged_occ_by_strat,
-        "pz_voxels":             record.get("pz_voxels"),
-        "tz_voxels":             record.get("tz_voxels"),
-        "pred_pz_voxels":        record.get("pred_pz_voxels"),
-        "pred_tz_voxels":        record.get("pred_tz_voxels"),
-        "confidence":            record.get("confidence"),
-        "pred_max_prob":         record.get("pred_max_prob"),
-        "ablation_ch_fraction":  record.get("ablation_ch_fraction"),
+        "input_ablation":          inp_abl.tolist() if (not _is_sentinel(inp_abl) and inp_abl.shape == (3,)) else None,
+        "saliency":                _enrich(record.get("saliency"), sal_ch_mean),
+        "integrated_gradients":    _enrich(record.get("integrated_gradients"), ig_ch_mean),
+        "occlusion":               _enrich(record.get("occlusion"), occ_ch_mean),
+        "occlusion_by_strategy":   merged_occ_by_strat,
+        "pz_voxels":               record.get("pz_voxels"),
+        "tz_voxels":               record.get("tz_voxels"),
+        "pred_pz_voxels":          record.get("pred_pz_voxels"),
+        "pred_tz_voxels":          record.get("pred_tz_voxels"),
+        "confidence":              record.get("confidence"),
+        "pred_max_prob":           record.get("pred_max_prob"),
+        "ablation_ch_fraction":    record.get("ablation_ch_fraction"),
+        "ig_ch_fraction":          record.get("ig_ch_fraction"),
     }
 
     return {"n_slices": n_slices, "panels": panels, "stats": stats, "record": record,

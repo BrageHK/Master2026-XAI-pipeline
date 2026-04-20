@@ -40,7 +40,7 @@ import torch
 import torch.nn.functional as F
 from memory_profiler import profile
 import objgraph
-from captum.attr import Occlusion, Saliency
+from captum.attr import IntegratedGradients, Occlusion, Saliency
 from src.ablation_cam_3d import AblationCAM3D, find_decoder_feature_layers
 
 from src.utils import load_plans as _load_plans_from_file, log_large_vars
@@ -96,7 +96,7 @@ sys.path.insert(0, str(UMAMBA_ROOT))
 # ---------------------------------------------------------------------------
 # Metrics/charts constants
 # ---------------------------------------------------------------------------
-METHODS       = ["saliency", "occlusion"]
+METHODS       = ["saliency", "occlusion", "integrated_gradients"]
 CLASS_FILTERS = ["tp", "fp", "both"]
 ZONE_FILTERS  = ["pz", "tz", "pz_dominated", "combined"]
 
@@ -985,6 +985,7 @@ def _build_progress_record(
     abl_np: Optional[np.ndarray] = None,
     occ_tz_np: Optional[np.ndarray] = None,
     occ_pz_np: Optional[np.ndarray] = None,
+    ig_np: Optional[np.ndarray] = None,
     pred_crop: Optional[np.ndarray] = None,
     pred_cancer_voxels: int = 0,
     pred_max_prob: float = 0.0,
@@ -1056,6 +1057,10 @@ def _build_progress_record(
     # there is no per-input-channel breakdown, so we store None.
     abl_frac = None  # reserved for future per-channel ablation variants
 
+    ig_frac = None
+    if ig_np is not None and ig_np.ndim == 4:
+        ig_frac = _channel_stats(np.abs(ig_np))["ch_fraction"]
+
     return {
         "done":                    True,
         "error":                   None,
@@ -1075,6 +1080,7 @@ def _build_progress_record(
         "saliency_ch_fraction":        sal_frac,
         "occlusion_ch_fraction":       occ_frac,
         "ablation_ch_fraction":        abl_frac,
+        "ig_ch_fraction":              ig_frac,
         "occlusion_zero_ch_fraction":  occ_zero_stats["ch_fraction"] if occ_zero_stats else None,
         "occlusion_zero_ch_mean":      occ_zero_stats["ch_mean"]     if occ_zero_stats else None,
         "occlusion_zm_ch_fraction":    occ_zm_stats["ch_fraction"]   if occ_zm_stats else None,
@@ -1111,6 +1117,8 @@ def process_fold_monai(
     zones_only: bool = False,
     aggregation: str = "sum",
     max_cases: Optional[int] = None,
+    ig_steps: int = 50,
+    ig_internal_batch_size: int = 8,
 ) -> None:
     from shared_modules.data_module import DataModule   # noqa: E402
     from shared_modules.utils import load_config        # noqa: E402
@@ -1143,10 +1151,11 @@ def process_fold_monai(
     dl = dm.val_dataloader()
     print(f"Validation samples: {len(dl)}")
 
-    run_saliency       = "saliency"        in methods
-    run_occlusion      = "occlusion"       in methods
-    run_ablation_cam   = "ablation"        in methods
-    run_input_ablation = "input_ablation"  in methods
+    run_saliency       = "saliency"              in methods
+    run_occlusion      = "occlusion"             in methods
+    run_ablation_cam   = "ablation"              in methods
+    run_input_ablation = "input_ablation"        in methods
+    run_ig             = "integrated_gradients"  in methods
 
     processed, skipped, errors = 0, 0, 0
     objgraph.show_growth()  # reset baseline
@@ -1290,7 +1299,7 @@ def process_fold_monai(
                 zones_crop = _zones_from_monai_batch(batch, d0, d1)  # (D_crop, H, W) or None
 
             # ---- XAI: only when predicted positive -------------------------
-            sal_np = occ_np = occ_tz_np = occ_pz_np = occ_ch_np = abl_np = inp_abl = None
+            sal_np = occ_np = occ_tz_np = occ_pz_np = occ_ch_np = abl_np = inp_abl = ig_np = None
             zone_median_baseline_np = None
 
             if predicted_pos:
@@ -1305,6 +1314,20 @@ def process_fold_monai(
                     del x_sal, sal_attr
                     sal_np = sal_np.transpose(0, 3, 1, 2)          # (3, D, H, W)
                     sal_np = sal_np[:, d0:d1]                       # (3, D_crop, H, W)
+
+                if run_ig:
+                    x_ig = x.detach().clone().requires_grad_(True)
+                    with torch.enable_grad():
+                        ig_attr = IntegratedGradients(forward_func).attribute(
+                            x_ig,
+                            baselines=0,
+                            n_steps=ig_steps,
+                            internal_batch_size=ig_internal_batch_size,
+                        )
+                    ig_np = ig_attr.detach().cpu().numpy()[0]   # (3, H, W, D)
+                    del x_ig, ig_attr
+                    ig_np = ig_np.transpose(0, 3, 1, 2)          # (3, D, H, W)
+                    ig_np = ig_np[:, d0:d1]                       # (3, D_crop, H, W)
 
                 if run_occlusion:
                     # x is (1, 3, H, W, D); occ_window/stride are specified as (C, D, H, W)
@@ -1473,6 +1496,7 @@ def process_fold_monai(
                     np.savez_compressed(
                         out_file,
                         saliency       = _sentinel(_sw(sal_np, 4)).astype(np.float32) if sal_np is not None else _sentinel(None),
+                        integrated_gradients   = _sentinel(_sw(ig_np, 4)).astype(np.float32) if ig_np is not None else _sentinel(None),
                         occlusion              = _sentinel(_sw(occ_np, 4)).astype(np.float32) if occ_np is not None else _sentinel(None),
                         occlusion_tz           = _sentinel(_sw(occ_tz_np, 4)).astype(np.float32) if occ_tz_np is not None else _sentinel(None),
                         occlusion_pz           = _sentinel(_sw(occ_pz_np, 4)).astype(np.float32) if occ_pz_np is not None else _sentinel(None),
@@ -1495,6 +1519,7 @@ def process_fold_monai(
                     existing = _load_npz_fields(out_file)
                     new_fields = {
                         f"saliency{agg_sfx}":              _sentinel(_sw(sal_np, 4)).astype(np.float32) if sal_np is not None else _sentinel(None),
+                        f"integrated_gradients{agg_sfx}":  _sentinel(_sw(ig_np, 4)).astype(np.float32) if ig_np is not None else _sentinel(None),
                         f"occlusion{agg_sfx}":             _sentinel(_sw(occ_np, 4)).astype(np.float32) if occ_np is not None else _sentinel(None),
                         f"occlusion_tz{agg_sfx}":          _sentinel(_sw(occ_tz_np, 4)).astype(np.float32) if occ_tz_np is not None else _sentinel(None),
                         f"occlusion_pz{agg_sfx}":          _sentinel(_sw(occ_pz_np, 4)).astype(np.float32) if occ_pz_np is not None else _sentinel(None),
@@ -1511,6 +1536,7 @@ def process_fold_monai(
                 predicted_pos, lbl_crop, zones_crop, sal_np,
                 occ_np=occ_np, abl_np=abl_np,
                 occ_tz_np=occ_tz_np, occ_pz_np=occ_pz_np,
+                ig_np=ig_np,
                 pred_crop=pred_crop,
                 pred_cancer_voxels=cancer_voxels, pred_max_prob=pred_max_prob,
                 confidence=pred_max_prob,  # MONAI uses sigmoid — identical to pred_max_prob
@@ -1527,7 +1553,7 @@ def process_fold_monai(
             # Also drop numpy intermediates — .numpy() shares storage with MetaTensor,
             # so these prevent the MetaTensor from being freed until GC runs
             image_np = image_crop = pred_np = pred_crop = None
-            lbl_np = lbl_crop = zones_crop = None
+            lbl_np = lbl_crop = zones_crop = ig_np = None
 
         except Exception as exc:
             print(f"    ERROR: {exc}")
@@ -1575,6 +1601,8 @@ def process_fold_nnunet(
     zone_source: str = "umamba_pred",
     aggregation: str = "sum",
     max_cases: Optional[int] = None,
+    ig_steps: int = 50,
+    ig_internal_batch_size: int = 8,
 ) -> None:
     fold_dir = output_dir / f"fold_{fold}"
     fold_dir.mkdir(parents=True, exist_ok=True)
@@ -1602,10 +1630,11 @@ def process_fold_nnunet(
     print(f"Validation cases: {len(val_cases)}")
 
     d_div, h_div, w_div = _compute_nnunet_divisors(plans)
-    run_saliency       = "saliency"       in methods
-    run_occlusion      = "occlusion"      in methods
-    run_ablation_cam   = "ablation"       in methods
-    run_input_ablation = "input_ablation" in methods
+    run_saliency       = "saliency"              in methods
+    run_occlusion      = "occlusion"             in methods
+    run_ablation_cam   = "ablation"              in methods
+    run_input_ablation = "input_ablation"        in methods
+    run_ig             = "integrated_gradients"  in methods
 
     processed, skipped, errors = 0, 0, 0
 
@@ -1706,7 +1735,7 @@ def process_fold_nnunet(
                 zones_crop = zones_full[d0:d1] if zones_full is not None else None
 
             # ---- XAI: only when predicted positive ------------------------
-            sal_np = occ_np = occ_tz_np = occ_pz_np = occ_ch_np = abl_np = inp_abl = None
+            sal_np = occ_np = occ_tz_np = occ_pz_np = occ_ch_np = abl_np = inp_abl = ig_np = None
             zone_median_baseline_np = None
 
             if predicted_pos:
@@ -1729,6 +1758,21 @@ def process_fold_nnunet(
                     if occ_crop_hw is not None:
                         sal_np = sal_np[:, :, h0:h0 + occ_crop_hw, w0:w0 + occ_crop_hw]
                     sal_np = sal_np[:, d0:d1]  # (3, D_crop, H_crop, W_crop)
+
+                if run_ig:
+                    x_ig = x.detach().clone().requires_grad_(True)
+                    with torch.enable_grad():
+                        ig_attr = IntegratedGradients(fwd_sal).attribute(
+                            x_ig,
+                            baselines=0,
+                            n_steps=ig_steps,
+                            internal_batch_size=ig_internal_batch_size,
+                        )
+                    ig_np = _unpad(ig_attr.detach().cpu().numpy()[0], original_dhw)
+                    del x_ig, ig_attr
+                    if occ_crop_hw is not None:
+                        ig_np = ig_np[:, :, h0:h0 + occ_crop_hw, w0:w0 + occ_crop_hw]
+                    ig_np = ig_np[:, d0:d1]  # (3, D_crop, H_crop, W_crop)
 
                 if run_occlusion:
                     # --- zone_median baseline (TZ + PZ) ---
@@ -1887,6 +1931,7 @@ def process_fold_nnunet(
                     np.savez_compressed(
                         out_file,
                         saliency       = _sentinel(sal_np).astype(np.float32) if sal_np is not None else _sentinel(None),
+                        integrated_gradients   = _sentinel(ig_np).astype(np.float32) if ig_np is not None else _sentinel(None),
                         occlusion              = _sentinel(occ_np).astype(np.float32) if occ_np is not None else _sentinel(None),
                         occlusion_tz           = _sentinel(occ_tz_np).astype(np.float32) if occ_tz_np is not None else _sentinel(None),
                         occlusion_pz           = _sentinel(occ_pz_np).astype(np.float32) if occ_pz_np is not None else _sentinel(None),
@@ -1909,6 +1954,7 @@ def process_fold_nnunet(
                     existing = _load_npz_fields(out_file)
                     new_fields = {
                         f"saliency{agg_sfx}":              _sentinel(sal_np).astype(np.float32) if sal_np is not None else _sentinel(None),
+                        f"integrated_gradients{agg_sfx}":  _sentinel(ig_np).astype(np.float32) if ig_np is not None else _sentinel(None),
                         f"occlusion{agg_sfx}":             _sentinel(occ_np).astype(np.float32) if occ_np is not None else _sentinel(None),
                         f"occlusion_tz{agg_sfx}":          _sentinel(occ_tz_np).astype(np.float32) if occ_tz_np is not None else _sentinel(None),
                         f"occlusion_pz{agg_sfx}":          _sentinel(occ_pz_np).astype(np.float32) if occ_pz_np is not None else _sentinel(None),
@@ -1924,6 +1970,7 @@ def process_fold_nnunet(
                 predicted_pos, lbl_crop, zones_crop, sal_np,
                 occ_np=occ_np, abl_np=abl_np,
                 occ_tz_np=occ_tz_np, occ_pz_np=occ_pz_np,
+                ig_np=ig_np,
                 pred_crop=pred_crop,
                 pred_cancer_voxels=cancer_voxels, pred_max_prob=pred_max_prob,
                 confidence=confidence,
@@ -1979,6 +2026,8 @@ def process_fold(
     zone_source: str = "umamba_pred",
     aggregation: str = "sum",
     max_cases: Optional[int] = None,
+    ig_steps: int = 50,
+    ig_internal_batch_size: int = 8,
 ) -> None:
     model_output_dir = output_dir / model_name
     model_output_dir.mkdir(parents=True, exist_ok=True)
@@ -1992,6 +2041,7 @@ def process_fold(
         process_fold_nnunet(
             fold, model_output_dir, methods, skip_existing, occ_window, occ_stride, ppe,
             occ_crop_hw, device, occ_strategy, n_zone_patches, zone_source, aggregation, max_cases,
+            ig_steps, ig_internal_batch_size,
         )
     else:
         if model_name == "swin_unetr" and zone_source == "umamba_pred":
@@ -1999,7 +2049,7 @@ def process_fold(
         process_fold_monai(
             fold, model_name, model_output_dir, methods, skip_existing, occ_window, occ_stride, ppe,
             device, occ_strategy, n_zone_patches, zone_source, aggregation=aggregation,
-            max_cases=max_cases,
+            max_cases=max_cases, ig_steps=ig_steps, ig_internal_batch_size=ig_internal_batch_size,
         )
 
 
@@ -2402,7 +2452,7 @@ def main() -> None:
         "--methods",
         nargs="+",
         required=True,
-        choices=["saliency", "occlusion", "ablation", "input_ablation", "all"],
+        choices=["saliency", "occlusion", "ablation", "input_ablation", "integrated_gradients", "all"],
         metavar="METHOD",
         help="XAI methods to run. Use 'all' for all methods.",
     )
@@ -2523,6 +2573,20 @@ def main() -> None:
             "Multiple values accepted: --aggregation sum mean abs_sum abs_avg"
         ),
     )
+    parser.add_argument(
+        "--ig-steps",
+        type=int,
+        default=50,
+        metavar="N",
+        help="Number of interpolation steps for Integrated Gradients (higher = more accurate, slower).",
+    )
+    parser.add_argument(
+        "--ig-internal-batch-size",
+        type=int,
+        default=8,
+        metavar="N",
+        help="Internal batch size for Integrated Gradients forward passes.",
+    )
 
     args = parser.parse_args()
 
@@ -2539,7 +2603,7 @@ def main() -> None:
     # Resolve methods
     methods = set(args.methods)
     if "all" in methods:
-        methods = {"saliency", "occlusion", "ablation", "input_ablation"}
+        methods = {"saliency", "occlusion", "ablation", "input_ablation", "integrated_gradients"}
 
     # Parse occlusion params
     occ_window: Tuple[int, int, int, int] = tuple(  # type: ignore[assignment]
@@ -2569,6 +2633,7 @@ def main() -> None:
     print(f"Occlusion window:  {occ_window}  stride: {occ_stride}")
     print(f"Occlusion strategy:{args.occlusion_strategy}  zone patches: {args.occlusion_zone_patches}")
     print(f"Zone source:       {args.zone_source}")
+    print(f"IG steps:          {args.ig_steps}  internal batch size: {args.ig_internal_batch_size}")
     print(f"Device:            {device if device is not None else 'auto'}")
 
     for model_name in models:
@@ -2591,6 +2656,8 @@ def main() -> None:
                         zone_source=args.zone_source,
                         aggregation=agg,
                         max_cases=args.max_cases,
+                        ig_steps=args.ig_steps,
+                        ig_internal_batch_size=args.ig_internal_batch_size,
                     )
 
         # Compute metrics and charts from saved .npz files

@@ -558,7 +558,7 @@ function buildGrid(availablePanels) {
   grid.innerHTML = "";
   grid.className = ROTATE_MODELS.has(activeModel) ? "rotate-left" : "";
   const ablVisible = document.getElementById("ablation-toggle")?.checked ?? false;
-  const nDataCols = COLS.filter(c => c.key !== "original" && (c.key !== "ablation" || ablVisible)).length;
+  const nDataCols = COLS.filter(c => c.key !== "ablation" || ablVisible).length;
   grid.style.gridTemplateColumns = `80px repeat(${nDataCols}, minmax(0, 1fr))`;
 
   grid.appendChild(document.createElement("div"));
@@ -1201,7 +1201,7 @@ document.getElementById("cmp-pred-model-select").addEventListener("change", e =>
 });
 
 function setAblationVisible(visible) {
-  const baseDataCols = COLS.filter(c => c.key !== "original" && c.key !== "ablation").length;
+  const baseDataCols = COLS.filter(c => c.key !== "ablation").length;
   document.getElementById("viewer-grid").style.gridTemplateColumns = visible
     ? `80px repeat(${baseDataCols + 1}, minmax(0, 1fr))`
     : `80px repeat(${baseDataCols}, minmax(0, 1fr))`;

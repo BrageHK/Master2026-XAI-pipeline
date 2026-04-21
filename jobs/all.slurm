@@ -48,4 +48,4 @@ mkdir -p "$(dirname "$LOG_BASE")"
 exec > "${LOG_BASE}.txt" 2> "${LOG_BASE}.err"
 
 echo "Running model=$MODEL fold=$FOLD"
-uv run generate_xai_data.py --fold "$FOLD" --models "$MODEL" --methods "all" --no-skip
+uv run main.py --fold "$FOLD" --models "$MODEL" --methods "all" --overwrite

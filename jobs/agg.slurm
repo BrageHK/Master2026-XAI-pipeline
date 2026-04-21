@@ -32,10 +32,10 @@ module purge
 # Appends saliency_mean / saliency_abs_sum / saliency_abs_avg fields
 # to existing .npz files — existing sum data is not touched.
 # Stops after 10 predicted-positive cases per model per aggregation.
-uv run generate_xai_data.py \
+uv run main.py \
     --models all \
     --fold 0 \
     --methods saliency \
     --aggregation mean abs_sum abs_avg \
     --max-cases 10 \
-    --no-skip
+    --overwrite

@@ -32,4 +32,4 @@ echo "Total of $SLURM_NTASKS cores"
 
 module purge
 
-uv run generate_xai_data.py --fold "$SLURM_ARRAY_TASK_ID" --models "umamba_mtl" --methods "all" --no-skip
+uv run main.py --fold "$SLURM_ARRAY_TASK_ID" --models "umamba_mtl" --methods "all" --overwrite

@@ -156,7 +156,7 @@ def _load_umamba_zones(case_id: str, fold: int) -> Optional[dict]:
     raw = np.load(path, allow_pickle=True)
     return {
         "zones":      raw["zones"],
-        "affine":     raw["affine"]     if "affine"     in raw.files else None,
+        "affine":     (raw["affine"][0] if raw["affine"].ndim == 3 else raw["affine"]) if "affine" in raw.files else None,
         "d0":         int(raw["d0"])    if "d0"         in raw.files else None,
         "d1":         int(raw["d1"])    if "d1"         in raw.files else None,
         "zones_crop": raw["zones_crop"] if "zones_crop" in raw.files else None,
@@ -307,7 +307,7 @@ def _ensure_umamba_zones(fold: int, device: torch.device) -> None:
             zone_pred_hwD = zone_logits.softmax(dim=1).argmax(dim=1)[0]    # (H, W, D)
 
         zones_pred_Dhw = zone_pred_hwD.cpu().numpy().transpose(2, 0, 1).astype(np.int8)  # (D, H, W)
-        monai_affine   = batch["image"].affine.cpu().numpy().astype(np.float64)           # (4, 4)
+        monai_affine   = batch["image"].affine[0].cpu().numpy().astype(np.float64)          # (4, 4)
 
         # Depth crop from own zone predictions
         zone_present = (zones_pred_Dhw > 0).any(axis=(1, 2))  # (D,)

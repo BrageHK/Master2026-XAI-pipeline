@@ -156,6 +156,7 @@
         <div class="btn-group" role="group">
           <button class="btn btn-sm btn-primary"           id="btn-method-saliency"             onclick="switchCompareMethod('saliency')">Saliency</button>
           <button class="btn btn-sm btn-outline-secondary" id="btn-method-integrated_gradients"  onclick="switchCompareMethod('integrated_gradients')">Int. Gradients</button>
+          <button class="btn btn-sm btn-outline-secondary" id="btn-method-gradient_shap"         onclick="switchCompareMethod('gradient_shap')">Grad. SHAP</button>
           <button class="btn btn-sm btn-outline-secondary" id="btn-method-occlusion"             onclick="switchCompareMethod('occlusion')">Occlusion</button>
           <button class="btn btn-sm btn-outline-secondary" id="btn-method-ablation"              onclick="switchCompareMethod('ablation')">AblationCAM</button>
         </div>
@@ -291,6 +292,10 @@
         <div id="plot-ig-pie" style="height:200px"></div>
       </div>
       <div class="stat-card">
+        <div class="stat-label mb-1">Grad. SHAP — Channel Share</div>
+        <div id="plot-gs-pie" style="height:200px"></div>
+      </div>
+      <div class="stat-card">
         <div class="stat-label mb-1">Occlusion — Channel Share</div>
         <div id="plot-occ-pie" style="height:200px"></div>
       </div>
@@ -301,6 +306,10 @@
       <div class="stat-card">
         <div class="stat-label mb-1">Int. Gradients — Mean per Channel</div>
         <div id="plot-ig-bar" style="height:160px"></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label mb-1">Grad. SHAP — Mean per Channel</div>
+        <div id="plot-gs-bar" style="height:160px"></div>
       </div>
       <div class="stat-card">
         <div class="stat-label mb-1">Occlusion — Mean per Channel</div>
@@ -387,6 +396,10 @@ function getIgPanelKey(row) {
   return `integrated_gradients${_aggSfx()}_${row.idx}`;
 }
 
+function getGsPanelKey(row) {
+  return `gradient_shap${_aggSfx()}_${row.idx}`;
+}
+
 function getOccPanelKey(row) {
   const sfx = _aggSfx();
   const strat = document.getElementById("occ-strategy-select")?.value;
@@ -407,6 +420,7 @@ const COLS = [
   { key: "label",                 label: "Label GT",       panelKey: () => "label"                         },
   { key: "saliency",              label: "Saliency",       panelKey: (r) => getSalPanelKey(r)              },
   { key: "integrated_gradients",  label: "Int. Gradients", panelKey: (r) => getIgPanelKey(r)              },
+  { key: "gradient_shap",         label: "Grad. SHAP",     panelKey: (r) => getGsPanelKey(r)              },
   { key: "occlusion",             label: "Occlusion",      panelKey: (r) => getOccPanelKey(r)             },
   { key: "ablation",              label: "AblationCAM",    panelKey: () => getAblPanelKey()               },
 ];
@@ -616,6 +630,7 @@ function cmpCompositeCell(m, row, sl, method) {
   const overlayKey = method === 'ablation'              ? getAblPanelKey()
     : method === 'occlusion'             ? getCmpOccKey(m, row.idx)
     : method === 'integrated_gradients'  ? getIgPanelKey(row)
+    : method === 'gradient_shap'         ? getGsPanelKey(row)
     : getSalPanelKey(row);
   const contourCache = cmpCachedContours[m] ?? (cmpCachedContours[m] = {});
   const baseRad = ROTATE_MODELS.has(m) ? -Math.PI/2 : 0;
@@ -793,6 +808,7 @@ function buildCompareGrid(method) {
       const xaiKey = method === 'ablation'             ? getAblPanelKey()
         : method === 'occlusion'            ? getCmpOccKey(m, row.idx)
         : method === 'integrated_gradients' ? getIgPanelKey(row)
+        : method === 'gradient_shap'        ? getGsPanelKey(row)
         : getSalPanelKey(row);
       const hasXai = hasPos && mPanels && (xaiKey in mPanels);
       const wrapper = document.createElement("div");
@@ -849,7 +865,8 @@ function buildCompareSidebar() {
         fracs = mData.stats[statKey]?.ch_fraction;
       }
       if (fracs) {
-        const methodLabel = compareMethod === 'ablation' ? 'Saliency' : compareMethod.charAt(0).toUpperCase() + compareMethod.slice(1);
+        const methodLabels = { ablation: 'Saliency', gradient_shap: 'Grad. SHAP', integrated_gradients: 'Int. Gradients' };
+        const methodLabel = methodLabels[compareMethod] ?? compareMethod.charAt(0).toUpperCase() + compareMethod.slice(1);
         html += `<div class="small text-muted mt-1 mb-1">${methodLabel} channels:</div>`;
         ['T2W','ADC','HBV'].forEach((name, i) => {
           html += `<div class="d-flex align-items-center gap-1 mb-1">
@@ -989,6 +1006,8 @@ function updateModelSidebar(mData) {
   plotBar("plot-sal-bar", s.saliency?.ch_mean ?? null);
   plotPie("plot-ig-pie",  s.integrated_gradients?.ch_fraction ?? null);
   plotBar("plot-ig-bar",  s.integrated_gradients?.ch_mean ?? null);
+  plotPie("plot-gs-pie",  s.gradient_shap?.ch_fraction ?? null);
+  plotBar("plot-gs-bar",  s.gradient_shap?.ch_mean ?? null);
   updateOccStats();
   const confRow = document.getElementById("cls-confidence-row");
   const confEl  = document.getElementById("cls-confidence");
@@ -1069,7 +1088,7 @@ function populateCmpOccStrategyDropdown() {
 
 function switchCompareMethod(method) {
   compareMethod = method;
-  for (const m of ['saliency','integrated_gradients','occlusion','ablation']) {
+  for (const m of ['saliency','integrated_gradients','gradient_shap','occlusion','ablation']) {
     const btn = document.getElementById(`btn-method-${m}`);
     if (btn) btn.className = m === method ? "btn btn-sm btn-primary" : "btn btn-sm btn-outline-secondary";
   }
@@ -1269,7 +1288,7 @@ function populateAggSelector(available) {
 }
 
 // ── Legend ────────────────────────────────────────────────────────────────────
-const COLORMAP_KEYS = ["prediction","saliency_0","integrated_gradients_0","occlusion_0","ablation"];
+const COLORMAP_KEYS = ["prediction","saliency_0","integrated_gradients_0","gradient_shap_0","occlusion_0","ablation"];
 const COLORMAP_GRAD = "linear-gradient(to right,#30123b,#4776ef,#1dbd9d,#b1f23c,#fb8a26,#7a0502)";
 
 function populateLegend(availablePanels) {
@@ -1333,7 +1352,7 @@ function populateLegend(availablePanels) {
     document.getElementById("screenshot-btn").disabled = false;
     document.getElementById("screenshot-split-drop-btn").disabled = false;
 
-    const hasXAI = ["saliency_0","integrated_gradients_0","occlusion_0","occlusion_zm_0","occlusion_tz_masked_0","ablation"].some(k => k in panels);
+    const hasXAI = ["saliency_0","integrated_gradients_0","gradient_shap_0","occlusion_0","occlusion_zm_0","occlusion_tz_masked_0","ablation"].some(k => k in panels);
     if (!hasXAI) document.getElementById("no-xai-msg").style.display = "";
 
     const zonesErrEl = document.getElementById("zones-error-msg");
@@ -1352,6 +1371,8 @@ function populateLegend(availablePanels) {
     plotBar("plot-sal-bar", s.saliency?.ch_mean ?? null);
     plotPie("plot-ig-pie",  s.integrated_gradients?.ch_fraction ?? null);
     plotBar("plot-ig-bar",  s.integrated_gradients?.ch_mean ?? null);
+    plotPie("plot-gs-pie",  s.gradient_shap?.ch_fraction ?? null);
+    plotBar("plot-gs-bar",  s.gradient_shap?.ch_mean ?? null);
     updateOccStats();
 
     buildModelSwitcher();

@@ -6,7 +6,7 @@ from typing import List, Optional, Set, Tuple
 
 import numpy as np
 import torch
-from captum.attr import IntegratedGradients, Occlusion, Saliency
+from captum.attr import GradientShap, IntegratedGradients, Occlusion, Saliency
 
 from src.models.loader import load_nnunet
 from src.models.preprocessing import (
@@ -42,7 +42,7 @@ def process_fold_nnunet(
     occ_window: Tuple[int, int, int, int],
     occ_stride: Tuple[int, int, int, int],
     ppe: int,
-    occ_crop_hw: Optional[int] = 128,
+    occ_crop_hw: int = 128,
     device: Optional[torch.device] = None,
     occ_strategy: str = "zero",
     n_zone_patches: int = 10,
@@ -51,6 +51,8 @@ def process_fold_nnunet(
     max_cases: Optional[int] = None,
     ig_steps: int = 50,
     ig_internal_batch_size: int = 8,
+    gs_n_samples: int = 50,
+    gs_stdevs: float = 0.0,
 ) -> None:
     fold_dir = output_dir / f"fold_{fold}"
     fold_dir.mkdir(parents=True, exist_ok=True)
@@ -78,11 +80,12 @@ def process_fold_nnunet(
     print(f"Validation cases: {len(val_cases)}")
 
     d_div, h_div, w_div = _compute_nnunet_divisors(plans)
-    run_saliency       = "saliency"              in methods
-    run_occlusion      = "occlusion"             in methods
-    run_ablation_cam   = "ablation"              in methods
-    run_input_ablation = "input_ablation"        in methods
-    run_ig             = "integrated_gradients"  in methods
+    run_saliency        = "saliency"              in methods
+    run_occlusion       = "occlusion"             in methods
+    run_ablation_cam    = "ablation"              in methods
+    run_input_ablation  = "input_ablation"        in methods
+    run_ig              = "integrated_gradients"  in methods
+    run_gs              = "gradient_shap"         in methods
 
     processed, skipped, errors = 0, 0, 0
 
@@ -152,12 +155,9 @@ def process_fold_nnunet(
                 d_max  = int(coords[:, 0].max())
                 d0     = max(0, d_min - 1)
                 d1     = min(D_orig, d_max + 2)
-                if occ_crop_hw is not None:
-                    _, hc, wc = coords.mean(axis=0).astype(int)
-                    h0 = int(np.clip(hc - occ_crop_hw // 2, 0, H_pad - occ_crop_hw))
-                    w0 = int(np.clip(wc - occ_crop_hw // 2, 0, W_pad - occ_crop_hw))
-                else:
-                    h0, w0 = 0, 0
+                _, hc, wc = coords.mean(axis=0).astype(int)
+                h0 = int(np.clip(hc - occ_crop_hw // 2, 0, H_pad - occ_crop_hw))
+                w0 = int(np.clip(wc - occ_crop_hw // 2, 0, W_pad - occ_crop_hw))
             else:
                 d0, d1 = 0, D_orig
                 h0, w0 = 0, 0
@@ -166,68 +166,66 @@ def process_fold_nnunet(
 
             # ---- Always: image, prediction, label, zones ------------------
             prob_full  = _unpad(cancer_prob.cpu().numpy(), original_dhw)  # (1, D, H, W)
-            if occ_crop_hw is not None:
-                image_crop = data[:, d0:d1, h0:h0 + occ_crop_hw, w0:w0 + occ_crop_hw]
-                pred_crop  = prob_full[:, d0:d1, h0:h0 + occ_crop_hw, w0:w0 + occ_crop_hw]
-                if label_np is not None:
-                    lbl_crop: Optional[np.ndarray] = label_np[d0:d1, h0:h0 + occ_crop_hw, w0:w0 + occ_crop_hw][np.newaxis]
-                else:
-                    lbl_crop = None
-                zones_crop = zones_full[d0:d1, h0:h0 + occ_crop_hw, w0:w0 + occ_crop_hw] if zones_full is not None else None
-            else:
-                image_crop = data[:, d0:d1]
-                pred_crop  = prob_full[:, d0:d1]
-                lbl_crop   = label_np[d0:d1][np.newaxis] if label_np is not None else None
-                zones_crop = zones_full[d0:d1] if zones_full is not None else None
+            image_crop = data[:, d0:d1, h0:h0 + occ_crop_hw, w0:w0 + occ_crop_hw]
+            pred_crop  = prob_full[:, d0:d1, h0:h0 + occ_crop_hw, w0:w0 + occ_crop_hw]
+            lbl_crop: Optional[np.ndarray] = label_np[d0:d1, h0:h0 + occ_crop_hw, w0:w0 + occ_crop_hw][np.newaxis] if label_np is not None else None
+            zones_crop = zones_full[d0:d1, h0:h0 + occ_crop_hw, w0:w0 + occ_crop_hw] if zones_full is not None else None
 
             # ---- XAI: only when predicted positive ------------------------
-            sal_np = occ_np = occ_tz_np = occ_pz_np = occ_ch_np = abl_np = inp_abl = ig_np = None
+            sal_np = occ_np = occ_tz_np = occ_pz_np = occ_ch_np = abl_np = inp_abl = ig_np = gs_np = None
             zone_median_baseline_np = None
 
             if predicted_pos:
-                if occ_crop_hw is not None:
-                    fixed_mask_crop = fixed_mask[:, :, h0:h0 + occ_crop_hw, w0:w0 + occ_crop_hw]
-                    x_crop = x.detach().clone()[:, :, :, h0:h0 + occ_crop_hw, w0:w0 + occ_crop_hw]
-                else:
-                    fixed_mask_crop = fixed_mask
-                    x_crop = x.detach().clone()
+                fixed_mask_crop = fixed_mask[:, :, h0:h0 + occ_crop_hw, w0:w0 + occ_crop_hw]
+                x_crop = x.detach().clone()[:, :, :, h0:h0 + occ_crop_hw, w0:w0 + occ_crop_hw]
 
-                fwd_sal = _make_forward_func_softmax(network, fixed_mask, aggregation=aggregation)
                 fwd_occ = _make_forward_func_softmax(network, fixed_mask_crop, aggregation=aggregation)
 
                 if run_saliency:
-                    x_sal = x.detach().clone().requires_grad_(True)
+                    x_sal = x_crop.detach().clone().requires_grad_(True)
                     with torch.enable_grad():
-                        sal_attr = Saliency(fwd_sal).attribute(x_sal, abs=True)
-                    sal_np = _unpad(sal_attr.detach().cpu().numpy()[0], original_dhw)
+                        sal_attr = Saliency(fwd_occ).attribute(x_sal, abs=True)
+                    sal_np = _unpad(sal_attr.detach().cpu().numpy()[0], (original_dhw[0], occ_crop_hw, occ_crop_hw))
                     del x_sal, sal_attr
-                    if occ_crop_hw is not None:
-                        sal_np = sal_np[:, :, h0:h0 + occ_crop_hw, w0:w0 + occ_crop_hw]
                     sal_np = sal_np[:, d0:d1]  # (3, D_crop, H_crop, W_crop)
 
                 if run_ig:
-                    x_ig = x.detach().clone().requires_grad_(True)
+                    x_ig = x_crop.detach().clone().requires_grad_(True)
                     with torch.enable_grad():
-                        ig_attr = IntegratedGradients(fwd_sal).attribute(
+                        ig_attr = IntegratedGradients(fwd_occ).attribute(
                             x_ig,
                             baselines=0,
                             n_steps=ig_steps,
                             internal_batch_size=ig_internal_batch_size,
                         )
-                    ig_np = _unpad(ig_attr.detach().cpu().numpy()[0], original_dhw)
+                    ig_np = _unpad(ig_attr.detach().cpu().numpy()[0], (original_dhw[0], occ_crop_hw, occ_crop_hw))
                     del x_ig, ig_attr
-                    if occ_crop_hw is not None:
-                        ig_np = ig_np[:, :, h0:h0 + occ_crop_hw, w0:w0 + occ_crop_hw]
                     ig_np = ig_np[:, d0:d1]  # (3, D_crop, H_crop, W_crop)
+
+                if run_gs:
+                    x_gs = x_crop.detach().clone().requires_grad_(True)
+                    baselines_gs = torch.zeros_like(x_gs)
+                    try:
+                        with torch.enable_grad():
+                            gs_attr = GradientShap(fwd_occ).attribute(
+                                x_gs,
+                                baselines=baselines_gs,
+                                n_samples=gs_n_samples,
+                                stdevs=gs_stdevs,
+                            )
+                        gs_np = _unpad(gs_attr.detach().cpu().numpy()[0], (original_dhw[0], occ_crop_hw, occ_crop_hw))
+                        del x_gs, gs_attr, baselines_gs
+                        gs_np = gs_np[:, d0:d1]  # (3, D_crop, H_crop, W_crop)
+                    except torch.OutOfMemoryError:
+                        print(f"    [gs] OOM for {case_id} (shape {list(x_gs.shape)}) — skipping GradientShap.")
+                        del x_gs, baselines_gs
+                        torch.cuda.empty_cache()
 
                 if run_occlusion:
                     # --- zone_median baseline (TZ + PZ) ---
                     if occ_strategy in ("zone_median", "all") and zones_full is not None:
                         # Build zones in x_crop coordinate system: (D_pad, H_crop, W_crop)
-                        if occ_crop_hw is not None:
-                            zones_xcrop = zones_full[:, h0:h0 + occ_crop_hw, w0:w0 + occ_crop_hw]
-                        else:
-                            zones_xcrop = zones_full  # (D_orig, H, W)
+                        zones_xcrop = zones_full[:, h0:h0 + occ_crop_hw, w0:w0 + occ_crop_hw]
                         D_orig_z = zones_xcrop.shape[0]
                         D_pad_val = x_crop.shape[2]
                         if D_pad_val > D_orig_z:
@@ -392,6 +390,8 @@ def process_fold_nnunet(
                         new_fields["saliency"] = sal_np.astype(np.float32)
                     if ig_np is not None:
                         new_fields["integrated_gradients"] = ig_np.astype(np.float32)
+                    if gs_np is not None:
+                        new_fields["gradient_shap"] = gs_np.astype(np.float32)
                     if occ_np is not None:
                         new_fields["occlusion"] = occ_np.astype(np.float32)
                     if occ_tz_np is not None:
@@ -413,6 +413,7 @@ def process_fold_nnunet(
                     new_fields = {
                         f"saliency{agg_sfx}":              _sentinel(sal_np).astype(np.float32) if sal_np is not None else _sentinel(None),
                         f"integrated_gradients{agg_sfx}":  _sentinel(ig_np).astype(np.float32) if ig_np is not None else _sentinel(None),
+                        f"gradient_shap{agg_sfx}":         _sentinel(gs_np).astype(np.float32) if gs_np is not None else _sentinel(None),
                         f"occlusion{agg_sfx}":             _sentinel(occ_np).astype(np.float32) if occ_np is not None else _sentinel(None),
                         f"occlusion_tz{agg_sfx}":          _sentinel(occ_tz_np).astype(np.float32) if occ_tz_np is not None else _sentinel(None),
                         f"occlusion_pz{agg_sfx}":          _sentinel(occ_pz_np).astype(np.float32) if occ_pz_np is not None else _sentinel(None),
@@ -428,7 +429,7 @@ def process_fold_nnunet(
                 predicted_pos, lbl_crop, zones_crop, sal_np,
                 occ_np=occ_np, abl_np=abl_np,
                 occ_tz_np=occ_tz_np, occ_pz_np=occ_pz_np,
-                ig_np=ig_np,
+                ig_np=ig_np, gs_np=gs_np,
                 pred_crop=pred_crop,
                 pred_cancer_voxels=cancer_voxels, pred_max_prob=pred_max_prob,
                 confidence=confidence,

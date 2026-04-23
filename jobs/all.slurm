@@ -1,9 +1,9 @@
 #!/bin/bash
 #SBATCH --partition=GPUQ
 #SBATCH --account=share-ie-idi
-#SBATCH --time=64:00:00
+#SBATCH --time=5:00:00
 #SBATCH --gres=gpu:1
-#SBATCH --constraint="gpu80g"
+#SBATCH --constraint="gpu80g|gpu40g|gpu32g"
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
 #SBATCH --cpus-per-task=8
@@ -48,4 +48,4 @@ mkdir -p "$(dirname "$LOG_BASE")"
 exec > "${LOG_BASE}.txt" 2> "${LOG_BASE}.err"
 
 echo "Running model=$MODEL fold=$FOLD"
-uv run main.py --fold "$FOLD" --models "$MODEL" --methods "all" --overwrite
+uv run main.py --fold "$FOLD" --models "$MODEL" --methods integrated_gradients gradient_shap

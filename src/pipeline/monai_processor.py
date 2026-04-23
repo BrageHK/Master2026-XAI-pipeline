@@ -6,7 +6,7 @@ from typing import Optional, Set, Tuple
 
 import numpy as np
 import torch
-from captum.attr import IntegratedGradients, Occlusion, Saliency
+from captum.attr import GradientShap, IntegratedGradients, Occlusion, Saliency
 
 from src.models.loader import load_model
 from src.utils import (
@@ -48,6 +48,8 @@ def process_fold_monai(
     max_cases: Optional[int] = None,
     ig_steps: int = 50,
     ig_internal_batch_size: int = 8,
+    gs_n_samples: int = 50,
+    gs_stdevs: float = 0.0,
 ) -> None:
     from shared_modules.data_module import DataModule   # noqa: E402
     from shared_modules.utils import load_config        # noqa: E402
@@ -81,11 +83,12 @@ def process_fold_monai(
     dl = dm.val_dataloader()
     print(f"Validation samples: {len(dl)}")
 
-    run_saliency       = "saliency"              in methods
-    run_occlusion      = "occlusion"             in methods
-    run_ablation_cam   = "ablation"              in methods
-    run_input_ablation = "input_ablation"        in methods
-    run_ig             = "integrated_gradients"  in methods
+    run_saliency        = "saliency"              in methods
+    run_occlusion       = "occlusion"             in methods
+    run_ablation_cam    = "ablation"              in methods
+    run_input_ablation  = "input_ablation"        in methods
+    run_ig              = "integrated_gradients"  in methods
+    run_gs              = "gradient_shap"         in methods
 
     processed, skipped, errors = 0, 0, 0
 
@@ -226,7 +229,7 @@ def process_fold_monai(
                 zones_crop = _zones_from_monai_batch(batch, d0, d1)  # (D_crop, H, W) or None
 
             # ---- XAI: only when predicted positive -------------------------
-            sal_np = occ_np = occ_tz_np = occ_pz_np = occ_ch_np = abl_np = inp_abl = ig_np = None
+            sal_np = occ_np = occ_tz_np = occ_pz_np = occ_ch_np = abl_np = inp_abl = ig_np = gs_np = None
             zone_median_baseline_np = None
 
             if predicted_pos:
@@ -255,6 +258,21 @@ def process_fold_monai(
                     del x_ig, ig_attr
                     ig_np = ig_np.transpose(0, 3, 1, 2)          # (3, D, H, W)
                     ig_np = ig_np[:, d0:d1]                       # (3, D_crop, H, W)
+
+                if run_gs:
+                    x_gs = x.detach().clone().requires_grad_(True)
+                    baselines_gs = torch.zeros_like(x_gs)
+                    with torch.enable_grad():
+                        gs_attr = GradientShap(forward_func).attribute(
+                            x_gs,
+                            baselines=baselines_gs,
+                            n_samples=gs_n_samples,
+                            stdevs=gs_stdevs,
+                        )
+                    gs_np = gs_attr.detach().cpu().numpy()[0]   # (3, H, W, D)
+                    del x_gs, gs_attr, baselines_gs
+                    gs_np = gs_np.transpose(0, 3, 1, 2)          # (3, D, H, W)
+                    gs_np = gs_np[:, d0:d1]                       # (3, D_crop, H, W)
 
                 if run_occlusion:
                     # x is (1, 3, H, W, D); occ_window/stride are specified as (C, D, H, W)
@@ -434,6 +452,8 @@ def process_fold_monai(
                         new_fields["saliency"] = _sw(sal_np, 4).astype(np.float32)
                     if ig_np is not None:
                         new_fields["integrated_gradients"] = _sw(ig_np, 4).astype(np.float32)
+                    if gs_np is not None:
+                        new_fields["gradient_shap"] = _sw(gs_np, 4).astype(np.float32)
                     if occ_np is not None:
                         new_fields["occlusion"] = _sw(occ_np, 4).astype(np.float32)
                     if occ_tz_np is not None:
@@ -455,6 +475,7 @@ def process_fold_monai(
                     new_fields = {
                         f"saliency{agg_sfx}":              _sentinel(_sw(sal_np, 4)).astype(np.float32) if sal_np is not None else _sentinel(None),
                         f"integrated_gradients{agg_sfx}":  _sentinel(_sw(ig_np, 4)).astype(np.float32) if ig_np is not None else _sentinel(None),
+                        f"gradient_shap{agg_sfx}":         _sentinel(_sw(gs_np, 4)).astype(np.float32) if gs_np is not None else _sentinel(None),
                         f"occlusion{agg_sfx}":             _sentinel(_sw(occ_np, 4)).astype(np.float32) if occ_np is not None else _sentinel(None),
                         f"occlusion_tz{agg_sfx}":          _sentinel(_sw(occ_tz_np, 4)).astype(np.float32) if occ_tz_np is not None else _sentinel(None),
                         f"occlusion_pz{agg_sfx}":          _sentinel(_sw(occ_pz_np, 4)).astype(np.float32) if occ_pz_np is not None else _sentinel(None),
@@ -471,7 +492,7 @@ def process_fold_monai(
                 predicted_pos, lbl_crop, zones_crop, sal_np,
                 occ_np=occ_np, abl_np=abl_np,
                 occ_tz_np=occ_tz_np, occ_pz_np=occ_pz_np,
-                ig_np=ig_np,
+                ig_np=ig_np, gs_np=gs_np,
                 pred_crop=pred_crop,
                 pred_cancer_voxels=cancer_voxels, pred_max_prob=pred_max_prob,
                 confidence=pred_max_prob,  # MONAI uses sigmoid — identical to pred_max_prob
@@ -488,7 +509,7 @@ def process_fold_monai(
             # Also drop numpy intermediates — .numpy() shares storage with MetaTensor,
             # so these prevent the MetaTensor from being freed until GC runs
             image_np = image_crop = pred_np = pred_crop = None
-            lbl_np = lbl_crop = zones_crop = ig_np = None
+            lbl_np = lbl_crop = zones_crop = ig_np = gs_np = None
 
         except Exception as exc:
             print(f"    ERROR: {exc}")

@@ -23,6 +23,7 @@ def _build_progress_record(
     occ_tz_np: Optional[np.ndarray] = None,
     occ_pz_np: Optional[np.ndarray] = None,
     ig_np: Optional[np.ndarray] = None,
+    gs_np: Optional[np.ndarray] = None,
     pred_crop: Optional[np.ndarray] = None,
     pred_cancer_voxels: int = 0,
     pred_max_prob: float = 0.0,
@@ -98,6 +99,10 @@ def _build_progress_record(
     if ig_np is not None and ig_np.ndim == 4:
         ig_frac = _channel_stats(np.abs(ig_np))["ch_fraction"]
 
+    gs_frac = None
+    if gs_np is not None and gs_np.ndim == 4:
+        gs_frac = _channel_stats(np.abs(gs_np))["ch_fraction"]
+
     return {
         "done":                    True,
         "error":                   None,
@@ -118,6 +123,7 @@ def _build_progress_record(
         "occlusion_ch_fraction":       occ_frac,
         "ablation_ch_fraction":        abl_frac,
         "ig_ch_fraction":              ig_frac,
+        "gs_ch_fraction":              gs_frac,
         "occlusion_zero_ch_fraction":  occ_zero_stats["ch_fraction"] if occ_zero_stats else None,
         "occlusion_zero_ch_mean":      occ_zero_stats["ch_mean"]     if occ_zero_stats else None,
         "occlusion_zm_ch_fraction":    occ_zm_stats["ch_fraction"]   if occ_zm_stats else None,

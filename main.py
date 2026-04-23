@@ -73,6 +73,8 @@ def process_fold(
     max_cases: Optional[int] = None,
     ig_steps: int = 50,
     ig_internal_batch_size: int = 8,
+    gs_n_samples: int = 50,
+    gs_stdevs: float = 0.0,
 ) -> None:
     from src.pipeline.monai_processor import process_fold_monai
     from src.pipeline.nnunet_processor import process_fold_nnunet
@@ -90,7 +92,7 @@ def process_fold(
         process_fold_nnunet(
             fold, model_output_dir, methods, overwrite, occ_window, occ_stride, ppe,
             occ_crop_hw, device, occ_strategy, n_zone_patches, zone_source, aggregation,
-            max_cases, ig_steps, ig_internal_batch_size,
+            max_cases, ig_steps, ig_internal_batch_size, gs_n_samples, gs_stdevs,
         )
     else:
         if model_name == "swin_unetr" and zone_source == "umamba_pred":
@@ -99,6 +101,7 @@ def process_fold(
             fold, model_name, model_output_dir, methods, overwrite, occ_window, occ_stride, ppe,
             device, occ_strategy, n_zone_patches, zone_source, aggregation=aggregation,
             max_cases=max_cases, ig_steps=ig_steps, ig_internal_batch_size=ig_internal_batch_size,
+            gs_n_samples=gs_n_samples, gs_stdevs=gs_stdevs,
         )
 
 
@@ -126,7 +129,7 @@ def main() -> None:
         "--methods",
         nargs="+",
         required=True,
-        choices=["saliency", "occlusion", "ablation", "input_ablation", "integrated_gradients", "all"],
+        choices=["saliency", "occlusion", "ablation", "input_ablation", "integrated_gradients", "gradient_shap", "all"],
         metavar="METHOD",
         help="XAI methods to run. Use 'all' for all methods.",
     )
@@ -261,6 +264,20 @@ def main() -> None:
         metavar="N",
         help="Internal batch size for Integrated Gradients forward passes.",
     )
+    parser.add_argument(
+        "--gs-n-samples",
+        type=int,
+        default=5,
+        metavar="N",
+        help="Number of random baseline samples for GradientShap.",
+    )
+    parser.add_argument(
+        "--gs-stdevs",
+        type=float,
+        default=0.0,
+        metavar="F",
+        help="Std dev of Gaussian noise added to baseline in GradientShap (0 = pure zero baseline).",
+    )
 
     args = parser.parse_args()
 
@@ -277,7 +294,7 @@ def main() -> None:
     # Resolve methods
     methods = set(args.methods)
     if "all" in methods:
-        methods = {"saliency", "occlusion", "ablation", "input_ablation", "integrated_gradients"}
+        methods = {"saliency", "occlusion", "ablation", "input_ablation", "integrated_gradients", "gradient_shap"}
 
     # Parse occlusion params
     occ_window: Tuple[int, int, int, int] = tuple(  # type: ignore[assignment]
@@ -308,6 +325,7 @@ def main() -> None:
     print(f"Occlusion strategy:{args.occlusion_strategy}  zone patches: {args.occlusion_zone_patches}")
     print(f"Zone source:       {args.zone_source}")
     print(f"IG steps:          {args.ig_steps}  internal batch size: {args.ig_internal_batch_size}")
+    print(f"GS n_samples:      {args.gs_n_samples}  stdevs: {args.gs_stdevs}")
     print(f"Device:            {device if device is not None else 'auto'}")
 
     from src.metrics.compute import compute_metrics
@@ -335,6 +353,8 @@ def main() -> None:
                         max_cases=args.max_cases,
                         ig_steps=args.ig_steps,
                         ig_internal_batch_size=args.ig_internal_batch_size,
+                        gs_n_samples=args.gs_n_samples,
+                        gs_stdevs=args.gs_stdevs,
                     )
 
         # Compute metrics and charts from saved .npz files

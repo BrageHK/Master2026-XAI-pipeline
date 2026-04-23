@@ -74,6 +74,7 @@ METHOD_NPZ_KEYS = {
     "saliency":             "saliency",
     "occlusion":            "occlusion",
     "integrated_gradients": "integrated_gradients",
+    "gradient_shap":        "gradient_shap",
     "ablation":             "ablation",
     "input_ablation":       "input_ablation",
 }

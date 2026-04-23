@@ -60,6 +60,7 @@ def load_splits_nnunet() -> Dict[int, Dict]:
     for fold_idx, (fold_key, fold_data) in enumerate(valid_splits.items()):
         extra = sorted(set(fold_data["subject_list"]) & missing)
         result[fold_idx] = {"subject_list": list(nnunet_splits[fold_idx]["val"]) + extra}
+    print(f"Total cases: loaded: ", len(result))
     return result
 
 

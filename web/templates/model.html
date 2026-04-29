@@ -100,7 +100,8 @@
             <th title="Total predicted cancer voxels (including background zone)">Pred vox&nbsp;total</th>
             <th>Sal dom.&nbsp;ch</th>
             <th>IG dom.&nbsp;ch</th>
-            <th>Occ dom.&nbsp;ch</th>
+            <th>Occ (zone med.)&nbsp;dom.&nbsp;ch</th>
+            <th>Occ (baseline)&nbsp;dom.&nbsp;ch</th>
           </tr>
         </thead>
         <tbody>
@@ -122,7 +123,8 @@
               data-gt-tz="{{ r.tz_voxels if r.tz_voxels is not none else '' }}"
               data-sal="{{ ['T2W','ADC','HBV'][r.saliency.dominant_ch] if r.saliency else '' }}"
               data-ig="{{ ['T2W','ADC','HBV'][r.integrated_gradients.dominant_ch] if r.integrated_gradients else '' }}"
-              data-occ="{{ ['T2W','ADC','HBV'][r.occlusion.dominant_ch] if r.occlusion else '' }}"
+              data-occ-zm="{{ ['T2W','ADC','HBV'][r.occlusion_by_strategy.zone_median.dominant_ch] if r.occlusion_by_strategy and r.occlusion_by_strategy.get('zone_median') else '' }}"
+              data-occ-zero="{{ ['T2W','ADC','HBV'][r.occlusion_by_strategy.zero.dominant_ch] if r.occlusion_by_strategy and r.occlusion_by_strategy.get('zero') else '' }}"
               data-has-npz="{{ 'true' if has_npz else 'false' }}">
             <td class="font-monospace small">{{ r.case_id }}</td>
             <td>{{ r.fold }}</td>
@@ -171,8 +173,13 @@
               {% else %}—{% endif %}
             </td>
             <td>
-              {% if r.occlusion %}
-                {{ ['T2W','ADC','HBV'][r.occlusion.dominant_ch] }}
+              {% if r.occlusion_by_strategy and r.occlusion_by_strategy.get('zone_median') %}
+                {{ ['T2W','ADC','HBV'][r.occlusion_by_strategy.zone_median.dominant_ch] }}
+              {% else %}—{% endif %}
+            </td>
+            <td>
+              {% if r.occlusion_by_strategy and r.occlusion_by_strategy.get('zero') %}
+                {{ ['T2W','ADC','HBV'][r.occlusion_by_strategy.zero.dominant_ch] }}
               {% else %}—{% endif %}
             </td>
           </tr>
@@ -187,18 +194,19 @@
 </div>
 
 {# ── Channel activation charts ─────────────────────────────────────────────
-    Layout: one section per method (saliency / occlusion), each showing two
-    3×3 grids (distribution box plots + mean pies).
+    Layout: one section per method (saliency / occlusion_zm / occlusion_zero),
+    each showing two 3×3 grids (distribution box plots + mean pies).
     Rows = classification filter (FP+TP / TP / FP)
     Cols = zone filter          (All zones / PZ / TZ)
 #}
 {% set cls_keys   = [("tp_fp","FP + TP"), ("tp","TP"), ("fp","FP")] %}
 {% set zone_keys  = [("all","All zones"), ("pz","PZ"), ("tz","TZ")] %}
 {% set chart_types = [("distribution","Distribution (box plots)"), ("pie","Mean attribution (pie)")] %}
+{% set method_labels = {"saliency": "Saliency", "occlusion_zm": "Occlusion (Zone Median)", "occlusion_zero": "Occlusion (Zero Baseline)", "ig": "Integrated Gradients", "gs": "GradientSHAP"} %}
 
 {% for method, grid in charts.channel_activation.items() %}
 <h5 class="fw-semibold mt-5 mb-3 border-bottom pb-2">
-  {{ method | title }} — Channel Activation
+  {{ method_labels.get(method, method | title) }} — Channel Activation
 </h5>
 
 <div class="ca-pair">
@@ -233,6 +241,65 @@
   {% endfor %}
 </div>
 {% endfor %}
+
+{# ── LaTeX Export ──────────────────────────────────────────────────────────── #}
+<div class="card shadow-sm mb-5">
+  <div class="card-header bg-white d-flex align-items-center gap-2"
+       style="cursor:pointer" data-bs-toggle="collapse" data-bs-target="#latex-export-body"
+       aria-expanded="false" aria-controls="latex-export-body">
+    <span class="fw-semibold">Export LaTeX Tables — Channel Attribution</span>
+    <span class="text-muted small ms-auto">click to expand ▼</span>
+  </div>
+  <div class="collapse" id="latex-export-body">
+    <div class="card-body">
+      <div class="d-flex flex-wrap gap-3 align-items-center mb-3">
+        <label class="fw-semibold mb-0" for="latex-method-select">Method:</label>
+        <select id="latex-method-select" class="form-select form-select-sm" style="width:auto">
+          <option value="saliency">Saliency</option>
+          <option value="occlusion_zero">Occlusion (Zero Baseline)</option>
+          <option value="occlusion_zm">Occlusion (Zone Median)</option>
+          <option value="ig">Integrated Gradients</option>
+          <option value="gs">GradientSHAP</option>
+        </select>
+        <button id="latex-gen-btn" class="btn btn-sm btn-primary">Generate Tables</button>
+        <span id="latex-status" class="text-muted small"></span>
+      </div>
+      <div id="latex-output" style="display:none">
+
+        <h6 class="mt-3 fw-semibold text-muted">
+          Table 1 — Median + IQR, all models (FP+TP, all zones)
+        </h6>
+        <div class="position-relative mb-4">
+          <pre id="latex-t1" class="bg-light border rounded p-3 small font-monospace"
+               style="overflow-x:auto;white-space:pre;max-height:360px;overflow-y:auto"></pre>
+          <button class="btn btn-xs btn-outline-secondary position-absolute top-0 end-0 m-1 px-2 py-1"
+                  onclick="copyLatex('latex-t1')">Copy</button>
+        </div>
+
+        <h6 class="mt-3 fw-semibold text-muted">
+          Table 2 — Mean per prediction × zone ({{ model }})
+        </h6>
+        <div class="position-relative mb-4">
+          <pre id="latex-t2" class="bg-light border rounded p-3 small font-monospace"
+               style="overflow-x:auto;white-space:pre;max-height:360px;overflow-y:auto"></pre>
+          <button class="btn btn-xs btn-outline-secondary position-absolute top-0 end-0 m-1 px-2 py-1"
+                  onclick="copyLatex('latex-t2')">Copy</button>
+        </div>
+
+        <h6 class="mt-3 fw-semibold text-muted">
+          Table 3 — Mean all models (FP+TP, all zones)
+        </h6>
+        <div class="position-relative mb-4">
+          <pre id="latex-t3" class="bg-light border rounded p-3 small font-monospace"
+               style="overflow-x:auto;white-space:pre;max-height:360px;overflow-y:auto"></pre>
+          <button class="btn btn-xs btn-outline-secondary position-absolute top-0 end-0 m-1 px-2 py-1"
+                  onclick="copyLatex('latex-t3')">Copy</button>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
 
 {% endblock %}
 
@@ -295,5 +362,149 @@ $('#fold-filter').on('change', applyFilters);
 
 // All-models-positive / TP / FP toggles
 $('#chk-all-models-pos, #chk-all-models-tp, #chk-all-models-fp').on('change', applyFilters);
+
+// ── LaTeX export ──────────────────────────────────────────────────────────────
+const LATEX_THIS_MODEL = '{{ model }}';
+const LATEX_MODELS = ['nnunet', 'swin_unetr', 'umamba_mtl'];
+const LATEX_MODEL_LABELS = {
+  nnunet:      '\\gls{nnunet}',
+  swin_unetr:  'Swin \\gls{unetr}',
+  umamba_mtl:  '\\gls{mtl}',
+};
+const LATEX_METHOD_NOUN = {
+  saliency:               'saliency',
+  occlusion_zero:         'occlusion (zero baseline)',
+  occlusion_zm:           'occlusion (zone-median baseline)',
+  ig:                     'integrated gradients',
+  gs:                     'GradientSHAP',
+};
+const LATEX_METHOD_TITLE = {
+  saliency:               'Saliency',
+  occlusion_zero:         'Occlusion (Zero Baseline)',
+  occlusion_zm:           'Occlusion (Zone Median)',
+  ig:                     'Integrated Gradients',
+  gs:                     'GradientSHAP',
+};
+
+function _f2(v)   { return v.toFixed(2); }
+function _pct(v)  { return (v * 100).toFixed(1); }
+
+function genTable1(allStats, method) {
+  const noun = LATEX_METHOD_NOUN[method] || method;
+  const rows = LATEX_MODELS.map(m => {
+    const s = allStats[m]?.[method]?.tp_fp?.all;
+    if (!s || s.n === 0) return null;
+    const cols = [0,1,2].map(i => `${_f2(s.median[i])} (${_f2(s.q1[i])}--${_f2(s.q3[i])})`);
+    return `        ${LATEX_MODEL_LABELS[m]} & ${cols.join(' & ')} \\\\`;
+  }).filter(Boolean).join('\n');
+  return `\\begin{table}[H]
+    \\centering
+    \\caption{Median ${noun} attribution fraction per input channel across all predicted \\gls{cspca} cases (\\gls{fp} + \\gls{tp}, all zones). Values in parentheses denote the \\gls{iqr} (Q1--Q3).}
+    \\label{tab:channel_attribution_median_${method}}
+    \\begin{tabular}{lccc}
+        \\toprule
+        \\textbf{Model} & \\textbf{\\gls{t2w}} & \\textbf{\\gls{adc}} & \\textbf{\\gls{hbv}} \\\\
+        \\midrule
+${rows}
+        \\bottomrule
+    \\end{tabular}
+\\end{table}`;
+}
+
+function genTable2(allStats, method, modelName) {
+  const title = LATEX_METHOD_TITLE[method] || method;
+  const modelLabel = LATEX_MODEL_LABELS[modelName] || modelName;
+  const clsDefs  = [['tp_fp','\\gls{fp} + \\gls{tp}'],['tp','\\gls{tp}'],['fp','\\gls{fp}']];
+  const zoneDefs = [['all','All'],['pz','\\gls{pz}'],['tz','\\gls{tz}']];
+  const ms = allStats[modelName];
+  let rows = '';
+  for (let ci = 0; ci < clsDefs.length; ci++) {
+    const [clsKey, clsLabel] = clsDefs[ci];
+    rows += `        \\multirow{3}{*}{${clsLabel}}\n`;
+    for (const [zoneKey, zoneLabel] of zoneDefs) {
+      const s = ms?.[method]?.[clsKey]?.[zoneKey];
+      if (!s || s.n === 0) {
+        rows += `            & ${zoneLabel} & --- & --- & --- &   0 \\\\\n`;
+      } else {
+        const vals = [0,1,2].map(i => _pct(s.mean[i]));
+        rows += `            & ${zoneLabel} & ${vals[0]} & ${vals[1]} & ${vals[2]} & ${String(s.n).padStart(3)} \\\\\n`;
+      }
+    }
+    if (ci < clsDefs.length - 1) rows += `        \\midrule\n`;
+  }
+  return `\\begin{table}[H]
+    \\caption{${title} attribution share per input channel for ${modelLabel}, stratified by model prediction (\\gls{tp}, \\gls{fp}, or both) and anatomical zone (\\gls{pz}, \\gls{tz}, or all zones).}
+    \\label{tab:${modelName}_${method}_all}
+    \\centering
+    \\begin{tabular}{llcccr}
+        \\toprule
+        \\textbf{Prediction} & \\textbf{Zone} & \\textbf{\\gls{t2w} (\\%)} & \\textbf{\\gls{adc} (\\%)} & \\textbf{\\gls{hbv} (\\%)} & \\textbf{$n$} \\\\
+        \\midrule
+${rows}        \\bottomrule
+    \\end{tabular}
+\\end{table}`;
+}
+
+function genTable3(allStats, method) {
+  const noun = LATEX_METHOD_NOUN[method] || method;
+  const rows = LATEX_MODELS.map(m => {
+    const s = allStats[m]?.[method]?.tp_fp?.all;
+    if (!s || s.n === 0) return null;
+    const vals = [0,1,2].map(i => _pct(s.mean[i]));
+    return `        ${LATEX_MODEL_LABELS[m]} & ${vals.join(' & ')} & ${s.n} \\\\`;
+  }).filter(Boolean).join('\n');
+  return `\\begin{table}[H]
+    \\caption{Mean ${noun} attribution share per input channel across all predicted \\gls{cspca} cases (\\gls{fp} + \\gls{tp}, all zones).}
+    \\label{tab:all_models_${method}_mean}
+    \\centering
+    \\begin{tabular}{lcccr}
+        \\toprule
+        \\textbf{Model} & \\textbf{\\gls{t2w} (\\%)} & \\textbf{\\gls{adc} (\\%)} & \\textbf{\\gls{hbv} (\\%)} & \\textbf{$n$} \\\\
+        \\midrule
+${rows}
+        \\bottomrule
+    \\end{tabular}
+\\end{table}`;
+}
+
+function copyLatex(id) {
+  const text = document.getElementById(id).textContent;
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = document.querySelector(`[onclick="copyLatex('${id}')"]`);
+    const orig = btn.textContent;
+    btn.textContent = 'Copied!';
+    btn.classList.replace('btn-outline-secondary','btn-success');
+    setTimeout(() => { btn.textContent = orig; btn.classList.replace('btn-success','btn-outline-secondary'); }, 1500);
+  });
+}
+
+async function generateLatex() {
+  const method = document.getElementById('latex-method-select').value;
+  const statusEl = document.getElementById('latex-status');
+  const btn = document.getElementById('latex-gen-btn');
+  statusEl.textContent = 'Loading…';
+  btn.disabled = true;
+  try {
+    const responses = await Promise.all(
+      LATEX_MODELS.map(m => fetch(`/api/channel_stats/${m}.json`).then(r => r.json()))
+    );
+    const allStats = {};
+    LATEX_MODELS.forEach((m, i) => { allStats[m] = responses[i]; });
+    document.getElementById('latex-t1').textContent = genTable1(allStats, method);
+    document.getElementById('latex-t2').textContent = genTable2(allStats, method, LATEX_THIS_MODEL);
+    document.getElementById('latex-t3').textContent = genTable3(allStats, method);
+    document.getElementById('latex-output').style.display = '';
+    statusEl.textContent = '';
+  } catch(e) {
+    statusEl.textContent = 'Error: ' + e.message;
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+document.getElementById('latex-gen-btn').addEventListener('click', generateLatex);
+document.getElementById('latex-method-select').addEventListener('change', () => {
+  if (document.getElementById('latex-output').style.display !== 'none') generateLatex();
+});
 </script>
 {% endblock %}

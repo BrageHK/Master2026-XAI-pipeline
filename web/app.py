@@ -201,7 +201,7 @@ def _available_charts(model: str) -> dict:
     ca_base   = ANALYSIS_DIR / model / "channel_activation"
     cls_keys  = ("tp_fp", "tp", "fp")
     zone_keys = ("all", "pz", "tz")
-    for method in ("saliency", "occlusion"):
+    for method in ("saliency", "occlusion_zm", "occlusion_zero", "ig", "gs"):
         method_dir = ca_base / method
         if not method_dir.exists():
             continue
@@ -426,7 +426,19 @@ def _build_case_payload(model: str, case_id: str) -> dict:
     if (not _is_sentinel(occ_tz) and occ_tz.ndim == 4
             and not _is_sentinel(zones_for_occlusion) and zones_for_occlusion.ndim == 3
             and zones_for_occlusion.shape != occ_tz.shape[1:]):
-        zones_for_occlusion = np.zeros((0,), dtype=np.int8)
+        # Crop or zero-pad each spatial dim to match occ_tz rather than discarding zones
+        target = occ_tz.shape[1:]
+        z = zones_for_occlusion
+        for dim in range(3):
+            if z.shape[dim] > target[dim]:
+                idx = [slice(None)] * 3
+                idx[dim] = slice(0, target[dim])
+                z = z[tuple(idx)]
+            elif z.shape[dim] < target[dim]:
+                pad = [(0, 0)] * 3
+                pad[dim] = (0, target[dim] - z.shape[dim])
+                z = np.pad(z, pad, constant_values=0)
+        zones_for_occlusion = z
 
     n_slices = image.shape[1]
     panels: dict = {}
@@ -1028,6 +1040,63 @@ def api_chart(model: str, relpath: str):
     if not path.exists() or path.suffix != ".png":
         abort(404)
     return send_file(path, mimetype="image/png")
+
+
+@app.route("/api/channel_stats/<model>.json")
+def api_channel_stats(model: str):
+    """Aggregate channel attribution stats (mean/median/Q1/Q3) per method × cls × zone."""
+    if model not in MODELS:
+        abort(404)
+    records = _get_case_data().get(model, [])
+
+    def _get_frac(r: dict, method: str):
+        if method == "saliency":
+            s = r.get("saliency"); return s["ch_fraction"] if s and s.get("ch_fraction") else None
+        if method == "occlusion_zero":
+            s = (r.get("occlusion_by_strategy") or {}).get("zero")
+            return s["ch_fraction"] if s and s.get("ch_fraction") else None
+        if method == "occlusion_zm":
+            s = (r.get("occlusion_by_strategy") or {}).get("zone_median")
+            return s["ch_fraction"] if s and s.get("ch_fraction") else None
+        if method == "ig":
+            s = r.get("integrated_gradients"); return s["ch_fraction"] if s and s.get("ch_fraction") else None
+        if method == "gs":
+            s = r.get("gradient_shap"); return s["ch_fraction"] if s and s.get("ch_fraction") else None
+        return None
+
+    methods = ["saliency", "occlusion_zero", "occlusion_zm", "ig", "gs"]
+    cls_filters = {
+        "tp_fp": lambda r: r.get("classification") in ("tp", "fp"),
+        "tp":    lambda r: r.get("classification") == "tp",
+        "fp":    lambda r: r.get("classification") == "fp",
+    }
+    zone_filters = {
+        "all": lambda r: True,
+        "pz":  lambda r: r.get("primary_zone") == "pz",
+        "tz":  lambda r: r.get("primary_zone") == "tz",
+    }
+
+    result: dict = {}
+    for method in methods:
+        result[method] = {}
+        for cls_key, cls_f in cls_filters.items():
+            result[method][cls_key] = {}
+            for zone_key, zone_f in zone_filters.items():
+                fracs = [_get_frac(r, method) for r in records
+                         if cls_f(r) and zone_f(r) and _get_frac(r, method) is not None]
+                n = len(fracs)
+                if n == 0:
+                    result[method][cls_key][zone_key] = {"n": 0}
+                    continue
+                arr = np.array(fracs)
+                result[method][cls_key][zone_key] = {
+                    "n": n,
+                    "mean":   arr.mean(axis=0).tolist(),
+                    "median": np.median(arr, axis=0).tolist(),
+                    "q1":     np.percentile(arr, 25, axis=0).tolist(),
+                    "q3":     np.percentile(arr, 75, axis=0).tolist(),
+                }
+    return jsonify(result)
 
 
 @app.route("/api/confusion_matrix/<model>")

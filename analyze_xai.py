@@ -33,7 +33,7 @@ XAI_DIR         = PROJECT_ROOT / "results" / "xai"
 ANALYSIS_DIR    = PROJECT_ROOT / "results" / "analysis"
 
 ALL_MODELS    = ["umamba_mtl", "swin_unetr", "nnunet"]
-METHODS       = ["saliency", "occlusion"]
+METHODS       = ["saliency", "occlusion_zm", "occlusion_zero", "ig", "gs"]
 CHANNEL_NAMES = ["T2W", "ADC", "HBV"]
 CHANNEL_COLORS = ["#e74c3c", "#2ecc71", "#3498db"]
 

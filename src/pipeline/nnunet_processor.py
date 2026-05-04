@@ -184,7 +184,7 @@ def process_fold_nnunet(
                 if run_saliency:
                     x_sal = x_crop.detach().clone().requires_grad_(True)
                     with torch.enable_grad():
-                        sal_attr = Saliency(fwd_occ).attribute(x_sal, abs=True)
+                        sal_attr = Saliency(fwd_occ).attribute(x_sal, abs="abs" in aggregation)
                     sal_np = _unpad(sal_attr.detach().cpu().numpy()[0], (original_dhw[0], occ_crop_hw, occ_crop_hw))
                     del x_sal, sal_attr
                     sal_np = sal_np[:, d0:d1]  # (3, D_crop, H_crop, W_crop)

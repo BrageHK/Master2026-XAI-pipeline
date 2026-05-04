@@ -32,10 +32,30 @@ module purge
 # Appends saliency_mean / saliency_abs_sum / saliency_abs_avg fields
 # to existing .npz files — existing sum data is not touched.
 # Stops after 10 predicted-positive cases per model per aggregation.
-uv run main.py \
-    --models all \
+timeout 30m uv run main.py \
+    --models umamba_mtl \
     --fold 0 \
-    --methods saliency \
-    --aggregation mean abs_sum abs_avg \
-    --max-cases 10 \
+    --methods saliency integrated_gradients \
+    --aggregation sum \
+    --overwrite
+
+timeout 30m uv run main.py \
+    --models umamba_mtl \
+    --fold 0 \
+    --methods saliency integrated_gradients \
+    --aggregation mean \
+    --overwrite
+
+timeout 30m uv run main.py \
+    --models umamba_mtl \
+    --fold 0 \
+    --methods saliency integrated_gradients \
+    --aggregation abs_sum \
+    --overwrite
+
+timeout 30m uv run main.py \
+    --models umamba_mtl \
+    --fold 0 \
+    --methods saliency integrated_gradients \
+    --aggregation abs_avg \
     --overwrite

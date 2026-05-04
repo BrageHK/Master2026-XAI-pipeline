@@ -239,7 +239,7 @@ def process_fold_monai(
                 if run_saliency:
                     x_sal = x.detach().clone().requires_grad_(True)
                     with torch.enable_grad():
-                        sal_attr = Saliency(forward_func).attribute(x_sal, abs=True)
+                        sal_attr = Saliency(forward_func).attribute(x_sal, abs="abs" in aggregation)
                     sal_np = sal_attr.detach().cpu().numpy()[0]   # (3, H, W, D)
                     del x_sal, sal_attr
                     sal_np = sal_np.transpose(0, 3, 1, 2)          # (3, D, H, W)

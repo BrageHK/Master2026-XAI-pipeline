@@ -130,6 +130,10 @@
         <div id="occ-strategy-wrap" class="d-flex align-items-center gap-2 d-none">
           <span class="fw-semibold small text-nowrap">Occlusion:</span>
           <select id="occ-strategy-select" class="form-select form-select-sm" style="width:auto"></select>
+          <div id="zone-swap-btns" class="btn-group btn-group-sm d-none" role="group" title="Swap zone/BG assignments if labels are reversed">
+            <button id="btn-swap-zones" class="btn btn-outline-warning" onclick="toggleSwapZones()" title="Swap PZ↔TZ zone labels">Swap zones</button>
+            <button id="btn-swap-bg"    class="btn btn-outline-warning" onclick="toggleSwapBg()"    title="Swap top/bottom background halves">Swap BG ↕</button>
+          </div>
         </div>
         <span class="vr mx-1"></span>
         <div id="agg-selector-wrap" class="d-flex align-items-center gap-2 d-none">
@@ -140,6 +144,14 @@
         <div class="form-check form-switch mb-0 d-flex align-items-center gap-2">
           <input class="form-check-input" type="checkbox" id="contour-toggle" role="switch">
           <label class="form-check-label small fw-semibold text-nowrap" for="contour-toggle">Zone contours</label>
+        </div>
+        <span class="vr mx-1"></span>
+        <div class="d-flex align-items-center gap-2">
+          <span class="small fw-semibold text-nowrap">Zone source:</span>
+          <select id="zone-source-select" class="form-select form-select-sm" style="width:auto" onchange="changeZoneSource(this.value)">
+            <option value="pred">Pred (umamba)</option>
+            <option value="gt">GT labels</option>
+          </select>
         </div>
         <span class="vr mx-1"></span>
         <div class="form-check form-switch mb-0 d-flex align-items-center gap-2">
@@ -189,10 +201,22 @@
           <input class="form-check-input" type="checkbox" id="cmp-contour-toggle" role="switch">
           <label class="form-check-label small fw-semibold text-nowrap" for="cmp-contour-toggle">Zone contours</label>
         </div>
+        <span class="vr mx-1"></span>
+        <div class="d-flex align-items-center gap-2">
+          <span class="small fw-semibold text-nowrap">Zone source:</span>
+          <select id="cmp-zone-source-select" class="form-select form-select-sm" style="width:auto" onchange="changeZoneSource(this.value)">
+            <option value="pred">Pred (umamba)</option>
+            <option value="gt">GT labels</option>
+          </select>
+        </div>
         <div id="cmp-occ-strategy-wrap" class="d-none d-flex align-items-center gap-2">
           <span class="vr mx-1"></span>
           <label class="fw-semibold small text-nowrap" for="cmp-occ-strategy-select">Strategy:</label>
           <select class="form-select form-select-sm" id="cmp-occ-strategy-select" style="width:auto"></select>
+          <div id="cmp-zone-swap-btns" class="btn-group btn-group-sm d-none" role="group" title="Swap zone/BG assignments if labels are reversed">
+            <button id="cmp-btn-swap-zones" class="btn btn-outline-warning" onclick="toggleSwapZones()" title="Swap PZ↔TZ zone labels">Swap zones</button>
+            <button id="cmp-btn-swap-bg"    class="btn btn-outline-warning" onclick="toggleSwapBgAll()" title="Swap top/bottom background halves for all models">Swap BG all ↕</button>
+          </div>
         </div>
         <span class="vr mx-1"></span>
         <div class="btn-group" role="group">
@@ -401,10 +425,11 @@ function getGsPanelKey(row) {
 }
 
 function getOccPanelKey(row) {
-  const sfx = _aggSfx();
+  const sfx  = _aggSfx();
+  const zsfx = getZoneSfx();
   const strat = document.getElementById("occ-strategy-select")?.value;
-  if (strat === "zone_median")  return `occlusion_zm${sfx}_${row.idx}`;
-  if (strat === "tz_masked")    return `occlusion_tz_masked${sfx}_${row.idx}`;
+  if (strat === "zone_median")  return `occlusion_zm${zsfx}${sfx}_${row.idx}`;
+  if (strat === "tz_masked")    return `occlusion_tz_masked${zsfx}${sfx}_${row.idx}`;
   if (strat === "pz_masked")    return `occlusion_pz_masked${sfx}_${row.idx}`;
   return `occlusion${sfx}_${row.idx}`;
 }
@@ -439,6 +464,79 @@ let currentAlpha = 0.95;
 let occByStrat = {};
 let showZoneContours = false;
 let cachedContours = {};
+let currentZoneSource = "pred";
+
+// Zone-swap toggles (for zone-merged occlusion strategies)
+let swapZones    = false;
+let swapBg       = false;          // model mode global
+let swapBgByModel = {};            // compare mode: per-model { model → bool }
+
+// Model-mode suffix (global swapBg)
+function getZoneSfx() {
+  if (swapZones && swapBg) return '_both';
+  if (swapBg)              return '_bgswap';
+  if (swapZones)           return '_zswap';
+  return '';
+}
+
+// Compare-mode suffix for a specific model
+function getZoneSfxForModel(m) {
+  const sbg = !!swapBgByModel[m];
+  if (swapZones && sbg) return '_both';
+  if (sbg)              return '_bgswap';
+  if (swapZones)        return '_zswap';
+  return '';
+}
+
+function _syncSwapButtons() {
+  // Zone-swap buttons (global, both modes)
+  for (const id of ['btn-swap-zones', 'cmp-btn-swap-zones'])
+    document.getElementById(id)?.classList.toggle('active', swapZones);
+  // Model-mode BG button
+  document.getElementById('btn-swap-bg')?.classList.toggle('active', swapBg);
+  // Compare-mode per-model BG buttons
+  for (const m of ALL_MODELS)
+    document.getElementById(`cmp-swap-bg-btn-${m}`)?.classList.toggle('active', !!swapBgByModel[m]);
+  _updateCmpSwapAllBtnState();
+}
+
+function _updateCmpSwapAllBtnState() {
+  const allOn = ALL_MODELS.length > 0 && ALL_MODELS.every(m => !!swapBgByModel[m]);
+  document.getElementById('cmp-btn-swap-bg')?.classList.toggle('active', allOn);
+}
+
+// Model mode: toggle global swapBg
+function toggleSwapBg() {
+  swapBg = !swapBg;
+  document.getElementById('btn-swap-bg')?.classList.toggle('active', swapBg);
+  showSlice(parseInt(document.getElementById("slice-slider").value));
+  updateOccStats();
+}
+
+// Compare mode: toggle one model's swapBg
+function toggleSwapBgModel(m) {
+  swapBgByModel[m] = !swapBgByModel[m];
+  document.getElementById(`cmp-swap-bg-btn-${m}`)?.classList.toggle('active', !!swapBgByModel[m]);
+  _updateCmpSwapAllBtnState();
+  recompositeCmpAll();
+  buildCompareSidebar();
+}
+
+// Compare mode: toggle all models at once
+function toggleSwapBgAll() {
+  const anyOff = ALL_MODELS.some(m => !swapBgByModel[m]);
+  for (const m of ALL_MODELS) swapBgByModel[m] = anyOff;
+  _syncSwapButtons();
+  recompositeCmpAll();
+  buildCompareSidebar();
+}
+
+function toggleSwapZones() {
+  swapZones = !swapZones;
+  _syncSwapButtons();
+  if (currentMode === 'compare') { recompositeCmpAll(); buildCompareSidebar(); }
+  else { showSlice(parseInt(document.getElementById("slice-slider").value)); updateOccStats(); }
+}
 
 // Compare Mode
 let cmpCachedImages  = {};    // model → cachedImages
@@ -613,12 +711,13 @@ function buildGrid(availablePanels) {
 function getCmpOccKey(m, rowIdx) {
   const mp   = modelDataCache[m]?.panels;
   const sfx  = _aggSfx();
+  const zsfx = getZoneSfxForModel(m);
   const strat = document.getElementById("cmp-occ-strategy-select")?.value;
-  if (strat === "zone_median")  { const k = `occlusion_zm${sfx}_${rowIdx}`;          if (mp && k in mp) return k; }
-  if (strat === "tz_masked")    { const k = `occlusion_tz_masked${sfx}_${rowIdx}`;   if (mp && k in mp) return k; }
-  if (strat === "pz_masked")    { const k = `occlusion_pz_masked${sfx}_${rowIdx}`;   if (mp && k in mp) return k; }
+  if (strat === "zone_median")  { const k = `occlusion_zm${zsfx}${sfx}_${rowIdx}`;          if (mp && k in mp) return k; }
+  if (strat === "tz_masked")    { const k = `occlusion_tz_masked${zsfx}${sfx}_${rowIdx}`;   if (mp && k in mp) return k; }
+  if (strat === "pz_masked")    { const k = `occlusion_pz_masked${sfx}_${rowIdx}`;           if (mp && k in mp) return k; }
   if (mp && `occlusion${sfx}_${rowIdx}` in mp) return `occlusion${sfx}_${rowIdx}`;
-  if (mp && `occlusion_zm${sfx}_${rowIdx}` in mp) return `occlusion_zm${sfx}_${rowIdx}`;
+  if (mp && `occlusion_zm${zsfx}${sfx}_${rowIdx}` in mp) return `occlusion_zm${zsfx}${sfx}_${rowIdx}`;
   return `occlusion${sfx}_${rowIdx}`;
 }
 
@@ -742,9 +841,12 @@ function buildCompareGrid(method) {
       ? `background:${MODEL_COLORS_HEX[m]}22;color:${MODEL_COLORS_HEX[m]};border-bottom:2px solid ${MODEL_COLORS_HEX[m]}`
       : "background:#f1f5f9;color:#94a3b8;border-bottom:2px solid #e2e8f0";
     if (hasPos) {
-      hdr.innerHTML = `<div class="mb-1 d-flex gap-1 justify-content-center">` +
+      const bgActive = swapBgByModel[m] ? ' active' : '';
+      hdr.innerHTML = `<div class="mb-1 d-flex gap-1 justify-content-center flex-wrap">` +
         `<button class="btn btn-sm p-0 px-1" onclick="rotateCmpContour('${m}',-90)" title="Rotate contour −90°" style="color:inherit;border:1px solid currentColor">↺</button>` +
-        `<button class="btn btn-sm p-0 px-1" onclick="rotateCmpContour('${m}',90)" title="Rotate contour +90°" style="color:inherit;border:1px solid currentColor">↻</button></div>${MODEL_LABELS[m]}`;
+        `<button class="btn btn-sm p-0 px-1" onclick="rotateCmpContour('${m}',90)" title="Rotate contour +90°" style="color:inherit;border:1px solid currentColor">↻</button>` +
+        `<button id="cmp-swap-bg-btn-${m}" class="btn btn-sm p-0 px-1 btn-outline-warning${bgActive}" onclick="toggleSwapBgModel('${m}')" title="Swap BG halves for this model">↕BG</button>` +
+        `</div>${MODEL_LABELS[m]}`;
     } else {
       hdr.textContent = MODEL_LABELS[m];
     }
@@ -857,9 +959,11 @@ function buildCompareSidebar() {
     }
     if (hasPos && mData?.stats) {
       const cmpOccStrat = document.getElementById("cmp-occ-strategy-select")?.value;
+      const _zsfx = getZoneSfxForModel(m);
+      const _cmpStratKey = (cmpOccStrat === "zone_median" || cmpOccStrat === "tz_masked") ? `${cmpOccStrat}${_zsfx}` : cmpOccStrat;
       let fracs;
-      if (compareMethod === 'occlusion' && cmpOccStrat && mData.stats.occlusion_by_strategy?.[cmpOccStrat]) {
-        fracs = mData.stats.occlusion_by_strategy[cmpOccStrat].ch_fraction;
+      if (compareMethod === 'occlusion' && _cmpStratKey && mData.stats.occlusion_by_strategy?.[_cmpStratKey]) {
+        fracs = mData.stats.occlusion_by_strategy[_cmpStratKey].ch_fraction;
       } else {
         const statKey = compareMethod === 'ablation' ? 'saliency' : compareMethod;
         fracs = mData.stats[statKey]?.ch_fraction;
@@ -900,7 +1004,9 @@ function buildModelSwitcher() {
 
 function updateOccStats() {
   const strat = document.getElementById("occ-strategy-select")?.value;
-  const o = (strat && occByStrat[strat]) ? occByStrat[strat]
+  const zsfx  = getZoneSfx();
+  const stratKey = (strat === "zone_median" || strat === "tz_masked") ? `${strat}${zsfx}` : strat;
+  const o = (stratKey && occByStrat[stratKey]) ? occByStrat[stratKey]
             : modelDataCache[activeModel]?.stats?.occlusion;
   plotPie("plot-occ-pie", o?.ch_fraction ?? null);
   plotBar("plot-occ-bar", o?.ch_mean ?? null);
@@ -934,7 +1040,7 @@ async function switchModel(model) {
   grid.style.opacity = "0.4";
 
   if (!modelDataCache[model]) {
-    const resp = await fetch(`/api/case/${model}/${CASE_ID}.json`);
+    const resp = await fetch(`/api/case/${model}/${CASE_ID}.json?zone_source=${currentZoneSource}`);
     if (!resp.ok) { grid.style.opacity = "1"; return; }
     modelDataCache[model] = await resp.json();
   }
@@ -959,7 +1065,7 @@ async function switchModel(model) {
     const opt = document.createElement("option"); opt.value = s; opt.textContent = stratLabels[s] ?? s;
     occSelect.appendChild(opt);
   }
-  occWrap.classList.toggle("d-none", occStrategies.length <= 1);
+  occWrap.classList.toggle("d-none", occStrategies.length === 0);
 
   // Sync aggregation selector for the new model
   const newAggAvail = mData.available_aggregations || ["sum"];
@@ -996,6 +1102,58 @@ async function switchModel(model) {
   if (badge) { badge.className = `badge bg-${model} px-3 fs-6`; badge.textContent = model; }
 }
 
+// ── Switch zone source (pred ↔ gt) ────────────────────────────────────────────
+async function changeZoneSource(source) {
+  if (source === currentZoneSource) return;
+  currentZoneSource = source;
+
+  // Sync both selects
+  document.getElementById("zone-source-select").value     = source;
+  document.getElementById("cmp-zone-source-select").value = source;
+
+  // Invalidate all cached payloads — zones differ per source
+  modelDataCache = {};
+  cmpCachedImages = {};
+  cmpCachedContours = {};
+  cachedContours = {};
+
+  const grid = document.getElementById("viewer-grid");
+  grid.style.opacity = "0.4";
+
+  if (currentMode === 'compare') {
+    await fetchCompareData();
+    buildCompareGrid(compareMethod);
+    const sl = parseInt(document.getElementById("cmp-slice-slider").value) || 0;
+    recompositeCmpAll();
+    document.getElementById("cmp-slice-label").textContent = `${sl+1} / ${nSlices}`;
+  } else {
+    const resp = await fetch(`/api/case/${activeModel}/${CASE_ID}.json?zone_source=${currentZoneSource}`);
+    if (!resp.ok) { grid.style.opacity = "1"; return; }
+    const data = await resp.json();
+    modelDataCache[activeModel] = data;
+    panels  = data.panels;
+    nSlices = data.n_slices;
+    modelDataCache[activeModel].cachedImages = await preloadImages(panels);
+    cachedImages = modelDataCache[activeModel].cachedImages;
+
+    buildGrid(panels);
+    setAblationVisible(document.getElementById("ablation-toggle").checked);
+    populateLegend(panels);
+    const sl = parseInt(document.getElementById("slice-slider").value) || 0;
+    showSlice(sl);
+
+    const zonesErrEl = document.getElementById("zones-error-msg");
+    if (data.zones_error_msg) {
+      zonesErrEl.textContent = "⚠ " + data.zones_error_msg;
+      zonesErrEl.style.display = "";
+    } else {
+      zonesErrEl.style.display = "none";
+    }
+  }
+
+  grid.style.opacity = "1";
+}
+
 // ── Update sidebar for current model ─────────────────────────────────────────
 function updateModelSidebar(mData) {
   const s = mData.stats;
@@ -1027,6 +1185,7 @@ async function switchMode(mode) {
   document.getElementById("btn-mode-compare").className = mode === 'compare' ? "btn btn-sm btn-primary" : "btn btn-sm btn-outline-secondary";
   document.getElementById("model-mode-controls").style.display   = mode === 'model'   ? "" : "none";
   document.getElementById("compare-mode-controls").style.display = mode === 'compare' ? "" : "none";
+  document.getElementById("cmp-zone-source-select").value = currentZoneSource;
   document.getElementById("model-sidebar").style.display    = mode === 'model'   ? "" : "none";
   document.getElementById("compare-sidebar").style.display  = mode === 'compare' ? "" : "none";
   document.getElementById("no-xai-msg").style.display = "none";
@@ -1083,7 +1242,9 @@ function populateCmpOccStrategyDropdown() {
     occSelect.appendChild(opt);
   }
   if (prevVal && stratSet.has(prevVal)) occSelect.value = prevVal;
-  occWrap.classList.toggle("d-none", compareMethod !== 'occlusion' || stratSet.size <= 1);
+  occWrap.classList.toggle("d-none", compareMethod !== 'occlusion' || stratSet.size === 0);
+  const s = occSelect.value;
+  document.getElementById("cmp-zone-swap-btns").classList.toggle("d-none", s !== "zone_median" && s !== "tz_masked");
 }
 
 function switchCompareMethod(method) {
@@ -1170,7 +1331,7 @@ async function fetchCompareData() {
   const positiveModels = ALL_MODELS.filter(m => ALL_MODEL_RECORDS[m]?.predicted_positive);
   await Promise.all(positiveModels.map(async m => {
     if (!modelDataCache[m]) {
-      const resp = await fetch(`/api/case/${m}/${CASE_ID}.json`);
+      const resp = await fetch(`/api/case/${m}/${CASE_ID}.json?zone_source=${currentZoneSource}`);
       if (resp.ok) modelDataCache[m] = await resp.json();
     }
     if (modelDataCache[m] && !modelDataCache[m].cachedImages) {
@@ -1210,6 +1371,8 @@ document.getElementById("cmp-monai-offset").addEventListener("input", e => {
   if (currentMode === 'compare') recompositeCmpAll();
 });
 document.getElementById("cmp-occ-strategy-select").addEventListener("change", () => {
+  const s = document.getElementById("cmp-occ-strategy-select").value;
+  document.getElementById("cmp-zone-swap-btns").classList.toggle("d-none", s !== "zone_median" && s !== "tz_masked");
   recompositeCmpAll();
   buildCompareSidebar();
 });
@@ -1308,7 +1471,7 @@ function populateLegend(availablePanels) {
   const loadMsg = document.getElementById("loading-msg");
   try {
     loadMsg.textContent = "Fetching & rendering slices (server-side)…";
-    const resp = await fetch(`/api/case/${MODEL}/${CASE_ID}.json`);
+    const resp = await fetch(`/api/case/${MODEL}/${CASE_ID}.json?zone_source=${currentZoneSource}`);
     if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
     loadMsg.textContent = "Decoding response…";
     const data = await resp.json();
@@ -1326,11 +1489,18 @@ function populateLegend(availablePanels) {
       const opt = document.createElement("option"); opt.value = s; opt.textContent = stratLabels[s] ?? s;
       occSelect.appendChild(opt);
     }
-    occWrap.classList.toggle("d-none", occStrategies.length <= 1);
+    occWrap.classList.toggle("d-none", occStrategies.length === 0);
+    function updateZoneSwapBtnVisibility() {
+      const s = occSelect.value;
+      const show = (s === "zone_median" || s === "tz_masked");
+      document.getElementById("zone-swap-btns").classList.toggle("d-none", !show);
+    }
     occSelect.addEventListener("change", () => {
+      updateZoneSwapBtnVisibility();
       showSlice(parseInt(document.getElementById("slice-slider").value));
       updateOccStats();
     });
+    updateZoneSwapBtnVisibility();
 
     populateAggSelector(data.available_aggregations || ["sum"]);
 

@@ -281,6 +281,35 @@ def _is_sentinel(arr) -> bool:
 # 'sum' uses no suffix (backward-compatible); rendered separately in the existing code path.
 _AGG_NON_SUM = [("mean", "_mean"), ("abs_sum", "_abs_sum"), ("abs_avg", "_abs_avg")]
 
+# Zone-swap variants: (panel_suffix, swap_zones, swap_bg)
+_SWAP_VARIANTS = [
+    ("",        False, False),  # normal
+    ("_bgswap", False, True),   # background halves swapped
+    ("_zswap",  True,  False),  # PZ/TZ zone labels swapped
+    ("_both",   True,  True),   # both swapped
+]
+
+
+def _merge_occ(occ_pz: np.ndarray, occ_tz: np.ndarray,
+               zones: np.ndarray, bg_bottom,
+               swap_zones: bool = False, swap_bg: bool = False) -> np.ndarray:
+    """Merge occ_pz and occ_tz by zone mask with optional label swaps.
+
+    swap_zones: treat zone==1 as TZ and zone==2 as PZ (reverse label fix)
+    swap_bg:    top-half background uses occ_tz, bottom-half uses occ_pz
+    """
+    z1_map  = occ_tz if swap_zones else occ_pz  # zone==1 pixels
+    z2_map  = occ_pz if swap_zones else occ_tz  # zone==2 pixels
+    top_map = occ_tz if swap_bg   else occ_pz   # background top half
+    bot_map = occ_pz if swap_bg   else occ_tz   # background bottom half
+
+    merged = top_map.copy()
+    merged[:, zones == 1] = z1_map[:, zones == 1]
+    merged[:, zones == 2] = z2_map[:, zones == 2]
+    if bg_bottom is not None:
+        merged[:, bg_bottom] = bot_map[:, bg_bottom]
+    return merged
+
 
 def _fix_zones(zones: np.ndarray, model: str) -> np.ndarray:
     """Swap zone labels 1↔2 for nnunet NPZ files that were saved with raw NIfTI
@@ -365,12 +394,14 @@ def _render_all_slices(arr: np.ndarray, cmap: str, vmin: float, vmax: float,
             for sl in range(arr.shape[0])]
 
 
-def _build_case_payload(model: str, case_id: str) -> dict:
+def _build_case_payload(model: str, case_id: str, zone_source: str = "pred") -> dict:
     """
     Load the NPZ for (model, case_id), render every depth slice for every panel
     as a base64 PNG, and return a JSON-serialisable dict.
 
     All rendering happens here — the client only swaps <img> src attributes.
+    zone_source: "pred" = umamba predicted zones (ZONES_PRED_DIR, fallback to npz);
+                 "gt"   = ground-truth zones from MONAI batch (npz["zones"]).
     """
     npz, fold_found = _load_npz(model, case_id)
 
@@ -407,18 +438,26 @@ def _build_case_payload(model: str, case_id: str) -> dict:
         label       = _rot_spatial(label)
         zm_baseline = _rot_spatial(zm_baseline)
 
-    # Zone display priority: umamba predictions > NPZ zones > error
+    # Zone display — source selected by caller
     zones_error_msg: str | None = None
-    zones_pred = _load_zones_pred(case_id, fold_found)
-    if model != "nnunet" and zones_pred is not None and zones_pred.ndim == 3:
-        zones_pred = np.rot90(zones_pred, k=1, axes=(1, 2))
-    if zones_pred is not None and zones_pred.ndim == 3:
-        zones = zones_pred    # (D_crop, W, H) orientation-corrected
-    elif not _is_sentinel(zones_npz) and zones_npz.ndim == 3:
-        zones = zones_npz     # fallback to model-native zones
+    if zone_source == "gt":
+        if not _is_sentinel(zones_npz) and zones_npz.ndim == 3:
+            zones = zones_npz
+        else:
+            zones = None
+            zones_error_msg = "Ground-truth zone labels are missing for this case."
     else:
-        zones = None
-        zones_error_msg = "Prostate zone predictions are missing for this case."
+        # "pred": umamba predicted zones > npz fallback
+        zones_pred = _load_zones_pred(case_id, fold_found)
+        if model != "nnunet" and zones_pred is not None and zones_pred.ndim == 3:
+            zones_pred = np.rot90(zones_pred, k=1, axes=(1, 2))
+        if zones_pred is not None and zones_pred.ndim == 3:
+            zones = zones_pred
+        elif not _is_sentinel(zones_npz) and zones_npz.ndim == 3:
+            zones = zones_npz
+        else:
+            zones = None
+            zones_error_msg = "Prostate zone predictions are missing for this case."
 
     # zones_npz (model-native space) is used for zone-median occlusion merging,
     # which must match the spatial dimensions of occ_tz/occ_pz
@@ -440,6 +479,13 @@ def _build_case_payload(model: str, case_id: str) -> dict:
                 z = np.pad(z, pad, constant_values=0)
         zones_for_occlusion = z
 
+    # Background split: top half → PZ baseline, bottom half → TZ baseline
+    bg_bottom = None
+    if not _is_sentinel(zones_for_occlusion) and zones_for_occlusion.ndim == 3:
+        H = zones_for_occlusion.shape[1]
+        bg_bottom = (zones_for_occlusion == 0)
+        bg_bottom[:, :H // 2, :] = False  # keep only bottom-half background pixels
+
     n_slices = image.shape[1]
     panels: dict = {}
 
@@ -449,12 +495,18 @@ def _build_case_payload(model: str, case_id: str) -> dict:
         v0, v1 = float(ch.min()), float(ch.max())
         panels[name] = _render_all_slices(ch, "gray", v0, v1)
 
-    # Zone-median baseline image (tiled zone patches used as occlusion baseline)
-    if not _is_sentinel(zm_baseline) and zm_baseline.ndim == 4:
+    # Zone-median baseline image: TZ median in TZ, PZ median everywhere else
+    if not _is_sentinel(zones_npz) and zones_npz.ndim == 3 and zones_npz.shape == image.shape[1:]:
         for i, name in enumerate(("t2w", "adc", "hbv")):
-            ch = zm_baseline[i]
-            v0, v1 = float(ch.min()), float(ch.max())
-            panels[f"zm_baseline_{name}"] = _render_all_slices(ch, "gray", v0, v1)
+            ch = image[i]
+            tz_px = ch[zones_npz == 2]
+            pz_px = ch[zones_npz == 1]
+            tz_med = float(np.median(tz_px)) if tz_px.size > 0 else 0.0
+            pz_med = float(np.median(pz_px)) if pz_px.size > 0 else 0.0
+            layer = np.full_like(ch, pz_med)
+            layer[zones_npz == 2] = tz_med
+            v0, v1 = float(layer.min()), float(layer.max())
+            panels[f"zm_baseline_{name}"] = _render_all_slices(layer, "gray", v0, v1)
 
     # Cancer probability (transparent background for client-side compositing)
     prob = pred[0]  # (D, H, W)
@@ -492,43 +544,27 @@ def _build_case_payload(model: str, case_id: str) -> dict:
         for i in range(3):
             panels[f"occlusion_{i}"] = _render_all_slices(occ_abs[i], "turbo", 0.0, occ_vmax, transparent=True)
 
-    # Zone-median occlusion: merge TZ and PZ attribution maps by zone mask
-    # Uses zones_for_occlusion (model-native space) which matches occ_tz/occ_pz dimensions.
+    # Zone-merged occlusion: 4 swap variants (swap_zones × swap_bg).
+    # zone_median and tz_masked share the same merged image; pz_masked is pure occ_pz.
     occ_merged = None
     if (not _is_sentinel(occ_tz) and occ_tz.ndim == 4
             and not _is_sentinel(occ_pz) and occ_pz.ndim == 4
             and not _is_sentinel(zones_for_occlusion) and zones_for_occlusion.ndim == 3):
-        occ_merged = np.zeros_like(occ_tz)
-        occ_merged[:, zones_for_occlusion == 2] = occ_tz[:, zones_for_occlusion == 2]
-        occ_merged[:, zones_for_occlusion == 1] = occ_pz[:, zones_for_occlusion == 1]
-        occ_merged_abs = np.abs(occ_merged)
-        occ_zm_vmax = float(np.percentile(occ_merged_abs, 99)) or 1e-6
-        for i in range(3):
-            panels[f"occlusion_zm_{i}"] = _render_all_slices(
-                occ_merged_abs[i], "turbo", 0.0, occ_zm_vmax, transparent=True
-            )
-
-    # TZ-masked and PZ-masked: zone attribution in its region, average of both elsewhere
-    if (not _is_sentinel(occ_tz) and occ_tz.ndim == 4
-            and not _is_sentinel(occ_pz) and occ_pz.ndim == 4
-            and not _is_sentinel(zones_for_occlusion) and zones_for_occlusion.ndim == 3):
-        occ_avg = (occ_tz + occ_pz) / 2.0
-
-        occ_tz_masked = occ_avg.copy()
-        occ_tz_masked[:, zones_for_occlusion == 2] = occ_tz[:, zones_for_occlusion == 2]
-        occ_tz_masked_abs = np.abs(occ_tz_masked)
-        occ_tz_vmax = float(np.percentile(occ_tz_masked_abs, 99)) or 1e-6
-        for i in range(3):
-            panels[f"occlusion_tz_masked_{i}"] = _render_all_slices(
-                occ_tz_masked_abs[i], "turbo", 0.0, occ_tz_vmax, transparent=True)
-
-        occ_pz_masked = occ_avg.copy()
-        occ_pz_masked[:, zones_for_occlusion == 1] = occ_pz[:, zones_for_occlusion == 1]
-        occ_pz_masked_abs = np.abs(occ_pz_masked)
-        occ_pz_vmax = float(np.percentile(occ_pz_masked_abs, 99)) or 1e-6
+        for zsfx, szones, sbg in _SWAP_VARIANTS:
+            _m = _merge_occ(occ_pz, occ_tz, zones_for_occlusion, bg_bottom, szones, sbg)
+            if not zsfx:
+                occ_merged = _m
+            _m_abs = np.abs(_m)
+            _vmax = float(np.percentile(_m_abs, 99)) or 1e-6
+            for i in range(3):
+                rendered = _render_all_slices(_m_abs[i], "turbo", 0.0, _vmax, transparent=True)
+                panels[f"occlusion_zm{zsfx}_{i}"] = rendered
+                panels[f"occlusion_tz_masked{zsfx}_{i}"] = rendered
+        _pz_abs = np.abs(occ_pz)
+        _pz_vmax = float(np.percentile(_pz_abs, 99)) or 1e-6
         for i in range(3):
             panels[f"occlusion_pz_masked_{i}"] = _render_all_slices(
-                occ_pz_masked_abs[i], "turbo", 0.0, occ_pz_vmax, transparent=True)
+                _pz_abs[i], "turbo", 0.0, _pz_vmax, transparent=True)
 
     # AblationCAM (single-channel spatial map)
     if not _is_sentinel(ablation) and ablation.ndim == 4:
@@ -601,70 +637,57 @@ def _build_case_payload(model: str, case_id: str) -> dict:
         if (not _is_sentinel(occ_tz_agg) and occ_tz_agg.ndim == 4
                 and not _is_sentinel(occ_pz_agg) and occ_pz_agg.ndim == 4
                 and not _is_sentinel(zones_for_occlusion) and zones_for_occlusion.ndim == 3):
-            _occ_merged = np.zeros_like(occ_tz_agg)
-            _occ_merged[:, zones_for_occlusion == 2] = occ_tz_agg[:, zones_for_occlusion == 2]
-            _occ_merged[:, zones_for_occlusion == 1] = occ_pz_agg[:, zones_for_occlusion == 1]
-            _occ_merged_abs = np.abs(_occ_merged)
-            _zm_vmax = float(np.percentile(_occ_merged_abs, 99)) or 1e-6
+            for zsfx, szones, sbg in _SWAP_VARIANTS:
+                _m = _merge_occ(occ_pz_agg, occ_tz_agg, zones_for_occlusion, bg_bottom, szones, sbg)
+                _m_abs = np.abs(_m)
+                _vmax = float(np.percentile(_m_abs, 99)) or 1e-6
+                for i in range(3):
+                    rendered = _render_all_slices(_m_abs[i], "turbo", 0.0, _vmax, transparent=True)
+                    panels[f"occlusion_zm{zsfx}{sfx}_{i}"] = rendered
+                    panels[f"occlusion_tz_masked{zsfx}{sfx}_{i}"] = rendered
+            _pz_abs = np.abs(occ_pz_agg)
+            _pz_vmax = float(np.percentile(_pz_abs, 99)) or 1e-6
             for i in range(3):
-                panels[f"occlusion_zm{sfx}_{i}"] = _render_all_slices(_occ_merged_abs[i], "turbo", 0.0, _zm_vmax, transparent=True)
-
-            _occ_avg = (occ_tz_agg + occ_pz_agg) / 2.0
-
-            _tz_m = _occ_avg.copy()
-            _tz_m[:, zones_for_occlusion == 2] = occ_tz_agg[:, zones_for_occlusion == 2]
-            _tz_m_abs = np.abs(_tz_m)
-            _tz_vmax = float(np.percentile(_tz_m_abs, 99)) or 1e-6
-            for i in range(3):
-                panels[f"occlusion_tz_masked{sfx}_{i}"] = _render_all_slices(_tz_m_abs[i], "turbo", 0.0, _tz_vmax, transparent=True)
-
-            _pz_m = _occ_avg.copy()
-            _pz_m[:, zones_for_occlusion == 1] = occ_pz_agg[:, zones_for_occlusion == 1]
-            _pz_m_abs = np.abs(_pz_m)
-            _pz_vmax = float(np.percentile(_pz_m_abs, 99)) or 1e-6
-            for i in range(3):
-                panels[f"occlusion_pz_masked{sfx}_{i}"] = _render_all_slices(_pz_m_abs[i], "turbo", 0.0, _pz_vmax, transparent=True)
+                panels[f"occlusion_pz_masked{sfx}_{i}"] = _render_all_slices(
+                    _pz_abs[i], "turbo", 0.0, _pz_vmax, transparent=True)
 
         if not _is_sentinel(abl_agg) and abl_agg.ndim == 4:
             abl_map = abl_agg[0]
             v1 = float(np.percentile(abl_map, 99)) or 1e-6
             panels[f"ablation{sfx}"] = _render_all_slices(abl_map, "turbo", 0.0, v1, transparent=True)
 
-    # Compute per-channel means on-the-fly from NPZ (not stored in progress.json)
-    sal_ch_mean = (np.abs(saliency).mean(axis=(1, 2, 3)).tolist()
-                   if not _is_sentinel(saliency) and saliency.ndim == 4 else None)
-    ig_ch_mean  = (np.abs(ig).mean(axis=(1, 2, 3)).tolist()
-                   if not _is_sentinel(ig) and ig.ndim == 4 else None)
-    gs_ch_mean  = (np.abs(gs).mean(axis=(1, 2, 3)).tolist()
-                   if not _is_sentinel(gs) and gs.ndim == 4 else None)
-    occ_for_stats = (occlusion if not _is_sentinel(occlusion) and occlusion.ndim == 4
-                     else occ_merged)
-    occ_ch_mean = (np.abs(occ_for_stats).mean(axis=(1, 2, 3)).tolist()
-                   if occ_for_stats is not None else None)
-
-    # Per-strategy occlusion stats computed from NPZ arrays
+    # Per-channel stats (ch_fraction + ch_mean) from NPZ — fills in where progress.json has null
     def _occ_stats(arr: np.ndarray) -> dict:
         abs_arr = np.abs(arr)
         ch_sum = abs_arr.sum(axis=(1, 2, 3))
         total = float(ch_sum.sum())
         return {
             "ch_fraction": (ch_sum / total).tolist() if total > 0 else [0.0, 0.0, 0.0],
-            "ch_mean": abs_arr.mean(axis=(1, 2, 3)).tolist(),
+            "ch_mean":     abs_arr.mean(axis=(1, 2, 3)).tolist(),
         }
+
+    def _safe_stats(arr):
+        return _occ_stats(arr) if not _is_sentinel(arr) and arr.ndim == 4 else None
+
+    occ_for_stats = (occlusion if not _is_sentinel(occlusion) and occlusion.ndim == 4
+                     else occ_merged)
+
+    sal_npz = _safe_stats(saliency)
+    ig_npz  = _safe_stats(ig)
+    gs_npz  = _safe_stats(gs)
+    occ_npz = _occ_stats(occ_for_stats) if occ_for_stats is not None else None
 
     occ_stats_by_strategy: dict = {}
     if not _is_sentinel(occlusion) and occlusion.ndim == 4:
         occ_stats_by_strategy["zero"] = _occ_stats(occlusion)
-    if occ_merged is not None:
-        occ_stats_by_strategy["zone_median"] = _occ_stats(occ_merged)
-    if "occlusion_tz_masked_0" in panels and not _is_sentinel(occ_tz) and occ_tz.ndim == 4 \
-            and not _is_sentinel(occ_pz) and occ_pz.ndim == 4 \
-            and not _is_sentinel(zones_for_occlusion) and zones_for_occlusion.ndim == 3:
-        occ_avg = (occ_tz + occ_pz) / 2.0
-        _tz_m = occ_avg.copy(); _tz_m[:, zones_for_occlusion == 2] = occ_tz[:, zones_for_occlusion == 2]
-        _pz_m = occ_avg.copy(); _pz_m[:, zones_for_occlusion == 1] = occ_pz[:, zones_for_occlusion == 1]
-        occ_stats_by_strategy["tz_masked"] = _occ_stats(_tz_m)
-        occ_stats_by_strategy["pz_masked"] = _occ_stats(_pz_m)
+    if (not _is_sentinel(occ_tz) and occ_tz.ndim == 4
+            and not _is_sentinel(occ_pz) and occ_pz.ndim == 4
+            and not _is_sentinel(zones_for_occlusion) and zones_for_occlusion.ndim == 3):
+        for zsfx, szones, sbg in _SWAP_VARIANTS:
+            _zm = _merge_occ(occ_pz, occ_tz, zones_for_occlusion, bg_bottom, szones, sbg)
+            occ_stats_by_strategy[f"zone_median{zsfx}"] = _occ_stats(_zm)
+            occ_stats_by_strategy[f"tz_masked{zsfx}"]   = _occ_stats(_zm)
+        occ_stats_by_strategy["pz_masked"] = _occ_stats(occ_pz)
 
     # Detect which occlusion strategies are available for this case
     occlusion_strategies = []
@@ -680,12 +703,12 @@ def _build_case_payload(model: str, case_id: str) -> dict:
     # Stats: pull from in-memory sample_data (refreshed periodically)
     record = _get_case_index().get(model, {}).get(case_id, {})
 
-    def _enrich(stat, ch_mean):
-        if ch_mean is None:
+    def _enrich(stat, npz_stat):
+        if not npz_stat:
             return stat
         if stat:
-            return {**stat, "ch_mean": ch_mean}
-        return {"ch_mean": ch_mean}
+            return {**npz_stat, **stat}  # progress.json wins; NPZ fills missing keys
+        return npz_stat
 
     # Merge NPZ-computed per-strategy stats over the progress.json base
     merged_occ_by_strat = {**record.get("occlusion_by_strategy", {})}
@@ -694,10 +717,10 @@ def _build_case_payload(model: str, case_id: str) -> dict:
 
     stats = {
         "input_ablation":          inp_abl.tolist() if (not _is_sentinel(inp_abl) and inp_abl.shape == (3,)) else None,
-        "saliency":                _enrich(record.get("saliency"), sal_ch_mean),
-        "integrated_gradients":    _enrich(record.get("integrated_gradients"), ig_ch_mean),
-        "gradient_shap":           _enrich(record.get("gradient_shap"), gs_ch_mean),
-        "occlusion":               _enrich(record.get("occlusion"), occ_ch_mean),
+        "saliency":                _enrich(record.get("saliency"), sal_npz),
+        "integrated_gradients":    _enrich(record.get("integrated_gradients"), ig_npz),
+        "gradient_shap":           _enrich(record.get("gradient_shap"), gs_npz),
+        "occlusion":               _enrich(record.get("occlusion"), occ_npz),
         "occlusion_by_strategy":   merged_occ_by_strat,
         "pz_voxels":               record.get("pz_voxels"),
         "tz_voxels":               record.get("tz_voxels"),
@@ -779,8 +802,11 @@ def api_case(model: str, case_id: str):
     """Return all rendered slices + stats for a case. Heavy — cached after first call."""
     if model not in MODELS:
         abort(404)
+    zone_source = request.args.get("zone_source", "pred")
+    if zone_source not in ("pred", "gt"):
+        zone_source = "pred"
     try:
-        payload = _build_case_payload(model, case_id)
+        payload = _build_case_payload(model, case_id, zone_source)
         return jsonify(payload)
     except FileNotFoundError:
         abort(404)

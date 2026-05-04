@@ -15,6 +15,7 @@ logs/
 results/
 results.bak/
 results.bak2/
+results.correct/
 uv.lock
 images/
 

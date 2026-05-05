@@ -30,11 +30,12 @@ from flask import Flask, abort, jsonify, render_template, request, send_file
 # Paths
 # ---------------------------------------------------------------------------
 PROJECT_ROOT = Path(__file__).parent.parent
-METRICS_DIR  = PROJECT_ROOT / "results" / "metrics"
-XAI_DIR      = PROJECT_ROOT / "results" / "xai"
-ANALYSIS_DIR = PROJECT_ROOT / "results" / "analysis"
+_DEFAULT_RESULTS = PROJECT_ROOT / "results"
+METRICS_DIR  = _DEFAULT_RESULTS / "metrics"
+XAI_DIR      = _DEFAULT_RESULTS / "xai"
+ANALYSIS_DIR = _DEFAULT_RESULTS / "analysis"
 MODELS        = ["umamba_mtl", "swin_unetr", "nnunet"]
-ZONES_PRED_DIR = XAI_DIR / "zones"   # umamba predicted zones: zones/fold_N/case_id.npz
+ZONES_PRED_DIR = XAI_DIR / "zones"
 
 CHANNEL_NAMES = ["T2W", "ADC", "HBV"]
 
@@ -150,8 +151,7 @@ def _get_case_index() -> Dict[str, Dict[str, dict]]:
     return _CASE_INDEX
 
 
-# Initialise on startup
-_get_case_data()
+# Initialised in main() after path globals are set
 
 
 # ---------------------------------------------------------------------------
@@ -1172,13 +1172,27 @@ def api_confusion_matrix(model: str):
 # ---------------------------------------------------------------------------
 
 def main() -> None:
+    global METRICS_DIR, XAI_DIR, ANALYSIS_DIR, ZONES_PRED_DIR
+
     parser = argparse.ArgumentParser(description="PI-CAI XAI Visualization Server")
-    parser.add_argument("--host",  default="127.0.0.1", help="Bind host")
-    parser.add_argument("--port",  default=5000, type=int, help="Bind port")
-    parser.add_argument("--debug", action="store_true", help="Enable Flask debug mode")
+    parser.add_argument("--host",        default="127.0.0.1", help="Bind host")
+    parser.add_argument("--port",        default=5000, type=int, help="Bind port")
+    parser.add_argument("--debug",       action="store_true", help="Enable Flask debug mode")
+    parser.add_argument("--results-dir", default=None, type=Path,
+                        help="Results root directory (default: <project>/results)")
     args = parser.parse_args()
 
+    if args.results_dir is not None:
+        results = args.results_dir.resolve()
+        METRICS_DIR    = results / "metrics"
+        XAI_DIR        = results / "xai"
+        ANALYSIS_DIR   = results / "analysis"
+        ZONES_PRED_DIR = XAI_DIR / "zones"
+
+    _load_npz.cache_clear()
+
     total = sum(len(v) for v in _get_case_data().values())
+    print(f"Results directory: {XAI_DIR.parent}")
     print(f"Loaded {total} cases across {len(MODELS)} models (refreshes every {_CACHE_TTL}s)")
     print(f"XAI NPZ directory: {XAI_DIR}")
     print(f"Starting server at http://{args.host}:{args.port}")
